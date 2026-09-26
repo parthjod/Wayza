@@ -1,0 +1,164 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(uuid())
+  fullName       String   @db.VarChar(100)
+  phone          String   @unique @db.VarChar(20)   // E.164
+  collegeEmail   String   @unique @db.VarChar(254)
+  emailVerified  Boolean  @default(false)
+  profilePicKey  String?  // S3 object key; null = use initials avatar
+  warningCount   Int      @default(0)
+  blacklisted    Boolean  @default(false)
+  role           String   @default("user") @db.VarChar(20) // "user" | "admin"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  sentMessages     ChatMessage[]       @relation("SentMessages")
+  groupMemberships GroupMember[]
+  reports          Report[]            @relation("ReporterReports")
+  reportedIn       Report[]            @relation("ReportedReports")
+  journeys         JourneyParticipant[]
+  fareSplits       FareSplit[]
+
+  @@index([phone])
+  @@index([collegeEmail])
+}
+
+model Group {
+  id           String      @id @default(uuid())
+  status       GroupStatus  @default(FORMING)
+  dropLocation String      @db.VarChar(500)
+  dropLat      Float?
+  dropLng      Float?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  members      GroupMember[]
+  chatMessages ChatMessage[]
+  journey      Journey?
+  fareSplit    FareSplit?
+}
+
+enum GroupStatus {
+  FORMING
+  CONFIRMED
+  JOURNEY_STARTED
+  JOURNEY_ENDED
+  SPLIT_DONE
+  DISBANDED
+}
+
+model GroupMember {
+  id              String   @id @default(uuid())
+  groupId         String
+  userId          String
+  confirmedGoWith Boolean  @default(false)
+  sharedPhone     Boolean  @default(false)
+  startedJourney  Boolean  @default(false)
+  endedJourney    Boolean  @default(false)
+  confirmedSplit  Boolean  @default(false)
+  joinedAt        DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+}
+
+model ChatMessage {
+  id        String   @id @default(uuid())
+  groupId   String
+  senderId  String
+  content   String   @db.VarChar(1000)
+  createdAt DateTime @default(now())
+
+  group  Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender User  @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([groupId, createdAt])
+}
+
+model Journey {
+  id         String    @id @default(uuid())
+  groupId    String    @unique
+  startedAt  DateTime?
+  endedAt    DateTime?
+  allStarted Boolean   @default(false)
+  allEnded   Boolean   @default(false)
+
+  group        Group              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  participants JourneyParticipant[]
+}
+
+model JourneyParticipant {
+  id        String    @id @default(uuid())
+  journeyId String
+  userId    String
+  startedAt DateTime?
+  endedAt   DateTime?
+
+  journey Journey @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([journeyId, userId])
+}
+
+model FareSplit {
+  id          String   @id @default(uuid())
+  groupId     String   @unique
+  totalFare   Float
+  submittedBy String
+  createdAt   DateTime @default(now())
+
+  group        Group              @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  submitter    User               @relation(fields: [submittedBy], references: [id])
+  participants SplitParticipant[]
+}
+
+model SplitParticipant {
+  id           String  @id @default(uuid())
+  fareSplitId  String
+  userId       String
+  amount       Float
+  acknowledged Boolean @default(false)
+
+  fareSplit FareSplit @relation(fields: [fareSplitId], references: [id], onDelete: Cascade)
+}
+
+model Report {
+  id          String       @id @default(uuid())
+  reporterId  String
+  reportedId  String
+  groupId     String?
+  description String       @db.VarChar(2000)
+  status      ReportStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+
+  reporter User @relation("ReporterReports", fields: [reporterId], references: [id])
+  reported User @relation("ReportedReports", fields: [reportedId], references: [id])
+}
+
+enum ReportStatus {
+  PENDING
+  UNDER_REVIEW
+  WARNING_ISSUED
+  BLACKLISTED
+  DISMISSED
+}
+
+model CampusPOI {
+  id    String @id @default(uuid())
+  name  String @db.VarChar(200)
+  lat   Float
+  lng   Float
+  label String @db.VarChar(100)
+}
