@@ -423,9 +423,11 @@ wayza/
 │   └── workflows/ci.yml           # GitHub Actions CI pipeline (lint, test, build)
 │
 ├── 🌐 client/                     # Frontend Single Page App (React 18 + Vite)
-│   ├── public/                    # Static assets & icons
-│   │   ├── favicon.svg            # Wayza brand favicons (ico, png, svg)
-│   │   └── videos/                # Background video loops (wayzaLoginVid, wayzaVid)
+│   ├── public/                    # Static assets & branding icons
+│   │   ├── favicon.svg            # Modern SVG vector favicon
+│   │   ├── favicon-32x32.png      # 32x32 desktop browser tab icon
+│   │   ├── favicon-16x16.png      # 16x16 bookmark & low-resolution icon
+│   │   └── apple-touch-icon.png   # 180x180 iOS home screen icon
 │   ├── src/
 │   │   ├── api/                   # Typed Axios API clients (auth, chat, group, journey, etc.)
 │   │   ├── components/            # UI component system
