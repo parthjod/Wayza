@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api/auth.api';
+import { userApi } from '../api/user.api';
 import { useAuthStore } from '../store/authStore';
 import { useToast } from '../components/ui/Toast';
 import { OTPInput } from '../components/ui/OTPInput';
@@ -36,8 +37,24 @@ export default function Landing() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (user) navigate('/home', { replace: true });
-  }, [user, navigate]);
+    if (user) {
+      navigate('/home', { replace: true });
+      return;
+    }
+    userApi
+      .getMe()
+      .then((data) => {
+        setUser({
+          id: data.id,
+          fullName: data.fullName,
+          profilePicUrl: data.profilePicUrl,
+        });
+        navigate('/home', { replace: true });
+      })
+      .catch(() => {
+        // Not authenticated, stay on landing page
+      });
+  }, [user, navigate, setUser]);
 
   // Rotate loading lines
   useEffect(() => {

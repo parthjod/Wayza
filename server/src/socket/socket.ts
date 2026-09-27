@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import cookie from 'cookie-parser';
-import { verifyAccessToken } from '../utils/jwt';
+import { verifyAccessToken, verifyRefreshToken } from '../utils/jwt';
 import { chatService } from '../modules/chat/chat.service';
 import { discoveryService } from '../modules/discovery/discovery.service';
 import { groupService } from '../modules/group/group.service';
@@ -20,8 +20,9 @@ export function setupSocket(io: Server) {
 
       // Try cookie first
       const cookieHeader = socket.handshake.headers.cookie;
+      let cookies: Record<string, string> = {};
       if (cookieHeader) {
-        const cookies = parseCookies(cookieHeader);
+        cookies = parseCookies(cookieHeader);
         token = cookies['accessToken'];
       }
 
@@ -30,13 +31,15 @@ export function setupSocket(io: Server) {
         token = socket.handshake.auth.token.replace('Bearer ', '');
       }
 
-      if (!token) {
-        return next(new Error('Authentication required'));
+      let payload = token ? verifyAccessToken(token) : null;
+
+      // Fallback to refreshToken if accessToken expired
+      if (!payload && cookies['refreshToken']) {
+        payload = verifyRefreshToken(cookies['refreshToken']);
       }
 
-      const payload = verifyAccessToken(token);
       if (!payload) {
-        return next(new Error('Invalid token'));
+        return next(new Error('Authentication required'));
       }
 
       socket.userId = payload.userId;
@@ -71,14 +74,16 @@ export function setupSocket(io: Server) {
 
         // Broadcast to group room
         io.to(`group:${data.groupId}`).emit('chat:message', {
-          groupId: data.groupId,
+          id: message.id,
           messageId: message.id,
+          groupId: data.groupId,
           senderId: message.senderId,
           senderName: message.senderName,
           content: message.content,
           createdAt: message.createdAt,
         });
       } catch (err: any) {
+        console.error('Chat send error:', err);
         socket.emit('error', { message: err.message || 'Failed to send message' });
       }
     });

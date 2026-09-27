@@ -7,6 +7,7 @@ import { useToast } from '../components/ui/Toast';
 import { Avatar } from '../components/ui/Avatar';
 import { Spinner } from '../components/ui/Spinner';
 import { Modal } from '../components/ui/Modal';
+import { FeedbackForm } from '../components/ui/FeedbackForm';
 import { discoveryApi } from '../api/discovery.api';
 import { groupApi } from '../api/group.api';
 import { locationApi } from '../api/location.api';
@@ -34,6 +35,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [customLocation, setCustomLocation] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [autocompleteResults, setAutocompleteResults] = useState<AutocompleteResult[]>([]);
@@ -254,7 +256,20 @@ export default function Home() {
           </span>
         </div>
 
-        <div className="flex items-center gap-4 pointer-events-auto" style={{ marginRight: '10px', marginTop: "10px" }}>
+        <div className="flex items-center gap-3 pointer-events-auto" style={{ marginRight: '10px', marginTop: "10px" }}>
+          {/* Tell us something — feedback button */}
+          <button
+            id="feedback-nav-btn"
+            onClick={() => setShowFeedback(true)}
+            className="feedback-nav-btn"
+            aria-label="Share feedback"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            Tell us something
+          </button>
+
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowDropdown(!showDropdown)}
@@ -745,6 +760,9 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Feedback Form */}
+      <FeedbackForm open={showFeedback} onClose={() => setShowFeedback(false)} />
     </div>
   );
 }

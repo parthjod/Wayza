@@ -1,16 +1,20 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from '../store/authStore';
 
 export function useSocket() {
-  const socketRef = useRef<Socket | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
   const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setSocket(null);
+      setConnected(false);
+      return;
+    }
 
-    const socket = io(import.meta.env.VITE_SOCKET_URL, {
+    const socketInstance = io(import.meta.env.VITE_SOCKET_URL, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -19,17 +23,22 @@ export function useSocket() {
       reconnectionDelayMax: 10000,
     });
 
-    socket.on('connect', () => setConnected(true));
-    socket.on('disconnect', () => setConnected(false));
+    socketInstance.on('connect', () => {
+      setConnected(true);
+    });
 
-    socketRef.current = socket;
+    socketInstance.on('disconnect', () => {
+      setConnected(false);
+    });
+
+    setSocket(socketInstance);
 
     return () => {
-      socket.disconnect();
-      socketRef.current = null;
+      socketInstance.disconnect();
+      setSocket(null);
       setConnected(false);
     };
   }, [user]);
 
-  return { socket: socketRef.current, connected };
+  return { socket, connected };
 }

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -12,15 +13,27 @@ const api = axios.create({
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
-    if (error.response?.status === 401 && !error.config._retry) {
-      error.config._retry = true;
+    const originalRequest = error.config;
+
+    // Do not attempt refresh if the failed request was already /auth/refresh or /auth/logout
+    if (originalRequest?.url?.includes('/auth/refresh') || originalRequest?.url?.includes('/auth/logout')) {
+      useAuthStore.getState().clearUser();
+      return Promise.reject(error);
+    }
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
       try {
         await api.post('/auth/refresh');
-        return api(error.config);
-      } catch {
-        // Refresh failed — redirect to login
-        window.location.href = '/';
-        return Promise.reject(error);
+        return api(originalRequest);
+      } catch (refreshErr) {
+        useAuthStore.getState().clearUser();
+        // Only redirect to landing if on a protected route to avoid page reload loops
+        const path = window.location.pathname;
+        if (path !== '/' && path !== '/verify-email') {
+          window.location.href = '/';
+        }
+        return Promise.reject(refreshErr);
       }
     }
     return Promise.reject(error);

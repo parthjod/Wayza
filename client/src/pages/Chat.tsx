@@ -46,6 +46,7 @@ export default function Chat() {
   const [reportDescription, setReportDescription] = useState('');
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
+  const isLeavingRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -60,31 +61,60 @@ export default function Chat() {
   useEffect(() => {
     if (!socket || !groupId) return;
 
-    socket.emit('join-room', groupId);
+    const joinRoom = () => {
+      socket.emit('join-room', groupId);
+    };
 
-    socket.on('chat:message', (msg: ChatMsg & { groupId: string }) => {
-      if (msg.groupId === groupId) {
-        setMessages((prev) => [...prev, msg]);
+    if (socket.connected) {
+      joinRoom();
+    }
+    socket.on('connect', joinRoom);
+
+    socket.on('chat:message', (rawMsg: any) => {
+      if (rawMsg.groupId === groupId) {
+        const normalizedMsg: ChatMsg = {
+          id: rawMsg.id || rawMsg.messageId || String(Date.now()),
+          senderId: rawMsg.senderId,
+          senderName: rawMsg.senderName,
+          content: rawMsg.content,
+          createdAt: rawMsg.createdAt || new Date().toISOString(),
+        };
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === normalizedMsg.id)) return prev;
+          return [...prev, normalizedMsg];
+        });
       }
     });
 
-    socket.on('group:confirmed', () => loadGroup());
-    socket.on('group:phone-shared', () => loadGroup());
-    socket.on('group:member-joined', () => loadGroup());
-    socket.on('group:member-left', () => loadGroup());
-    socket.on('journey:progress', () => loadGroup());
-    socket.on('journey:all-started', () => loadGroup());
+    socket.on('error', (err: any) => {
+      console.error('Socket error:', err);
+      showToast(err.message || 'Chat error', 'error');
+    });
+
+    socket.on('group:confirmed', () => { if (!isLeavingRef.current) loadGroup(); });
+    socket.on('group:phone-shared', () => { if (!isLeavingRef.current) loadGroup(); });
+    socket.on('group:member-joined', () => { if (!isLeavingRef.current) loadGroup(); });
+    socket.on('group:member-left', (data: any) => {
+      if (isLeavingRef.current || data?.userId === user?.id) return;
+      loadGroup();
+    });
+    socket.on('journey:progress', () => { if (!isLeavingRef.current) loadGroup(); });
+    socket.on('journey:all-started', () => { if (!isLeavingRef.current) loadGroup(); });
     socket.on('journey:all-ended', () => {
+      if (isLeavingRef.current) return;
       loadGroup();
       setShowFareSplitModal(true);
     });
     socket.on('fare:split-submitted', (data: any) => {
+      if (isLeavingRef.current) return;
       setFareSplitResult(data);
       loadGroup();
     });
 
     return () => {
+      socket.off('connect', joinRoom);
       socket.off('chat:message');
+      socket.off('error');
       socket.off('group:confirmed');
       socket.off('group:phone-shared');
       socket.off('group:member-joined');
@@ -102,9 +132,15 @@ export default function Chat() {
   }, [messages]);
 
   const loadGroup = async () => {
-    if (!groupId) return;
+    if (!groupId || isLeavingRef.current) return;
     try {
       const data = await groupApi.getGroup(groupId);
+      if (isLeavingRef.current) return;
+      if (data.status === 'DISBANDED') {
+        showToast('The group has ended', 'info');
+        navigate('/home', { replace: true });
+        return;
+      }
       setGroup(data);
 
       // Initialize split members with all member IDs
@@ -112,9 +148,17 @@ export default function Chat() {
         setSplitMembers(data.members.map((m) => m.userId));
       }
     } catch (err: any) {
+      if (isLeavingRef.current) return;
+      if (err.response?.status === 403 || err.response?.status === 404) {
+        showToast('You left the group', 'info');
+        navigate('/home', { replace: true });
+        return;
+      }
       showToast('Failed to load group', 'error');
     } finally {
-      setLoading(false);
+      if (!isLeavingRef.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -141,8 +185,14 @@ export default function Chat() {
   };
 
   const sendMessage = () => {
-    if (!messageInput.trim() || !socket || !groupId) return;
-    socket.emit('chat:send-message', { groupId, content: messageInput.trim() });
+    const text = messageInput.trim();
+    if (!text || !groupId) return;
+    if (!socket || !socket.connected) {
+      showToast('Connecting to chat server, please wait...', 'info');
+      socket?.connect();
+      return;
+    }
+    socket.emit('chat:send-message', { groupId, content: text });
     setMessageInput('');
   };
 
@@ -260,13 +310,15 @@ export default function Chat() {
   };
 
   const handleLeaveGroup = async () => {
-    if (!groupId) return;
+    if (!groupId || isLeavingRef.current) return;
+    isLeavingRef.current = true;
     try {
       await groupApi.leave(groupId);
-      showToast('Left the group', 'info');
+    } catch {
+      // Ignore error if already removed or group disbanded
+    } finally {
+      showToast('You left the group', 'info');
       navigate('/home', { replace: true });
-    } catch (err: any) {
-      showToast(err.response?.data?.error || 'Failed', 'error');
     }
   };
 
@@ -331,7 +383,7 @@ export default function Chat() {
             <span className="text-white/60 text-xs">+{otherMembers.length - 2}</span>
           )}
           <span className="text-white font-semibold text-[15px] truncate leading-none">
-            {otherNames}
+            {otherNames || 'Ride Group'}
           </span>
         </div>
         <button
@@ -413,6 +465,22 @@ export default function Chat() {
         }}
       >
         {messages.map((msg) => {
+          const isSystemEvent =
+            msg.content.endsWith(' joined the group') ||
+            msg.content.endsWith(' left the group');
+
+          if (isSystemEvent) {
+            const isJoin = msg.content.endsWith(' joined the group');
+            return (
+              <div key={msg.id} className="flex justify-center my-2.5 px-4 animate-fade-in">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.08] backdrop-blur-md border border-white/10 text-white/75 text-xs font-medium tracking-wide shadow-sm">
+                  <span className="text-[12px]">{isJoin ? '👋' : '🚪'}</span>
+                  <span>{msg.content}</span>
+                </div>
+              </div>
+            );
+          }
+
           const isOwn = msg.senderId === user?.id;
           const sender = group.members.find((m) => m.userId === msg.senderId);
           return (
@@ -483,19 +551,25 @@ export default function Chat() {
           </button>
         </div>
 
-        {/* Action buttons — three-column grid layout */}
-        <div style={{ marginLeft: "520px" }} className="chat-actions-row">
+        {/* Action buttons */}
+        <div className="chat-actions-row">
           {/* Confirmed button */}
           {(group.status === 'FORMING' || group.status === 'CONFIRMED') && (
             <button
               onClick={handleConfirmGo}
-              disabled={selfMember?.confirmedGoWith}
-              className={`chat-action-btn ${selfMember?.confirmedGoWith ? 'chat-action-btn--confirmed' : 'chat-go-btn'
+              disabled={selfMember?.confirmedGoWith || otherMembers.length === 0}
+              className={`chat-action-btn ${selfMember?.confirmedGoWith
+                ? 'chat-action-btn--confirmed'
+                : otherMembers.length === 0
+                  ? 'opacity-50 cursor-not-allowed bg-white/10'
+                  : 'chat-go-btn'
                 }`}
             >
               {selfMember?.confirmedGoWith
                 ? `✓ Confirmed (${confirmedCount}/${group.members.length})`
-                : `Go with ${otherNames}`}
+                : otherMembers.length > 0
+                  ? `Go with ${otherNames}`
+                  : 'Waiting for members to join…'}
             </button>
           )}
 
@@ -598,12 +672,24 @@ export default function Chat() {
               })}
             </div>
 
-            <div className="border-t border-white/10 mt-3 pt-3">
+            <div className="border-t border-white/10 mt-3 pt-3 flex flex-col gap-1">
               <button
                 onClick={handleLeaveGroup}
                 className="w-full text-left text-red-400/80 text-xs hover:text-red-400 py-1.5 px-2 rounded-lg hover:bg-red-500/10 transition-colors flex items-center gap-2"
               >
                 <span>🚪</span> Leave group
+              </button>
+              <button
+                onClick={() => {
+                  setShowMenuPanel(false);
+                  if (otherMembers.length > 0 && !reportUserId) {
+                    setReportUserId(otherMembers[0].userId);
+                  }
+                  setShowReportModal(true);
+                }}
+                className="w-full text-left text-red-400/80 text-xs hover:text-red-400 py-1.5 px-2 rounded-lg hover:bg-red-500/10 transition-colors flex items-center gap-2"
+              >
+                <span>⚠️</span> Report
               </button>
             </div>
           </div>
@@ -745,6 +831,19 @@ export default function Chat() {
               className="fare-modal-submit-btn"
             >
               Acknowledge ✓
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowFareSplitModal(false);
+                if (otherMembers.length > 0 && !reportUserId) {
+                  setReportUserId(otherMembers[0].userId);
+                }
+                setShowReportModal(true);
+              }}
+              className="fare-modal-report-btn"
+            >
+              <span>⚠️</span> Report
             </button>
           </>
         )}

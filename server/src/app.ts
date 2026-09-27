@@ -17,6 +17,7 @@ import fareRoutes from './modules/fare/fare.routes';
 import reportRoutes from './modules/report/report.routes';
 import locationRoutes from './modules/location/location.routes';
 import adminRoutes from './modules/admin/admin.routes';
+import feedbackRoutes from './modules/feedback/feedback.routes';
 
 const app = express();
 
@@ -113,6 +114,7 @@ app.use('/api/fare', fareRoutes);
 app.use('/api/report', reportRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/location', locationRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

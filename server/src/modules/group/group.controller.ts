@@ -4,7 +4,8 @@ import { groupService } from './group.service';
 export class GroupController {
   async initiate(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await groupService.initiateGroup(req.user!.userId, req.body.targetUserId);
+      const io = req.app.get('io');
+      const result = await groupService.initiateGroup(req.user!.userId, req.body.targetUserId, io);
       res.json(result);
     } catch (err) {
       next(err);
@@ -13,7 +14,8 @@ export class GroupController {
 
   async getGroup(req: Request, res: Response, next: NextFunction) {
     try {
-      const result = await groupService.getGroup(req.params.groupId as string, req.user!.userId);
+      const io = req.app.get('io');
+      const result = await groupService.getGroup(req.params.groupId as string, req.user!.userId, io);
       res.json(result);
     } catch (err) {
       next(err);
@@ -79,14 +81,8 @@ export class GroupController {
   async acceptInvite(req: Request, res: Response, next: NextFunction) {
     try {
       const groupId = req.params.groupId as string;
-      const result = await groupService.acceptInvite(groupId, req.user!.userId);
       const io = req.app.get('io');
-      if (io) {
-        io.to(`group:${groupId}`).emit('group:member-joined', {
-          groupId,
-          userId: req.user!.userId,
-        });
-      }
+      const result = await groupService.acceptInvite(groupId, req.user!.userId, io);
       res.json(result);
     } catch (err) {
       next(err);
@@ -96,14 +92,8 @@ export class GroupController {
   async leave(req: Request, res: Response, next: NextFunction) {
     try {
       const groupId = req.params.groupId as string;
-      const result = await groupService.leaveGroup(groupId, req.user!.userId);
       const io = req.app.get('io');
-      if (io) {
-        io.to(`group:${groupId}`).emit('group:member-left', {
-          groupId,
-          userId: req.user!.userId,
-        });
-      }
+      const result = await groupService.leaveGroup(groupId, req.user!.userId, io);
       res.json(result);
     } catch (err) {
       next(err);

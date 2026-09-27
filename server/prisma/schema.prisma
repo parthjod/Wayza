@@ -28,6 +28,7 @@ model User {
   reportedIn       Report[]            @relation("ReportedReports")
   journeys         JourneyParticipant[]
   fareSplits       FareSplit[]
+  feedbacks        Feedback[]
 
   @@index([phone])
   @@index([collegeEmail])
@@ -161,4 +162,18 @@ model CampusPOI {
   lat   Float
   lng   Float
   label String @db.VarChar(100)
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  userId    String
+  name      String   @db.VarChar(100)
+  phone     String   @db.VarChar(20)
+  email     String   @db.VarChar(254)
+  message   String   @db.VarChar(2000)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
