@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/authStore';
 import { useToast } from '../components/ui/Toast';
 import { OTPInput } from '../components/ui/OTPInput';
 import { Spinner } from '../components/ui/Spinner';
-import { isValidPhone, normalizePhone, formatPhone, formatNationalPhone } from '../utils/phone';
+import { isValidPhone, normalizePhone, formatPhone } from '../utils/phone';
 import { LOGIN_BG_VIDEO, LOADING_LINES } from '../utils/constants';
 
 type FlowState =
@@ -15,7 +15,6 @@ type FlowState =
   | 'login-otp'
   | 'signup-name'
   | 'signup-email'
-  | 'signup-phone'
   | 'signup-otp';
 
 export default function Landing() {
@@ -34,6 +33,7 @@ export default function Landing() {
   const [collegeEmail, setCollegeEmail] = useState('');
   const [otp, setOtp] = useState<string[]>(Array(6).fill(''));
   const [otpLoading, setOtpLoading] = useState(false);
+  const [signupLoading, setSignupLoading] = useState(false);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -132,13 +132,21 @@ export default function Landing() {
     }
   };
 
-  const handleSignupInitiate = async () => {
+  const handleSignupInitiate = async (emailOverride?: string) => {
+    const targetEmail = (emailOverride ?? collegeEmail).trim();
+    if (!targetEmail.includes('@') || !targetEmail.endsWith('mitwpu.edu.in')) {
+      showToast('Please use your @mitwpu.edu.in email', 'error');
+      return;
+    }
+    setSignupLoading(true);
     try {
-      await authApi.signupInitiate(normalizePhone(phone), fullName, collegeEmail);
+      await authApi.signupInitiate(normalizePhone(phone), fullName.trim(), targetEmail);
       setFlowState('signup-otp');
     } catch (err: any) {
       const msg = err.response?.data?.error || 'Signup failed';
       showToast(msg, 'error');
+    } finally {
+      setSignupLoading(false);
     }
   };
 
@@ -308,19 +316,16 @@ export default function Landing() {
                 onChange={(e) => setCollegeEmail(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
-                    if (!collegeEmail.includes('@') || !collegeEmail.endsWith('mitwpu.edu.in')) {
-                      showToast('Please use your @mitwpu.edu.in email', 'error');
-                      return;
-                    }
-                    setFlowState('signup-phone');
+                    handleSignupInitiate(collegeEmail);
                   }
                 }}
                 placeholder="name@mitwpu.edu.in"
                 className="signup-name-input"
                 autoFocus
                 maxLength={254}
+                disabled={signupLoading}
               />
-              {collegeEmail && (
+              {collegeEmail && !signupLoading && (
                 <button
                   type="button"
                   onClick={() => setCollegeEmail('')}
@@ -337,87 +342,24 @@ export default function Landing() {
 
             {/* Go button */}
             <button
-              onClick={() => {
-                if (!collegeEmail.includes('@') || !collegeEmail.endsWith('mitwpu.edu.in')) {
-                  showToast('Please use your @mitwpu.edu.in email', 'error');
-                  return;
-                }
-                setFlowState('signup-phone');
-              }}
+              onClick={() => handleSignupInitiate(collegeEmail)}
+              disabled={signupLoading}
               className="signup-name-go-btn"
             >
-              <span>Go</span>
-              <span style={{ fontSize: '19px', lineHeight: 1 }}>→</span>
+              {signupLoading ? (
+                <Spinner size="sm" />
+              ) : (
+                <>
+                  <span>Go</span>
+                  <span style={{ fontSize: '19px', lineHeight: 1 }}>→</span>
+                </>
+              )}
             </button>
 
             {/* Back link */}
             <button
               onClick={() => setFlowState('signup-name')}
-              className="signup-name-back"
-            >
-              ← Back
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    if (flowState === 'signup-phone') {
-      return (
-        <div className="signup-name-wrapper">
-          {/* Light scrim — keeps landscape visible */}
-          <div className="signup-name-scrim" onClick={closeFlow} />
-
-          {/* Glass modal */}
-          <div className="signup-name-card animate-slide-in-right">
-            {/* Close button */}
-            <button
-              className="signup-name-close"
-              onClick={closeFlow}
-              aria-label="Close"
-            >
-              ✕
-            </button>
-
-            {/* Heading */}
-            <h2 className="signup-name-heading">Your phone number</h2>
-
-            {/* Phone display pill */}
-            <div className="signup-phone-pill">
-              {/* Flag + +91 + chevron */}
-              <div className="flex items-center gap-2 select-none flex-shrink-0">
-                <svg className="w-6 h-4 rounded-[3px] overflow-hidden shadow-sm flex-shrink-0" viewBox="0 0 24 16" xmlns="http://www.w3.org/2000/svg">
-                  <rect width="24" height="5.33" fill="#FF9933" />
-                  <rect y="5.33" width="24" height="5.33" fill="#FFFFFF" />
-                  <rect y="10.67" width="24" height="5.33" fill="#138808" />
-                  <circle cx="12" cy="8" r="2.2" fill="none" stroke="#000080" strokeWidth="0.6" />
-                  <circle cx="12" cy="8" r="0.6" fill="#000080" />
-                </svg>
-                <span className="tracking-wide text-white font-medium text-[16px] sm:text-[17px]">+91</span>
-                <svg className="w-3.5 h-3.5 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                </svg>
-              </div>
-
-              {/* Vertical divider */}
-              <div className="h-6 w-[1px] bg-white/20 mx-8 flex-shrink-0" style={{ marginLeft: "15px" }} />
-
-              {/* Formatted phone number */}
-              <span className="text-white text-[17px] tracking-wide font-normal flex-1" style={{ marginRight: "250px" }}>{formatNationalPhone(phone) || phone}</span>
-            </div>
-
-            {/* Go button */}
-            <button
-              onClick={handleSignupInitiate}
-              className="signup-name-go-btn"
-            >
-              <span>Go</span>
-              <span style={{ fontSize: '19px', lineHeight: 1 }}>→</span>
-            </button>
-
-            {/* Back link */}
-            <button
-              onClick={() => setFlowState('signup-email')}
+              disabled={signupLoading}
               className="signup-name-back"
             >
               ← Back
@@ -473,7 +415,7 @@ export default function Landing() {
 
             {/* Back link */}
             <button
-              onClick={() => setFlowState('signup-phone')}
+              onClick={() => setFlowState('signup-email')}
               className="otp-modal-back"
             >
               ← Back
@@ -505,7 +447,7 @@ export default function Landing() {
       <div className="video-scrim" />
 
       {/* Minimal Top Navbar */}
-      <header style={{ marginTop: "10px" }} className={`fixed top-0 left-0 right-0 w-full flex items-center justify-between px-8 sm:px-12 md:px-14 py-7 sm:py-8 pointer-events-none ${(flowState === 'signup-name' || flowState === 'signup-email' || flowState === 'signup-phone' || flowState === 'signup-otp' || flowState === 'login-otp') ? 'z-[52]' : 'z-40'}`}>
+      <header style={{ marginTop: "10px" }} className={`fixed top-0 left-0 right-0 w-full flex items-center justify-between px-8 sm:px-12 md:px-14 py-7 sm:py-8 pointer-events-none ${(flowState === 'signup-name' || flowState === 'signup-email' || flowState === 'signup-otp' || flowState === 'login-otp') ? 'z-[52]' : 'z-40'}`}>
         {/* Brand Logo */}
         <div className="pointer-events-auto select-none">
           <span className="text-white text-[32px] sm:text-[36px] font-instrument tracking-[0.14em] drop-shadow-md leading-none select-none" style={{ marginLeft: "10px" }}>
