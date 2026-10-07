@@ -21,6 +21,14 @@ import feedbackRoutes from './modules/feedback/feedback.routes';
 
 const app = express();
 
+// Trust reverse proxy (Nginx / CloudFront) for correct client IP detection in rate limiting
+app.set('trust proxy', true);
+
+// Health check endpoint (placed before rate limits so it never gets blocked)
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // --- Core Middleware ---
 
 // CORS — restricted to frontend URL only (plus local dev ports in development)
@@ -116,10 +124,6 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/feedback', feedbackRoutes);
 
-// Health check
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
 
 // Global error handler (must be last)
 app.use(errorHandler);
