@@ -1,12 +1,31 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { userApi } from '../../api/user.api';
 import { Spinner } from '../ui/Spinner';
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuthStore();
+  const { user, clearUser } = useAuthStore();
+  const [checking, setChecking] = useState(true);
 
-  if (isLoading && !user) {
+  useEffect(() => {
+    if (!user) {
+      setChecking(false);
+      return;
+    }
+
+    userApi
+      .getMe()
+      .then(() => {
+        setChecking(false);
+      })
+      .catch(() => {
+        clearUser();
+        setChecking(false);
+      });
+  }, [user, clearUser]);
+
+  if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-wayza-dark">
         <Spinner size="lg" />

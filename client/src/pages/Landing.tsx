@@ -37,10 +37,6 @@ export default function Landing() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (user) {
-      navigate('/home', { replace: true });
-      return;
-    }
     userApi
       .getMe()
       .then((data) => {
@@ -52,9 +48,12 @@ export default function Landing() {
         navigate('/home', { replace: true });
       })
       .catch(() => {
-        // Not authenticated, stay on landing page
+        // Not authenticated or stale session — wipe local state and stay on auth landing page
+        if (user) {
+          useAuthStore.getState().clearUser();
+        }
       });
-  }, [user, navigate, setUser]);
+  }, [navigate, setUser, user]);
 
   // Rotate loading lines
   useEffect(() => {
