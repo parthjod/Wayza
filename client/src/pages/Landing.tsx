@@ -495,7 +495,13 @@ export default function Landing() {
 
       {/* Main Center Box Section */}
       <main className="relative z-10 min-h-screen flex items-center justify-center px-4 sm:px-6 py-16">
-        <div className="wayza-login-card relative mx-auto animate-fade-in-up text-center">
+        <div
+          className={`wayza-login-card relative mx-auto text-center transition-all duration-300 ${
+            flowState !== 'idle' && flowState !== 'checking'
+              ? 'hidden'
+              : 'animate-fade-in-up'
+          }`}
+        >
           {/* Badge */}
           <div className="wayza-badge">
             <span className="wayza-badge-dot" />
