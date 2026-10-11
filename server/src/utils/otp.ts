@@ -24,48 +24,83 @@ export async function verifyOTP(otp: string, hash: string): Promise<boolean> {
   return bcrypt.compare(otp, hash);
 }
 
+// In-memory fallback map for OTPs if Redis is offline or timing out
+const memoryOtpStore = new Map<string, { hash: string; expiresAt: number; attempts: number }>();
+
 /**
- * Store OTP hash in Redis with TTL
+ * Store OTP hash in Redis with TTL (with in-memory fallback)
  */
 export async function storeOTP(phone: string, otpHash: string): Promise<void> {
-  const key = `otp:phone:${phone}`;
-  const attemptsKey = `otp:attempts:${phone}`;
+  const ttl = env.OTP_TTL_SECONDS;
+  memoryOtpStore.set(phone, {
+    hash: otpHash,
+    expiresAt: Date.now() + ttl * 1000,
+    attempts: 0,
+  });
 
-  // Store the hash
-  await redis.setex(key, env.OTP_TTL_SECONDS, otpHash);
-  // Reset attempts counter
-  await redis.setex(attemptsKey, env.OTP_TTL_SECONDS, '0');
+  try {
+    const key = `otp:phone:${phone}`;
+    const attemptsKey = `otp:attempts:${phone}`;
+    await redis.setex(key, ttl, otpHash);
+    await redis.setex(attemptsKey, ttl, '0');
+  } catch (err: any) {
+    console.warn('[Redis] storeOTP fallback to memory store:', err.message);
+  }
 }
 
 /**
- * Retrieve OTP hash from Redis
+ * Retrieve OTP hash from Redis (with in-memory fallback)
  */
 export async function getStoredOTP(phone: string): Promise<string | null> {
-  return redis.get(`otp:phone:${phone}`);
+  try {
+    const redisVal = await redis.get(`otp:phone:${phone}`);
+    if (redisVal) return redisVal;
+  } catch (err: any) {
+    console.warn('[Redis] getStoredOTP fallback to memory store:', err.message);
+  }
+
+  const mem = memoryOtpStore.get(phone);
+  if (mem && mem.expiresAt > Date.now()) {
+    return mem.hash;
+  }
+  return null;
 }
 
 /**
  * Increment and check OTP attempt counter.
- * Returns the current attempt count after incrementing.
- * Locks on max attempts.
  */
 export async function incrementOTPAttempts(phone: string): Promise<number> {
-  const attemptsKey = `otp:attempts:${phone}`;
-  const attempts = await redis.incr(attemptsKey);
-
-  if (attempts >= env.OTP_MAX_ATTEMPTS) {
-    // Lock: delete the OTP so it can't be used
-    await redis.del(`otp:phone:${phone}`);
+  const mem = memoryOtpStore.get(phone);
+  if (mem) {
+    mem.attempts += 1;
+    if (mem.attempts >= env.OTP_MAX_ATTEMPTS) {
+      memoryOtpStore.delete(phone);
+    }
   }
 
-  return attempts;
+  try {
+    const attemptsKey = `otp:attempts:${phone}`;
+    const attempts = await redis.incr(attemptsKey);
+    if (attempts >= env.OTP_MAX_ATTEMPTS) {
+      await redis.del(`otp:phone:${phone}`);
+    }
+    return attempts;
+  } catch (err: any) {
+    console.warn('[Redis] incrementOTPAttempts fallback:', err.message);
+    return mem ? mem.attempts : 1;
+  }
 }
 
 /**
  * Delete OTP data from Redis
  */
 export async function deleteOTP(phone: string): Promise<void> {
-  await redis.del(`otp:phone:${phone}`, `otp:attempts:${phone}`);
+  memoryOtpStore.delete(phone);
+  try {
+    await redis.del(`otp:phone:${phone}`, `otp:attempts:${phone}`);
+  } catch (err: any) {
+    console.warn('[Redis] deleteOTP fallback:', err.message);
+  }
 }
 
 /**
@@ -83,18 +118,22 @@ export async function checkOTPRateLimit(phone: string): Promise<{
   const key = `otp:rate:${phone}`;
   const windowSeconds = 600; // 10 minutes
 
-  const current = await redis.get(key);
-  if (current && parseInt(current, 10) >= 3) {
-    const ttl = await redis.ttl(key);
-    return { allowed: false, retryAfterSeconds: ttl > 0 ? ttl : windowSeconds };
-  }
+  try {
+    const current = await redis.get(key);
+    if (current && parseInt(current, 10) >= 3) {
+      const ttl = await redis.ttl(key);
+      return { allowed: false, retryAfterSeconds: ttl > 0 ? ttl : windowSeconds };
+    }
 
-  const count = await redis.incr(key);
-  if (count === 1) {
-    await redis.expire(key, windowSeconds);
+    const count = await redis.incr(key);
+    if (count === 1) {
+      await redis.expire(key, windowSeconds);
+    }
+    return { allowed: true };
+  } catch (err: any) {
+    console.warn('[Redis] checkOTPRateLimit skipped due to Redis timeout:', err.message);
+    return { allowed: true };
   }
-
-  return { allowed: true };
 }
 
 /**

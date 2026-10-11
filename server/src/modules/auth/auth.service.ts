@@ -27,6 +27,9 @@ import {
 } from '../../utils/jwt';
 import { createError } from '../../middleware/errorHandler';
 
+// In-memory fallback map for pending signups
+const memoryPendingSignup = new Map<string, { data: any; expiresAt: number }>();
+
 export class AuthService {
   /**
    * Check if phone is registered, send OTP if so
@@ -109,13 +112,21 @@ export class AuthService {
       );
     }
 
-    // Store pending signup in Redis (15 min TTL)
-    const pendingData = JSON.stringify({
+    // Store pending signup in memory + Redis (15 min TTL)
+    const pendingObj = {
       phone,
       fullName: fullName.trim(),
       collegeEmail: collegeEmail.toLowerCase().trim(),
+    };
+    memoryPendingSignup.set(phone, {
+      data: pendingObj,
+      expiresAt: Date.now() + 900 * 1000,
     });
-    await redis.setex(`signup:pending:${phone}`, 900, pendingData);
+    try {
+      await redis.setex(`signup:pending:${phone}`, 900, JSON.stringify(pendingObj));
+    } catch (err: any) {
+      console.warn('[Redis] signup pending store fallback to memory:', err.message);
+    }
 
     // Generate and send OTP
     const otp = generateOTP();
@@ -159,14 +170,28 @@ export class AuthService {
     let user;
 
     if (flow === 'signup') {
-      // Read pending signup from Redis
-      const pendingRaw = await redis.get(`signup:pending:${phone}`);
-      if (!pendingRaw) {
-        throw createError('Signup session expired. Please start over.', 400, 'signup_expired');
+      let pendingData: any = null;
+      try {
+        const pendingRaw = await redis.get(`signup:pending:${phone}`);
+        if (pendingRaw) {
+          pendingData = JSON.parse(pendingRaw);
+          redis.del(`signup:pending:${phone}`).catch(() => {});
+        }
+      } catch (err: any) {
+        console.warn('[Redis] get pending signup fallback:', err.message);
       }
 
-      const pendingData = JSON.parse(pendingRaw);
-      await redis.del(`signup:pending:${phone}`);
+      if (!pendingData) {
+        const mem = memoryPendingSignup.get(phone);
+        if (mem && mem.expiresAt > Date.now()) {
+          pendingData = mem.data;
+          memoryPendingSignup.delete(phone);
+        }
+      }
+
+      if (!pendingData) {
+        throw createError('Signup session expired. Please start over.', 400, 'signup_expired');
+      }
 
       // Create user
       user = await prisma.user.create({

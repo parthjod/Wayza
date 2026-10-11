@@ -3,8 +3,8 @@ import { env } from './env';
 
 export const redis = new Redis(env.REDIS_URL, {
   maxRetriesPerRequest: 3,
-  connectTimeout: 5000,
-  commandTimeout: 5000,
+  connectTimeout: 2000,
+  commandTimeout: 1500,
   retryStrategy(times) {
     return Math.min(times * 100, 2000);
   },
