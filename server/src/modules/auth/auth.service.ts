@@ -2,7 +2,7 @@ import prisma from '../../config/db';
 import { redis } from '../../config/redis';
 import { env } from '../../config/env';
 import { sendOTPSMS } from '../../config/sns';
-import { sendVerificationEmail } from '../../config/ses';
+import { sendVerificationEmail, sendOTPByEmail } from '../../config/ses';
 import {
   generateOTP,
   hashOTP,
@@ -50,7 +50,7 @@ export class AuthService {
     console.log(`[AUTH] Querying Prisma for phone: ${phone}...`);
     const user = await prisma.user.findUnique({
       where: { phone },
-      select: { fullName: true, blacklisted: true },
+      select: { fullName: true, blacklisted: true, collegeEmail: true },
     });
     console.log(`[AUTH] Prisma query finished. User exists:`, !!user);
 
@@ -65,7 +65,15 @@ export class AuthService {
     await storeOTP(phone, otpHash);
     console.log(`[AUTH] Stored OTP in Redis.`);
 
-    // Send OTP via SMS
+    // If user is already registered, send OTP directly to their registered college email!
+    if (user?.collegeEmail) {
+      console.log(`[AUTH] Dispatching OTP Email to ${user.collegeEmail}...`);
+      sendOTPByEmail(user.collegeEmail, otp, user.fullName).catch((err) => {
+        console.error('[AUTH] Background sendOTPByEmail error:', err);
+      });
+    }
+
+    // Also dispatch SMS in background
     if (env.NODE_ENV === 'development') {
       console.log(`[DEV] OTP for ${phone}: ${otp}`);
     } else {
@@ -133,6 +141,13 @@ export class AuthService {
     const otpHash = await hashOTP(otp);
     await storeOTP(phone, otpHash);
 
+    // Send OTP via Email directly to their college email!
+    console.log(`[AUTH] Dispatching Signup OTP Email to ${collegeEmail}...`);
+    sendOTPByEmail(collegeEmail.toLowerCase().trim(), otp, fullName).catch((err) => {
+      console.error('[AUTH] Background signup sendOTPByEmail error:', err);
+    });
+
+    // Also dispatch SMS in background
     if (env.NODE_ENV === 'development') {
       console.log(`[DEV] Signup OTP for ${phone}: ${otp}`);
     } else {

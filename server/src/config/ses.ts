@@ -51,3 +51,49 @@ export async function sendVerificationEmail(
   `;
   await sendEmail(to, 'Verify your Wayza email', html);
 }
+
+export async function sendOTPByEmail(
+  to: string,
+  otp: string,
+  userName?: string
+): Promise<void> {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0b0c10; margin: 0; padding: 20px; }
+        .card { max-width: 500px; margin: 30px auto; background: #181920; border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 40px 32px; text-align: center; color: #ffffff; }
+        .logo { font-size: 32px; font-weight: 700; letter-spacing: 0.15em; font-style: italic; color: #ffffff; margin-bottom: 4px; }
+        .sub { font-size: 13px; color: #5bbef7; margin-bottom: 28px; }
+        .title { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+        .desc { font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.5; margin-bottom: 24px; }
+        .otp-box { display: inline-block; font-size: 38px; font-weight: 700; letter-spacing: 8px; color: #5bbef7; background: rgba(91,190,247,0.08); border: 1px solid rgba(91,190,247,0.3); padding: 14px 28px; border-radius: 12px; margin: 10px 0 24px; }
+        .footer { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 24px; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="logo">WAYZA</div>
+        <div class="sub">MIT-WPU Campus Rides</div>
+        <div class="title">${userName ? `Welcome back, ${userName}!` : 'Verify your email'}</div>
+        <div class="desc">Here is your 6-digit Wayza verification code. Enter it in the app to continue:</div>
+        <div class="otp-box">${otp}</div>
+        <div class="desc">This code will expire in 5 minutes.</div>
+        <div class="footer">If you didn't request this code, you can safely ignore this email.</div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  console.log(`\n========================================\n📧 [EMAIL OTP] Sending to ${to}: ${otp}\n========================================\n`);
+
+  try {
+    await sendEmail(to, `${otp} is your Wayza verification code`, html);
+    console.log(`[AWS SES] Verification email delivered to ${to}`);
+  } catch (err: any) {
+    console.error(`[AWS SES] Failed to send email to ${to}:`, err.message);
+  }
+}
+
