@@ -39,23 +39,23 @@ export async function sendOTPSMS(phone: string, otp: string): Promise<void> {
   const fast2smsKey = process.env.FAST2SMS_API_KEY;
   if (fast2smsKey && fast2smsKey !== 'your-fast2sms-api-key') {
     try {
-      console.log(`[Fast2SMS] Sending OTP to +91${cleanPhone}...`);
+      console.log(`[Fast2SMS Quick Route] Sending OTP to +91${cleanPhone}...`);
       const response = await axios.post(
         'https://www.fast2sms.com/dev/bulkV2',
         {
-          route: 'otp',
-          variables_values: otp,
+          route: 'q',
+          message: `Your Wayza verification code is ${otp}. Valid for 5 minutes.`,
           numbers: cleanPhone,
         },
         {
           headers: {
             authorization: fast2smsKey,
           },
-          timeout: 6000,
+          timeout: 7000,
         }
       );
       if (response.data?.return) {
-        console.log(`[Fast2SMS] OTP sent successfully to +91${cleanPhone}`);
+        console.log(`[Fast2SMS] OTP sent successfully to +91${cleanPhone}:`, response.data.message);
         return;
       }
       console.warn('[Fast2SMS] Gateway response warning:', response.data);
