@@ -1,7 +1,7 @@
 import http from 'http';
 import { Server } from 'socket.io';
 import { createAdapter } from '@socket.io/redis-adapter';
-import app from './app';
+import app, { isOriginAllowed } from './app';
 import { env } from './config/env';
 import { createRedisPubClient, createRedisSubClient } from './config/redis';
 import { setupSocket } from './socket/socket';
@@ -11,7 +11,13 @@ const server = http.createServer(app);
 // Socket.io setup with Redis adapter
 const io = new Server(server, {
   cors: {
-    origin: env.FRONTEND_URL,
+    origin: (origin, callback) => {
+      if (isOriginAllowed(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   },
   pingInterval: 25000,

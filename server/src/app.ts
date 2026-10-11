@@ -32,21 +32,33 @@ app.get('/api/health', (_req, res) => {
 // --- Core Middleware ---
 
 // CORS — restricted to frontend URL only (plus local dev ports in development)
-const allowedOrigins = [
-  env.FRONTEND_URL,
+const cleanFrontend = env.FRONTEND_URL ? env.FRONTEND_URL.replace(/\/$/, '') : '';
+
+export const allowedOrigins = [
+  cleanFrontend,
+  'https://www.wayza.co.in',
+  'https://wayza.co.in',
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:5175',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
   'http://127.0.0.1:5175',
-];
+].filter(Boolean);
+
+export const isOriginAllowed = (origin?: string): boolean => {
+  if (!origin || env.NODE_ENV === 'development') return true;
+  if (allowedOrigins.includes(origin)) return true;
+  if (/^https:\/\/(www\.)?wayza\.co\.in$/.test(origin)) return true;
+  return false;
+};
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || env.NODE_ENV === 'development') {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
+      console.warn(`[CORS] Blocked request from origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
