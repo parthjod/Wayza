@@ -2,7 +2,9 @@ import Redis from 'ioredis';
 import { env } from './env';
 
 export const redis = new Redis(env.REDIS_URL, {
-  maxRetriesPerRequest: null,
+  maxRetriesPerRequest: 3,
+  connectTimeout: 5000,
+  commandTimeout: 5000,
   retryStrategy(times) {
     return Math.min(times * 100, 2000);
   },
@@ -11,7 +13,9 @@ export const redis = new Redis(env.REDIS_URL, {
 // Separate pub/sub clients for Socket.io adapter
 export const createRedisPubClient = () => {
   const client = new Redis(env.REDIS_URL, {
-    maxRetriesPerRequest: null,
+    maxRetriesPerRequest: 3,
+    connectTimeout: 5000,
+    commandTimeout: 5000,
     retryStrategy: (times) => Math.min(times * 100, 2000),
   });
   client.on('error', (err) => console.warn('Redis pub client error:', err.message));
@@ -20,7 +24,9 @@ export const createRedisPubClient = () => {
 
 export const createRedisSubClient = () => {
   const client = new Redis(env.REDIS_URL, {
-    maxRetriesPerRequest: null,
+    maxRetriesPerRequest: 3,
+    connectTimeout: 5000,
+    commandTimeout: 5000,
     retryStrategy: (times) => Math.min(times * 100, 2000),
   });
   client.on('error', (err) => console.warn('Redis sub client error:', err.message));

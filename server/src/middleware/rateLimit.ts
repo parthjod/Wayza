@@ -1,6 +1,4 @@
 import rateLimit from 'express-rate-limit';
-import RedisStore from 'rate-limit-redis';
-import { redis } from '../config/redis';
 import { env } from '../config/env';
 
 /**
@@ -13,11 +11,6 @@ export const globalRateLimit = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   validate: { trustProxy: false, xForwardedForHeader: false },
-  store: new RedisStore({
-    // @ts-ignore - ioredis compatible
-    sendCommand: (...args: string[]) => redis.call(...args),
-    prefix: 'rl:global:',
-  }),
   message: { error: 'Too many requests, please try again later.' },
 });
 
@@ -31,10 +24,6 @@ export const authRateLimit = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   validate: { trustProxy: false, xForwardedForHeader: false },
-  store: new RedisStore({
-    // @ts-ignore - ioredis compatible
-    sendCommand: (...args: string[]) => redis.call(...args),
-    prefix: 'rl:auth:',
-  }),
   message: { error: 'Too many authentication attempts, please try again later.' },
 });
+
