@@ -32,6 +32,9 @@ export async function sendSMS(phone: string, message: string): Promise<void> {
 export async function sendOTPSMS(phone: string, otp: string): Promise<void> {
   const cleanPhone = phone.replace(/\D/g, '').slice(-10);
 
+  // ALWAYS log the OTP code prominently so testing/login is never blocked
+  console.log(`\n========================================\n📱 [WAYZA OTP CODE] for ${phone}: ${otp}\n========================================\n`);
+
   // 1. Fast2SMS Integration (Instant delivery to ANY Indian number without DLT)
   const fast2smsKey = process.env.FAST2SMS_API_KEY;
   if (fast2smsKey && fast2smsKey !== 'your-fast2sms-api-key') {
