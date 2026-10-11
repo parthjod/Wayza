@@ -24,6 +24,16 @@ const app = express();
 // Trust reverse proxy (Nginx / CloudFront) for correct client IP detection in rate limiting
 app.set('trust proxy', 1);
 
+// HTTP request logging
+app.use((req, res, next) => {
+  const start = Date.now();
+  console.log(`[REQ] ${req.method} ${req.originalUrl || req.url}`);
+  res.on('finish', () => {
+    console.log(`[RES] ${req.method} ${req.originalUrl || req.url} -> ${res.statusCode} (${Date.now() - start}ms)`);
+  });
+  next();
+});
+
 // Health check endpoint (placed before rate limits so it never gets blocked)
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

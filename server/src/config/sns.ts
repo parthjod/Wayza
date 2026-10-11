@@ -36,6 +36,7 @@ export async function sendOTPSMS(phone: string, otp: string): Promise<void> {
   const fast2smsKey = process.env.FAST2SMS_API_KEY;
   if (fast2smsKey && fast2smsKey !== 'your-fast2sms-api-key') {
     try {
+      console.log(`[Fast2SMS] Sending OTP to +91${cleanPhone}...`);
       const response = await axios.post(
         'https://www.fast2sms.com/dev/bulkV2',
         {
@@ -47,7 +48,7 @@ export async function sendOTPSMS(phone: string, otp: string): Promise<void> {
           headers: {
             authorization: fast2smsKey,
           },
-          timeout: 10000,
+          timeout: 6000,
         }
       );
       if (response.data?.return) {
@@ -58,12 +59,18 @@ export async function sendOTPSMS(phone: string, otp: string): Promise<void> {
     } catch (err: any) {
       console.error('[Fast2SMS] Failed to send SMS:', err.response?.data || err.message);
     }
+  } else {
+    console.warn('[Fast2SMS] FAST2SMS_API_KEY is not set or using placeholder');
   }
 
   // 2. AWS SNS Fallback (If AWS keys are configured)
   if (env.AWS_ACCESS_KEY_ID && env.AWS_ACCESS_KEY_ID !== 'your-access-key') {
     try {
-      await sendSMS(phone, `Your Wayza verification code is: ${otp}. Valid for 5 minutes.`);
+      console.log(`[AWS SNS] Sending OTP to ${phone}...`);
+      await Promise.race([
+        sendSMS(phone, `Your Wayza verification code is: ${otp}. Valid for 5 minutes.`),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('AWS SNS timeout after 5s')), 5000))
+      ]);
       console.log(`[AWS SNS] OTP sent to ${phone}`);
       return;
     } catch (err: any) {

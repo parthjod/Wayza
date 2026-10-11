@@ -32,8 +32,10 @@ export class AuthService {
    * Check if phone is registered, send OTP if so
    */
   async checkPhone(phone: string) {
+    console.log(`[AUTH] checkPhone start for: ${phone}`);
     // Rate limit OTP sends
     const rateCheck = await checkOTPRateLimit(phone);
+    console.log(`[AUTH] checkOTPRateLimit result: allowed=${rateCheck.allowed}`);
     if (!rateCheck.allowed) {
       throw createError(
         'Too many OTP requests. Please try again later.',
@@ -42,10 +44,12 @@ export class AuthService {
       );
     }
 
+    console.log(`[AUTH] Querying Prisma for phone: ${phone}...`);
     const user = await prisma.user.findUnique({
       where: { phone },
       select: { fullName: true, blacklisted: true },
     });
+    console.log(`[AUTH] Prisma query finished. User exists:`, !!user);
 
     if (user?.blacklisted) {
       throw createError('Account suspended', 403, 'account_suspended');
@@ -54,13 +58,18 @@ export class AuthService {
     // Generate and send OTP regardless (to not reveal existence to attackers)
     const otp = generateOTP();
     const otpHash = await hashOTP(otp);
+    console.log(`[AUTH] Storing OTP in Redis...`);
     await storeOTP(phone, otpHash);
+    console.log(`[AUTH] Stored OTP in Redis.`);
 
-    // Send OTP via SMS (in dev mode, log to console)
+    // Send OTP via SMS
     if (env.NODE_ENV === 'development') {
       console.log(`[DEV] OTP for ${phone}: ${otp}`);
     } else {
-      await sendOTPSMS(phone, otp);
+      console.log(`[AUTH] Triggering sendOTPSMS...`);
+      sendOTPSMS(phone, otp).catch((err) => {
+        console.error('[AUTH] Background sendOTPSMS error:', err);
+      });
     }
 
     if (user) {
@@ -116,7 +125,9 @@ export class AuthService {
     if (env.NODE_ENV === 'development') {
       console.log(`[DEV] Signup OTP for ${phone}: ${otp}`);
     } else {
-      await sendOTPSMS(phone, otp);
+      sendOTPSMS(phone, otp).catch((err) => {
+        console.error('[AUTH] Background signup sendOTPSMS error:', err);
+      });
     }
 
     return { message: 'OTP sent' };
