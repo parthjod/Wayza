@@ -22,7 +22,7 @@ import feedbackRoutes from './modules/feedback/feedback.routes';
 const app = express();
 
 // Trust reverse proxy (Nginx / CloudFront) for correct client IP detection in rate limiting
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 
 // Health check endpoint (placed before rate limits so it never gets blocked)
 app.get('/api/health', (_req, res) => {

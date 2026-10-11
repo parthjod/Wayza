@@ -12,7 +12,7 @@ export const globalRateLimit = rateLimit({
   skip: () => env.NODE_ENV === 'development',
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { xForwardedForHeader: false },
+  validate: { trustProxy: false, xForwardedForHeader: false },
   store: new RedisStore({
     // @ts-ignore - ioredis compatible
     sendCommand: (...args: string[]) => redis.call(...args),
@@ -30,7 +30,7 @@ export const authRateLimit = rateLimit({
   skip: () => env.NODE_ENV === 'development',
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { xForwardedForHeader: false },
+  validate: { trustProxy: false, xForwardedForHeader: false },
   store: new RedisStore({
     // @ts-ignore - ioredis compatible
     sendCommand: (...args: string[]) => redis.call(...args),
