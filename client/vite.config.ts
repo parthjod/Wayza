@@ -8,6 +8,13 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
+    proxy: {
+      '/api': {
+        target: 'https://d10grnxvwn5xrp.cloudfront.net',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
   },
   css: {
     postcss: {},
