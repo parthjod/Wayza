@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/authStore';
 import { useToast } from '../components/ui/Toast';
 import { OTPInput } from '../components/ui/OTPInput';
 import { Spinner } from '../components/ui/Spinner';
-import { isValidPhone, normalizePhone, formatPhone } from '../utils/phone';
+import { isValidPhone, normalizePhone } from '../utils/phone';
 import { LOGIN_BG_VIDEO, LOADING_LINES } from '../utils/constants';
 
 type FlowState =
@@ -179,7 +179,7 @@ export default function Landing() {
               ✕
             </button>
             <h2 className="otp-modal-heading">Welcome back, {userName} 👋</h2>
-            <p className="otp-modal-subtitle">Enter the 6-digit code sent to {formatPhone(phone) || phone}</p>
+            <p className="otp-modal-subtitle">Enter the 6-digit code sent to your registered email & phone</p>
             <OTPInput
               value={otp}
               onChange={setOtp}
@@ -386,11 +386,11 @@ export default function Landing() {
             </button>
 
             {/* Heading */}
-            <h2 className="otp-modal-heading">Check your phone for the OTP</h2>
+            <h2 className="otp-modal-heading">Check your inbox for the OTP ✉️</h2>
 
             {/* Subtitle */}
             <p className="otp-modal-subtitle">
-              6-digit code sent to {formatPhone(phone) || phone}
+              6-digit verification code sent to <span className="text-[#5bbef7] font-medium">{collegeEmail}</span>
             </p>
 
             {/* 6 OTP input boxes */}
