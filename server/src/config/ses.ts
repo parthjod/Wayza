@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { env } from './env';
 
@@ -14,16 +15,59 @@ export async function sendEmail(
   subject: string,
   htmlBody: string
 ): Promise<void> {
-  await sesClient.send(
-    new SendEmailCommand({
-      Source: env.AWS_SES_FROM_EMAIL,
-      Destination: { ToAddresses: [to] },
-      Message: {
-        Subject: { Data: subject },
-        Body: { Html: { Data: htmlBody } },
-      },
-    })
-  );
+  // 1. Resend Integration (Zero-wait instant delivery)
+  const resendKey = process.env.RESEND_API_KEY;
+  if (resendKey && resendKey !== 'your-resend-api-key') {
+    try {
+      console.log(`[Resend] Sending email to ${to}...`);
+      const fromEmail = process.env.RESEND_FROM_EMAIL || (
+        env.AWS_SES_FROM_EMAIL && !env.AWS_SES_FROM_EMAIL.includes('yourdomain.com')
+          ? `Wayza <${env.AWS_SES_FROM_EMAIL}>`
+          : 'Wayza <onboarding@resend.dev>'
+      );
+
+      const response = await axios.post(
+        'https://api.resend.com/emails',
+        {
+          from: fromEmail,
+          to: [to],
+          subject,
+          html: htmlBody,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${resendKey}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 7000,
+        }
+      );
+      if (response.data?.id) {
+        console.log(`[Resend] Email sent successfully (id: ${response.data.id}) to ${to}`);
+        return;
+      }
+      console.warn(`[Resend] Response warning:`, response.data);
+    } catch (err: any) {
+      console.error(`[Resend] Failed to send email to ${to}:`, err.response?.data || err.message);
+    }
+  }
+
+  // 2. AWS SES Fallback
+  try {
+    await sesClient.send(
+      new SendEmailCommand({
+        Source: env.AWS_SES_FROM_EMAIL,
+        Destination: { ToAddresses: [to] },
+        Message: {
+          Subject: { Data: subject },
+          Body: { Html: { Data: htmlBody } },
+        },
+      })
+    );
+    console.log(`[AWS SES] Email sent successfully to ${to}`);
+  } catch (err: any) {
+    console.error(`[AWS SES] Failed to send email to ${to}:`, err.message);
+  }
 }
 
 export async function sendVerificationEmail(
