@@ -14,6 +14,11 @@ export interface CheckPhoneResponse {
   userName?: string;
 }
 
+export interface CheckEmailResponse {
+  registered: boolean;
+  userName?: string;
+}
+
 export interface AuthResponse {
   user: User;
 }

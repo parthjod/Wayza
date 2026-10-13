@@ -3,6 +3,15 @@ import { authService } from './auth.service';
 import { setAuthCookies, clearAuthCookies } from '../../utils/jwt';
 
 export class AuthController {
+  async checkEmail(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await authService.checkEmail(req.body.email);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async checkPhone(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await authService.checkPhone(req.body.phone);
@@ -14,8 +23,8 @@ export class AuthController {
 
   async signupInitiate(req: Request, res: Response, next: NextFunction) {
     try {
-      const { phone, fullName, collegeEmail } = req.body;
-      const result = await authService.signupInitiate(phone, fullName, collegeEmail);
+      const { collegeEmail, fullName, phone } = req.body;
+      const result = await authService.signupInitiate({ collegeEmail, fullName, phone });
       res.json(result);
     } catch (err) {
       next(err);
@@ -24,13 +33,24 @@ export class AuthController {
 
   async verifyOTP(req: Request, res: Response, next: NextFunction) {
     try {
-      const { phone, otp, flow } = req.body;
-      const result = await authService.verifyOTP(phone, otp, flow);
+      const { email, phone, otp, flow } = req.body;
+      const identifier = email ? { email } : { phone };
+      const result = await authService.verifyOTP(identifier, otp, flow);
 
       // Set auth cookies
       setAuthCookies(res, result.accessToken, result.refreshToken);
 
       res.json({ user: result.user });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async resendOTP(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { email } = req.body;
+      const result = await authService.resendOTP(email);
+      res.json(result);
     } catch (err) {
       next(err);
     }

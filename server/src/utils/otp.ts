@@ -30,17 +30,18 @@ const memoryOtpStore = new Map<string, { hash: string; expiresAt: number; attemp
 /**
  * Store OTP hash in Redis with TTL (with in-memory fallback)
  */
-export async function storeOTP(phone: string, otpHash: string): Promise<void> {
+export async function storeOTP(identifier: string, otpHash: string): Promise<void> {
+  const cleanId = identifier.toLowerCase().trim();
   const ttl = env.OTP_TTL_SECONDS;
-  memoryOtpStore.set(phone, {
+  memoryOtpStore.set(cleanId, {
     hash: otpHash,
     expiresAt: Date.now() + ttl * 1000,
     attempts: 0,
   });
 
   try {
-    const key = `otp:phone:${phone}`;
-    const attemptsKey = `otp:attempts:${phone}`;
+    const key = `otp:id:${cleanId}`;
+    const attemptsKey = `otp:attempts:${cleanId}`;
     await redis.setex(key, ttl, otpHash);
     await redis.setex(attemptsKey, ttl, '0');
   } catch (err: any) {
@@ -51,15 +52,16 @@ export async function storeOTP(phone: string, otpHash: string): Promise<void> {
 /**
  * Retrieve OTP hash from Redis (with in-memory fallback)
  */
-export async function getStoredOTP(phone: string): Promise<string | null> {
+export async function getStoredOTP(identifier: string): Promise<string | null> {
+  const cleanId = identifier.toLowerCase().trim();
   try {
-    const redisVal = await redis.get(`otp:phone:${phone}`);
+    const redisVal = await redis.get(`otp:id:${cleanId}`);
     if (redisVal) return redisVal;
   } catch (err: any) {
     console.warn('[Redis] getStoredOTP fallback to memory store:', err.message);
   }
 
-  const mem = memoryOtpStore.get(phone);
+  const mem = memoryOtpStore.get(cleanId);
   if (mem && mem.expiresAt > Date.now()) {
     return mem.hash;
   }
@@ -69,20 +71,21 @@ export async function getStoredOTP(phone: string): Promise<string | null> {
 /**
  * Increment and check OTP attempt counter.
  */
-export async function incrementOTPAttempts(phone: string): Promise<number> {
-  const mem = memoryOtpStore.get(phone);
+export async function incrementOTPAttempts(identifier: string): Promise<number> {
+  const cleanId = identifier.toLowerCase().trim();
+  const mem = memoryOtpStore.get(cleanId);
   if (mem) {
     mem.attempts += 1;
     if (mem.attempts >= env.OTP_MAX_ATTEMPTS) {
-      memoryOtpStore.delete(phone);
+      memoryOtpStore.delete(cleanId);
     }
   }
 
   try {
-    const attemptsKey = `otp:attempts:${phone}`;
+    const attemptsKey = `otp:attempts:${cleanId}`;
     const attempts = await redis.incr(attemptsKey);
     if (attempts >= env.OTP_MAX_ATTEMPTS) {
-      await redis.del(`otp:phone:${phone}`);
+      await redis.del(`otp:id:${cleanId}`);
     }
     return attempts;
   } catch (err: any) {
@@ -94,19 +97,20 @@ export async function incrementOTPAttempts(phone: string): Promise<number> {
 /**
  * Delete OTP data from Redis
  */
-export async function deleteOTP(phone: string): Promise<void> {
-  memoryOtpStore.delete(phone);
+export async function deleteOTP(identifier: string): Promise<void> {
+  const cleanId = identifier.toLowerCase().trim();
+  memoryOtpStore.delete(cleanId);
   try {
-    await redis.del(`otp:phone:${phone}`, `otp:attempts:${phone}`);
+    await redis.del(`otp:id:${cleanId}`, `otp:attempts:${cleanId}`);
   } catch (err: any) {
     console.warn('[Redis] deleteOTP fallback:', err.message);
   }
 }
 
 /**
- * Check OTP send rate limit (max 3 per 10 min per phone in production, bypassed in dev)
+ * Check OTP send rate limit (max 5 per 10 min per identifier in production, bypassed in dev)
  */
-export async function checkOTPRateLimit(phone: string): Promise<{
+export async function checkOTPRateLimit(identifier: string): Promise<{
   allowed: boolean;
   retryAfterSeconds?: number;
 }> {
@@ -115,12 +119,13 @@ export async function checkOTPRateLimit(phone: string): Promise<{
     return { allowed: true };
   }
 
-  const key = `otp:rate:${phone}`;
+  const cleanId = identifier.toLowerCase().trim();
+  const key = `otp:rate:${cleanId}`;
   const windowSeconds = 600; // 10 minutes
 
   try {
     const current = await redis.get(key);
-    if (current && parseInt(current, 10) >= 3) {
+    if (current && parseInt(current, 10) >= 5) {
       const ttl = await redis.ttl(key);
       return { allowed: false, retryAfterSeconds: ttl > 0 ? ttl : windowSeconds };
     }

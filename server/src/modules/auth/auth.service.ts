@@ -1,8 +1,7 @@
 import prisma from '../../config/db';
 import { redis } from '../../config/redis';
 import { env } from '../../config/env';
-import { sendOTPSMS } from '../../config/sns';
-import { sendVerificationEmail, sendOTPByEmail } from '../../config/ses';
+import { sendOTPByEmail, sendVerificationEmail } from '../../config/ses';
 import {
   generateOTP,
   hashOTP,
@@ -32,55 +31,80 @@ const memoryPendingSignup = new Map<string, { data: any; expiresAt: number }>();
 
 export class AuthService {
   /**
-   * Check if phone is registered, send OTP if so
+   * Check if email is registered, send OTP to student inbox if so
    */
-  async checkPhone(phone: string) {
-    console.log(`[AUTH] checkPhone start for: ${phone}`);
-    // Rate limit OTP sends
-    const rateCheck = await checkOTPRateLimit(phone);
-    console.log(`[AUTH] checkOTPRateLimit result: allowed=${rateCheck.allowed}`);
-    if (!rateCheck.allowed) {
+  async checkEmail(email: string) {
+    const cleanEmail = email.toLowerCase().trim();
+    console.log(`[AUTH] checkEmail start for: ${cleanEmail}`);
+
+    const emailDomain = cleanEmail.split('@')[1];
+    if (!emailDomain || !env.ALLOWED_EMAIL_DOMAINS.includes(emailDomain)) {
       throw createError(
-        'Too many OTP requests. Please try again later.',
-        429,
-        'otp_rate_limited'
+        'Email domain not allowed. Use your @mitwpu.edu.in email address.',
+        400,
+        'invalid_email_domain'
       );
     }
 
-    console.log(`[AUTH] Querying Prisma for phone: ${phone}...`);
     const user = await prisma.user.findUnique({
-      where: { phone },
+      where: { collegeEmail: cleanEmail },
       select: { fullName: true, blacklisted: true, collegeEmail: true },
     });
-    console.log(`[AUTH] Prisma query finished. User exists:`, !!user);
 
     if (user?.blacklisted) {
       throw createError('Account suspended', 403, 'account_suspended');
     }
 
-    // Generate and send OTP regardless (to not reveal existence to attackers)
-    const otp = generateOTP();
-    const otpHash = await hashOTP(otp);
-    console.log(`[AUTH] Storing OTP in Redis...`);
-    await storeOTP(phone, otpHash);
-    console.log(`[AUTH] Stored OTP in Redis.`);
+    if (user) {
+      // Check rate limit for this email
+      const rateCheck = await checkOTPRateLimit(cleanEmail);
+      if (!rateCheck.allowed) {
+        throw createError(
+          'Too many OTP requests. Please try again later.',
+          429,
+          'otp_rate_limited'
+        );
+      }
 
-    // If user is already registered, send OTP directly to their registered college email!
-    if (user?.collegeEmail) {
-      console.log(`[AUTH] Dispatching OTP Email to ${user.collegeEmail}...`);
-      sendOTPByEmail(user.collegeEmail, otp, user.fullName).catch((err) => {
+      // Generate & store OTP
+      const otp = generateOTP();
+      const otpHash = await hashOTP(otp);
+      await storeOTP(cleanEmail, otpHash);
+
+      // Send OTP to student email via Resend / SES
+      console.log(`[AUTH] Dispatching login OTP to ${cleanEmail}...`);
+      sendOTPByEmail(cleanEmail, otp, user.fullName).catch((err) => {
         console.error('[AUTH] Background sendOTPByEmail error:', err);
       });
+
+      return { registered: true, userName: user.fullName };
     }
 
-    // Also dispatch SMS in background
-    if (env.NODE_ENV === 'development') {
-      console.log(`[DEV] OTP for ${phone}: ${otp}`);
-    } else {
-      console.log(`[AUTH] Triggering sendOTPSMS...`);
-      sendOTPSMS(phone, otp).catch((err) => {
-        console.error('[AUTH] Background sendOTPSMS error:', err);
-      });
+    // New user — let client know to show name & contact info modal
+    return { registered: false };
+  }
+
+  /**
+   * Legacy phone check compatibility
+   */
+  async checkPhone(phone: string) {
+    console.log(`[AUTH] checkPhone start for: ${phone}`);
+    const user = await prisma.user.findUnique({
+      where: { phone },
+      select: { fullName: true, blacklisted: true, collegeEmail: true },
+    });
+
+    if (user?.blacklisted) {
+      throw createError('Account suspended', 403, 'account_suspended');
+    }
+
+    const otp = generateOTP();
+    const otpHash = await hashOTP(otp);
+    await storeOTP(phone, otpHash);
+
+    if (user?.collegeEmail) {
+      await storeOTP(user.collegeEmail, otpHash);
+      sendOTPByEmail(user.collegeEmail, otp, user.fullName).catch(() => {});
     }
 
     if (user) {
@@ -90,28 +114,40 @@ export class AuthService {
   }
 
   /**
-   * Initiate signup flow — store pending signup in Redis, send OTP + email verification
+   * Initiate signup flow — store pending signup and send OTP to student email
    */
-  async signupInitiate(phone: string, fullName: string, collegeEmail: string) {
+  async signupInitiate(data: {
+    collegeEmail: string;
+    fullName: string;
+    phone?: string;
+  }) {
+    const cleanEmail = data.collegeEmail.toLowerCase().trim();
+    const fullName = data.fullName.trim();
+
     // Validate email domain
-    const emailDomain = collegeEmail.split('@')[1]?.toLowerCase();
-    if (!env.ALLOWED_EMAIL_DOMAINS.includes(emailDomain)) {
-      throw createError('Email domain not allowed. Use your college email.', 400, 'invalid_email_domain');
+    const emailDomain = cleanEmail.split('@')[1];
+    if (!emailDomain || !env.ALLOWED_EMAIL_DOMAINS.includes(emailDomain)) {
+      throw createError(
+        'Email domain not allowed. Use your @mitwpu.edu.in email address.',
+        400,
+        'invalid_email_domain'
+      );
     }
 
-    // Check if phone or email already exists
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [{ phone }, { collegeEmail: collegeEmail.toLowerCase() }],
-      },
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { collegeEmail: cleanEmail },
     });
-
     if (existingUser) {
-      throw createError('An account with this phone or email already exists', 409, 'account_exists');
+      throw createError(
+        'An account with this email already exists. Please sign in.',
+        409,
+        'account_exists'
+      );
     }
 
-    // Rate limit OTP sends
-    const rateCheck = await checkOTPRateLimit(phone);
+    // Rate limit OTP requests
+    const rateCheck = await checkOTPRateLimit(cleanEmail);
     if (!rateCheck.allowed) {
       throw createError(
         'Too many OTP requests. Please try again later.',
@@ -120,59 +156,109 @@ export class AuthService {
       );
     }
 
+    // Format phone or generate fallback
+    let cleanPhone = data.phone?.replace(/\D/g, '') || '';
+    if (cleanPhone.length > 10 && cleanPhone.startsWith('91')) cleanPhone = cleanPhone.slice(2);
+    if (cleanPhone.length === 10) {
+      cleanPhone = `+91${cleanPhone}`;
+    } else {
+      // Unique fallback phone if omitted
+      cleanPhone = `+91${Math.floor(6000000000 + Math.random() * 3999999999)}`;
+    }
+
     // Store pending signup in memory + Redis (15 min TTL)
     const pendingObj = {
-      phone,
-      fullName: fullName.trim(),
-      collegeEmail: collegeEmail.toLowerCase().trim(),
+      phone: cleanPhone,
+      fullName,
+      collegeEmail: cleanEmail,
     };
-    memoryPendingSignup.set(phone, {
+    memoryPendingSignup.set(cleanEmail, {
       data: pendingObj,
       expiresAt: Date.now() + 900 * 1000,
     });
     try {
-      await redis.setex(`signup:pending:${phone}`, 900, JSON.stringify(pendingObj));
+      await redis.setex(`signup:pending:${cleanEmail}`, 900, JSON.stringify(pendingObj));
     } catch (err: any) {
       console.warn('[Redis] signup pending store fallback to memory:', err.message);
     }
 
-    // Generate and send OTP
+    // Generate and store OTP
     const otp = generateOTP();
     const otpHash = await hashOTP(otp);
-    await storeOTP(phone, otpHash);
+    await storeOTP(cleanEmail, otpHash);
 
     // Send OTP via Email directly to their college email!
-    console.log(`[AUTH] Dispatching Signup OTP Email to ${collegeEmail}...`);
-    sendOTPByEmail(collegeEmail.toLowerCase().trim(), otp, fullName).catch((err) => {
+    console.log(`[AUTH] Dispatching Signup OTP Email to ${cleanEmail}...`);
+    sendOTPByEmail(cleanEmail, otp, fullName).catch((err) => {
       console.error('[AUTH] Background signup sendOTPByEmail error:', err);
     });
-
-    // Also dispatch SMS in background
-    if (env.NODE_ENV === 'development') {
-      console.log(`[DEV] Signup OTP for ${phone}: ${otp}`);
-    } else {
-      sendOTPSMS(phone, otp).catch((err) => {
-        console.error('[AUTH] Background signup sendOTPSMS error:', err);
-      });
-    }
 
     return { message: 'OTP sent' };
   }
 
   /**
-   * Verify OTP for login or signup flow
+   * Resend OTP directly to student college email
    */
-  async verifyOTP(phone: string, otp: string, flow: 'login' | 'signup') {
+  async resendOTP(email: string) {
+    const cleanEmail = email.toLowerCase().trim();
+    const rateCheck = await checkOTPRateLimit(cleanEmail);
+    if (!rateCheck.allowed) {
+      throw createError(
+        'Too many OTP requests. Please wait a few moments before trying again.',
+        429,
+        'otp_rate_limited'
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { collegeEmail: cleanEmail },
+      select: { fullName: true },
+    });
+
+    const pending = memoryPendingSignup.get(cleanEmail);
+    const userName = user?.fullName || pending?.data?.fullName || undefined;
+
+    const otp = generateOTP();
+    const otpHash = await hashOTP(otp);
+    await storeOTP(cleanEmail, otpHash);
+
+    console.log(`[AUTH] Resending OTP Email to ${cleanEmail}...`);
+    sendOTPByEmail(cleanEmail, otp, userName).catch((err) => {
+      console.error('[AUTH] Background resendOTP error:', err);
+    });
+
+    return { message: 'OTP resent successfully' };
+  }
+
+  /**
+   * Verify OTP for email login or signup
+   */
+  async verifyOTP(
+    identifier: { email?: string; phone?: string } | string,
+    otp: string,
+    flow: 'login' | 'signup'
+  ) {
+    let cleanId = '';
+    if (typeof identifier === 'string') {
+      cleanId = identifier.toLowerCase().trim();
+    } else {
+      cleanId = (identifier.email?.toLowerCase().trim() || identifier.phone?.trim()) ?? '';
+    }
+
+    if (!cleanId) {
+      throw createError('Email or phone identifier required', 400, 'missing_identifier');
+    }
+
     // Get stored OTP hash
-    const storedHash = await getStoredOTP(phone);
+    const storedHash = await getStoredOTP(cleanId);
     if (!storedHash) {
-      throw createError('OTP expired or not found. Please request a new one.', 400, 'otp_expired');
+      throw createError('OTP expired or not found. Please request a new code.', 400, 'otp_expired');
     }
 
     // Verify OTP
     const isValid = await verifyOTPHash(otp, storedHash);
     if (!isValid) {
-      const attempts = await incrementOTPAttempts(phone);
+      const attempts = await incrementOTPAttempts(cleanId);
       if (attempts >= env.OTP_MAX_ATTEMPTS) {
         throw createError('Too many failed attempts. Please request a new OTP.', 429, 'otp_locked');
       }
@@ -180,56 +266,68 @@ export class AuthService {
     }
 
     // OTP valid — delete it
-    await deleteOTP(phone);
+    await deleteOTP(cleanId);
 
     let user;
 
     if (flow === 'signup') {
       let pendingData: any = null;
       try {
-        const pendingRaw = await redis.get(`signup:pending:${phone}`);
+        const pendingRaw = await redis.get(`signup:pending:${cleanId}`);
         if (pendingRaw) {
           pendingData = JSON.parse(pendingRaw);
-          redis.del(`signup:pending:${phone}`).catch(() => {});
+          redis.del(`signup:pending:${cleanId}`).catch(() => {});
         }
       } catch (err: any) {
         console.warn('[Redis] get pending signup fallback:', err.message);
       }
 
       if (!pendingData) {
-        const mem = memoryPendingSignup.get(phone);
+        const mem = memoryPendingSignup.get(cleanId);
         if (mem && mem.expiresAt > Date.now()) {
           pendingData = mem.data;
-          memoryPendingSignup.delete(phone);
+          memoryPendingSignup.delete(cleanId);
         }
       }
 
       if (!pendingData) {
-        throw createError('Signup session expired. Please start over.', 400, 'signup_expired');
-      }
-
-      // Create user
-      user = await prisma.user.create({
-        data: {
-          phone: pendingData.phone,
-          fullName: pendingData.fullName,
-          collegeEmail: pendingData.collegeEmail,
-          emailVerified: false,
-        },
-      });
-
-      // Send email verification link
-      const emailToken = generateEmailVerificationToken(user.id, user.collegeEmail);
-      if (env.NODE_ENV === 'development') {
-        console.log(`[DEV] Email verification link: ${env.FRONTEND_URL}/verify-email?token=${emailToken}`);
+        // Fallback: check if user already exists
+        const existing = await prisma.user.findFirst({
+          where: { OR: [{ collegeEmail: cleanId }, { phone: cleanId }] },
+        });
+        if (existing) {
+          user = existing;
+        } else {
+          throw createError('Signup session expired. Please start over.', 400, 'signup_expired');
+        }
       } else {
-        await sendVerificationEmail(user.collegeEmail, emailToken);
+        // Ensure phone is unique in database
+        let candidatePhone = pendingData.phone;
+        const phoneOccupied = await prisma.user.findUnique({ where: { phone: candidatePhone } });
+        if (phoneOccupied) {
+          candidatePhone = `+91${Math.floor(6000000000 + Math.random() * 3999999999)}`;
+        }
+
+        // Create user with emailVerified = true (since they entered the email OTP!)
+        user = await prisma.user.create({
+          data: {
+            fullName: pendingData.fullName,
+            collegeEmail: pendingData.collegeEmail,
+            phone: candidatePhone,
+            emailVerified: true,
+          },
+        });
       }
     } else {
       // Login flow
-      user = await prisma.user.findUnique({ where: { phone } });
+      user = await prisma.user.findFirst({
+        where: {
+          OR: [{ collegeEmail: cleanId }, { phone: cleanId }],
+        },
+      });
+
       if (!user) {
-        throw createError('User not found', 404, 'user_not_found');
+        throw createError('User not found. Please sign up.', 404, 'user_not_found');
       }
       if (user.blacklisted) {
         throw createError('Account suspended', 403, 'account_suspended');
@@ -255,6 +353,7 @@ export class AuthService {
       user: {
         id: user.id,
         fullName: user.fullName,
+        collegeEmail: user.collegeEmail,
         profilePicUrl,
       },
     };
@@ -271,17 +370,13 @@ export class AuthService {
 
     const currentHash = hashToken(currentRefreshToken);
 
-    // Check if revoked
     if (await isRefreshTokenRevoked(currentHash)) {
-      // Token reuse detected — revoke all tokens for this user (security measure)
       await revokeAllUserTokens(payload.userId);
       throw createError('Token reuse detected. All sessions revoked.', 401, 'token_reuse');
     }
 
-    // Revoke the current refresh token
     await revokeRefreshToken(currentHash);
 
-    // Check user still exists and isn't blacklisted
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
       select: { id: true, role: true, blacklisted: true },
@@ -291,7 +386,6 @@ export class AuthService {
       throw createError('Account not found or suspended', 401, 'account_invalid');
     }
 
-    // Issue new token pair
     const newPayload = { userId: user.id, role: user.role };
     const newAccessToken = generateAccessToken(newPayload);
     const newRefreshToken = generateRefreshToken(newPayload);

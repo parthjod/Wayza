@@ -2,9 +2,22 @@ import { Router } from 'express';
 import { authController } from './auth.controller';
 import { validate } from '../../middleware/validate';
 import { authRateLimit } from '../../middleware/rateLimit';
-import { checkPhoneSchema, signupInitiateSchema, verifyOTPSchema } from './auth.schema';
+import {
+  checkEmailSchema,
+  checkPhoneSchema,
+  signupInitiateSchema,
+  verifyOTPSchema,
+  resendOTPSchema,
+} from './auth.schema';
 
 const router = Router();
+
+router.post(
+  '/check-email',
+  authRateLimit,
+  validate({ body: checkEmailSchema }),
+  (req, res, next) => authController.checkEmail(req, res, next)
+);
 
 router.post(
   '/check-phone',
@@ -25,6 +38,13 @@ router.post(
   authRateLimit,
   validate({ body: verifyOTPSchema }),
   (req, res, next) => authController.verifyOTP(req, res, next)
+);
+
+router.post(
+  '/resend-otp',
+  authRateLimit,
+  validate({ body: resendOTPSchema }),
+  (req, res, next) => authController.resendOTP(req, res, next)
 );
 
 router.post(
