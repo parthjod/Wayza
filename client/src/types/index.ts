@@ -23,6 +23,14 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface VerifyOTPResponse {
+  registered: boolean;
+  emailVerified?: boolean;
+  signupToken?: string;
+  user?: User;
+}
+
+
 // Discovery types
 export interface NearbyUser {
   userId: string;

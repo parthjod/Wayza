@@ -37,14 +37,40 @@ export class AuthController {
       const identifier = email ? { email } : { phone };
       const result = await authService.verifyOTP(identifier, otp, flow);
 
-      // Set auth cookies
-      setAuthCookies(res, result.accessToken, result.refreshToken);
+      // If user session is established (login or legacy direct-signup)
+      if (result.user && result.accessToken && result.refreshToken) {
+        setAuthCookies(res, result.accessToken, result.refreshToken);
+        res.json({ registered: true, user: result.user });
+      } else {
+        // Email OTP successfully verified for new registration
+        res.json({
+          registered: false,
+          emailVerified: true,
+          signupToken: result.signupToken,
+        });
+      }
+    } catch (err) {
+      next(err);
+    }
+  }
 
+  async signupComplete(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { collegeEmail, fullName, phone, signupToken } = req.body;
+      const result = await authService.signupComplete({
+        collegeEmail,
+        fullName,
+        phone,
+        signupToken,
+      });
+
+      setAuthCookies(res, result.accessToken, result.refreshToken);
       res.json({ user: result.user });
     } catch (err) {
       next(err);
     }
   }
+
 
   async resendOTP(req: Request, res: Response, next: NextFunction) {
     try {

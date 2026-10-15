@@ -35,6 +35,7 @@ export default function Landing() {
   const [otpLoading, setOtpLoading] = useState(false);
   const [signupLoading, setSignupLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [signupToken, setSignupToken] = useState('');
 
   const emailInputRef = useRef<HTMLInputElement>(null);
 
@@ -110,13 +111,17 @@ export default function Landing() {
 
     try {
       const result = await authApi.checkEmail(cleanEmail);
+      setResendCooldown(30);
+      setOtp(Array(6).fill(''));
+
       if (result.registered) {
         setUserName(result.userName || '');
         setFlowState('login-otp');
-        setResendCooldown(30);
         showToast('6-digit OTP sent to your inbox ✉️', 'success');
       } else {
-        setFlowState('signup-name');
+        setUserName('');
+        setFlowState('signup-otp');
+        showToast('Verification code sent to your inbox ✉️', 'success');
       }
     } catch (err: any) {
       const msg = err.response?.data?.error || 'Something went wrong';
@@ -144,12 +149,18 @@ export default function Landing() {
     setPhoneError('');
     setSignupLoading(true);
     try {
-      await authApi.signupInitiate(email.trim().toLowerCase(), fullName.trim(), normalizedPhone);
-      setFlowState('signup-otp');
-      setResendCooldown(30);
-      showToast('Verification code sent to your inbox ✉️', 'success');
+      const result = await authApi.signupComplete({
+        collegeEmail: email.trim().toLowerCase(),
+        fullName: fullName.trim(),
+        phone: normalizedPhone,
+        signupToken,
+      });
+
+      setUser(result.user);
+      showToast('Welcome to Wayza! 🚗', 'success');
+      navigate('/home', { replace: true });
     } catch (err: any) {
-      const msg = err.response?.data?.error || 'Signup failed';
+      const msg = err.response?.data?.error || 'Registration failed';
       showToast(msg, 'error');
     } finally {
       setSignupLoading(false);
@@ -164,9 +175,24 @@ export default function Landing() {
         otpString,
         flow
       );
-      setUser(result.user);
-      showToast('Welcome to Wayza! 🚗', 'success');
-      navigate('/home', { replace: true });
+
+      if (flow === 'login' && result.user) {
+        setUser(result.user);
+        showToast('Welcome back to Wayza! 🚗', 'success');
+        navigate('/home', { replace: true });
+      } else if (flow === 'signup') {
+        if (result.user) {
+          // Direct login fallback
+          setUser(result.user);
+          showToast('Welcome to Wayza! 🚗', 'success');
+          navigate('/home', { replace: true });
+        } else {
+          // Email verified! Transition to profile info modal
+          setSignupToken(result.signupToken || '');
+          setFlowState('signup-name');
+          showToast('Email verified! Please complete your profile 🚀', 'success');
+        }
+      }
     } catch (err: any) {
       const msg = err.response?.data?.error || 'Invalid OTP';
       showToast(msg, 'error');
@@ -200,6 +226,7 @@ export default function Landing() {
   const closeFlow = () => {
     setFlowState('idle');
     setOtp(Array(6).fill(''));
+    setSignupToken('');
   };
 
   // Render the current flow state overlay
@@ -255,6 +282,61 @@ export default function Landing() {
       );
     }
 
+    if (flowState === 'signup-otp') {
+      return (
+        <div className="otp-modal-wrapper">
+          <div className="otp-modal-scrim" onClick={closeFlow} />
+          <div className="otp-modal-card animate-slide-in-right">
+            <button onClick={closeFlow} className="otp-modal-close" aria-label="Close">
+              ✕
+            </button>
+
+            <h2 className="otp-modal-heading">Verify your college email ✉️</h2>
+            <p className="otp-modal-subtitle">
+              6-digit verification code sent to <span className="text-[#5bbef7] font-medium">{email}</span>
+            </p>
+
+            <OTPInput
+              value={otp}
+              onChange={setOtp}
+              onComplete={(val: string) => handleVerifyOTP(val, 'signup')}
+            />
+
+            {otpLoading && <Spinner className="mx-auto mt-6" />}
+
+            <div className="mt-4 text-center">
+              {resendCooldown > 0 ? (
+                <span className="text-white/40 text-xs">
+                  Resend code in <span className="text-[#5bbef7]">{resendCooldown}s</span>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleResendOTP}
+                  className="text-xs text-[#5bbef7] hover:underline cursor-pointer bg-transparent border-none p-0"
+                >
+                  Didn't receive code? Resend OTP
+                </button>
+              )}
+            </div>
+
+            <button
+              onClick={() => handleVerifyOTP(otp.join(''), 'signup')}
+              disabled={otp.some((d) => !d) || otpLoading}
+              className="otp-modal-go-btn mt-6"
+            >
+              <span>Verify & Continue</span>
+              <span style={{ fontSize: '19px', lineHeight: 1 }}>→</span>
+            </button>
+
+            <button onClick={closeFlow} className="otp-modal-back">
+              ← Change Email
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     if (flowState === 'signup-name') {
       return (
         <div className="signup-name-wrapper">
@@ -265,11 +347,22 @@ export default function Landing() {
             </button>
 
             <h2 className="signup-name-heading">
-              Looks like you're new to <span style={{ color: '#5bbef7' }}>Wayza.</span>
+              Welcome to <span style={{ color: '#5bbef7' }}>Wayza.</span>
             </h2>
-            <p className="text-white/60 text-sm mb-6 -mt-2">
-              Signing up with <span className="text-[#5bbef7] font-medium">{email}</span>
+            <p className="text-white/60 text-sm mb-4 -mt-2">
+              Email verified: <span className="text-[#5bbef7] font-medium">{email}</span> ✓
             </p>
+
+            {/* Prominent Notice: No more phone OTPs */}
+            <div className="bg-[#5bbef7]/10 border border-[#5bbef7]/30 rounded-2xl p-4 mb-5 text-left flex items-start gap-3">
+              <span className="text-xl leading-none mt-0.5">🔒</span>
+              <div className="text-xs text-white/85 leading-relaxed">
+                <strong className="text-[#5bbef7] block font-semibold mb-0.5 text-xs">
+                  No more OTPs on phone number
+                </strong>
+                Authentication only happens through your college email. Your mobile number is used exclusively for co-passengers to coordinate on ride day.
+              </div>
+            </div>
 
             {/* Full Name Input */}
             <div className="signup-name-input-wrap mb-4">
@@ -325,82 +418,24 @@ export default function Landing() {
                 {phoneError}
               </p>
             )}
-            <p className="text-xs text-white/40 mb-6 px-1">
-              Used strictly for co-passengers to coordinate on trip day. No SMS OTP required.
-            </p>
 
             {/* Continue Button */}
             <button
               onClick={handleSignupSubmit}
               disabled={signupLoading || fullName.trim().length < 2}
-              className="signup-name-go-btn"
+              className="signup-name-go-btn mt-2"
             >
               {signupLoading ? (
                 <Spinner size="sm" />
               ) : (
                 <>
-                  <span>Send Verification Code</span>
+                  <span>Enter Wayza</span>
                   <span style={{ fontSize: '19px', lineHeight: 1 }}>→</span>
                 </>
               )}
             </button>
 
-            <button onClick={closeFlow} className="signup-name-back">
-              ← Back
-            </button>
-          </div>
-        </div>
-      );
-    }
-
-    if (flowState === 'signup-otp') {
-      return (
-        <div className="otp-modal-wrapper">
-          <div className="otp-modal-scrim" onClick={closeFlow} />
-          <div className="otp-modal-card animate-slide-in-right">
-            <button onClick={closeFlow} className="otp-modal-close" aria-label="Close">
-              ✕
-            </button>
-
-            <h2 className="otp-modal-heading">Check your inbox for the OTP ✉️</h2>
-            <p className="otp-modal-subtitle">
-              6-digit verification code sent to <span className="text-[#5bbef7] font-medium">{email}</span>
-            </p>
-
-            <OTPInput
-              value={otp}
-              onChange={setOtp}
-              onComplete={(val: string) => handleVerifyOTP(val, 'signup')}
-            />
-
-            {otpLoading && <Spinner className="mx-auto mt-6" />}
-
-            <div className="mt-4 text-center">
-              {resendCooldown > 0 ? (
-                <span className="text-white/40 text-xs">
-                  Resend code in <span className="text-[#5bbef7]">{resendCooldown}s</span>
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleResendOTP}
-                  className="text-xs text-[#5bbef7] hover:underline cursor-pointer bg-transparent border-none p-0"
-                >
-                  Didn't receive code? Resend OTP
-                </button>
-              )}
-            </div>
-
-            <button
-              onClick={() => handleVerifyOTP(otp.join(''), 'signup')}
-              disabled={otp.some((d) => !d) || otpLoading}
-              className="otp-modal-go-btn mt-6"
-            >
-              <span>Go</span>
-              <span style={{ fontSize: '19px', lineHeight: 1 }}>→</span>
-            </button>
-
-            <button onClick={() => setFlowState('signup-name')} className="otp-modal-back">
+            <button onClick={() => setFlowState('signup-otp')} className="signup-name-back">
               ← Back
             </button>
           </div>
@@ -512,7 +547,7 @@ export default function Landing() {
             className="text-white/65 text-[14px] sm:text-[16px] font-normal tracking-normal leading-[1.4]"
             style={{ marginBottom: '22px' }}
           >
-            Enter your college email to sign in or get started
+            Enter your official college email (<span className="text-[#5bbef7] font-medium">@mitwpu.edu.in</span>) to continue
           </p>
 
           {/* Email Input Box (Pill Shape) */}

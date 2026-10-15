@@ -6,6 +6,7 @@ import {
   checkEmailSchema,
   checkPhoneSchema,
   signupInitiateSchema,
+  signupCompleteSchema,
   verifyOTPSchema,
   resendOTPSchema,
 } from './auth.schema';
@@ -32,6 +33,14 @@ router.post(
   validate({ body: signupInitiateSchema }),
   (req, res, next) => authController.signupInitiate(req, res, next)
 );
+
+router.post(
+  '/signup/complete',
+  authRateLimit,
+  validate({ body: signupCompleteSchema }),
+  (req, res, next) => authController.signupComplete(req, res, next)
+);
+
 
 router.post(
   '/verify-otp',

@@ -54,9 +54,28 @@ export const verifyEmailSchema = z.object({
   token: z.string().min(1, 'Token is required'),
 });
 
+export const signupCompleteSchema = z.object({
+  collegeEmail: z
+    .string()
+    .email('Invalid email address')
+    .max(254, 'Email must be at most 254 characters'),
+  fullName: z
+    .string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(100, 'Name must be at most 100 characters'),
+  phone: z
+    .string()
+    .optional(),
+  signupToken: z
+    .string()
+    .optional(),
+});
+
 export type CheckEmailInput = z.infer<typeof checkEmailSchema>;
 export type CheckPhoneInput = z.infer<typeof checkPhoneSchema>;
 export type SignupInitiateInput = z.infer<typeof signupInitiateSchema>;
+export type SignupCompleteInput = z.infer<typeof signupCompleteSchema>;
 export type VerifyOTPInput = z.infer<typeof verifyOTPSchema>;
 export type ResendOTPInput = z.infer<typeof resendOTPSchema>;
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
+

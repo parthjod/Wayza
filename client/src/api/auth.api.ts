@@ -1,5 +1,5 @@
 import api from './client';
-import type { CheckPhoneResponse, CheckEmailResponse, AuthResponse } from '../types';
+import type { CheckPhoneResponse, CheckEmailResponse, AuthResponse, VerifyOTPResponse } from '../types';
 
 export const authApi = {
   checkEmail: (email: string) =>
@@ -11,8 +11,15 @@ export const authApi = {
   signupInitiate: (collegeEmail: string, fullName: string, phone?: string) =>
     api.post('/auth/signup/initiate', { collegeEmail, fullName, phone }).then((r) => r.data),
 
+  signupComplete: (data: {
+    collegeEmail: string;
+    fullName: string;
+    phone?: string;
+    signupToken?: string;
+  }) => api.post<AuthResponse>('/auth/signup/complete', data).then((r) => r.data),
+
   verifyOTP: (identifier: { email?: string; phone?: string }, otp: string, flow: 'login' | 'signup') =>
-    api.post<AuthResponse>('/auth/verify-otp', { ...identifier, otp, flow }).then((r) => r.data),
+    api.post<VerifyOTPResponse>('/auth/verify-otp', { ...identifier, otp, flow }).then((r) => r.data),
 
   resendOTP: (email: string) =>
     api.post('/auth/resend-otp', { email }).then((r) => r.data),

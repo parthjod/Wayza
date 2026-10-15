@@ -189,3 +189,49 @@ export function verifyEmailVerificationToken(
     return null;
   }
 }
+
+/**
+ * Generate HMAC-SHA256 signed signup verification token (15 mins)
+ */
+export function generateSignupVerificationToken(email: string): string {
+  const payload = JSON.stringify({
+    email: email.toLowerCase().trim(),
+    exp: Date.now() + 15 * 60 * 1000, // 15 mins
+  });
+  const signature = crypto
+    .createHmac('sha256', env.OTP_HMAC_SECRET)
+    .update(payload)
+    .digest('hex');
+  return Buffer.from(`${payload}.${signature}`).toString('base64url');
+}
+
+/**
+ * Verify signup verification token
+ */
+export function verifySignupVerificationToken(token: string, email: string): boolean {
+  try {
+    const decoded = Buffer.from(token, 'base64url').toString('utf-8');
+    const lastDotIndex = decoded.lastIndexOf('.');
+    if (lastDotIndex === -1) return false;
+
+    const payload = decoded.substring(0, lastDotIndex);
+    const signature = decoded.substring(lastDotIndex + 1);
+
+    const expectedSignature = crypto
+      .createHmac('sha256', env.OTP_HMAC_SECRET)
+      .update(payload)
+      .digest('hex');
+
+    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+      return false;
+    }
+
+    const data = JSON.parse(payload);
+    if (data.exp < Date.now()) return false;
+
+    return data.email === email.toLowerCase().trim();
+  } catch {
+    return false;
+  }
+}
+
