@@ -3612,3 +3612,44 @@ body {
   transition: width 0.45s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 0 2px 2px 0;
 }
+
+/* Dynamic Island Style Connection Request Notification */
+.wayza-dynamic-invite {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  width: calc(100% - 28px);
+  max-width: 420px;
+  background: rgba(14, 18, 30, 0.88);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  border-radius: 1.25rem;
+  padding: 14px 16px;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.75), 0 0 25px rgba(59, 130, 246, 0.22);
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+.animate-fade-in-down {
+  animation: fadeInDown 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (max-width: 640px) {
+  .wayza-dynamic-invite {
+    top: 14px;
+    padding: 12px 14px;
+    border-radius: 1rem;
+  }
+}

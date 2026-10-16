@@ -1,4 +1,5 @@
 import prisma from '../../config/db';
+import { redis } from '../../config/redis';
 import { env } from '../../config/env';
 import { createError } from '../../middleware/errorHandler';
 
@@ -42,11 +43,21 @@ export class GroupService {
           ? `https://${env.AWS_CLOUDFRONT_DOMAIN}/${initiator.profilePicKey}`
           : null;
 
+        let dropLocationLabel = '';
+        try {
+          const raw = await redis.get(`active:${userId}`);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            dropLocationLabel = parsed.dropLocationLabel || '';
+          }
+        } catch {}
+
         io.to(`user:${targetUserId}`).emit('group:invite-received', {
           groupId: grpId,
           inviterId: userId,
           inviterName: initiator?.fullName || 'A rider',
           inviterPicUrl: initiatorPicUrl,
+          dropLocationLabel,
         });
       } catch (e) {
         console.warn('Failed to emit group:invite-received:', e);

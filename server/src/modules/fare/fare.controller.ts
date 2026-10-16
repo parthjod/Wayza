@@ -4,19 +4,25 @@ import { fareService } from './fare.service';
 export class FareController {
   async submit(req: Request, res: Response, next: NextFunction) {
     try {
-      const { totalFare, splitBetween } = req.body;
+      const { totalFare, splitBetween, splits } = req.body;
       const groupId = req.params.groupId as string;
       const result = await fareService.submitFare(
         groupId,
         req.user!.userId,
         totalFare,
-        splitBetween
+        splitBetween,
+        splits
       );
       const io = req.app.get('io');
       if (io) {
         io.to(`group:${groupId}`).emit('fare:split-submitted', {
           groupId,
           splits: result.splits,
+          totalFare,
+          rideEnded: true,
+        });
+        io.to(`group:${groupId}`).emit('journey:all-ended', {
+          groupId,
         });
       }
       res.json(result);

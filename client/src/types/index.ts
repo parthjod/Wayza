@@ -38,6 +38,8 @@ export interface NearbyUser {
   profilePicUrl: string | null;
   distanceMeters: number;
   dropLocationLabel: string;
+  rating?: number;
+  reviewsCount?: number;
 }
 
 export interface NearbyResponse {

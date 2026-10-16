@@ -46,7 +46,9 @@ export default function Home() {
     inviterId: string;
     inviterName: string;
     inviterPicUrl: string | null;
+    dropLocationLabel?: string;
   } | null>(null);
+  const [showAllRidersModal, setShowAllRidersModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [rideHistory, setRideHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -87,15 +89,19 @@ export default function Home() {
         inviterId: data.inviterId,
         inviterName: data.inviterName || 'A rider',
         inviterPicUrl: data.inviterPicUrl || null,
+        dropLocationLabel: data.dropLocationLabel || '',
       });
-      showToast(`${data.inviterName || 'A rider'} wants to connect!`, 'info');
     });
 
-    socket.on('discovery:user-joined', (data: { userId: string; fullName: string; distanceMeters: number }) => {
-      setNearbyUsers((prev) => {
-        if (prev.some((u) => u.userId === data.userId)) return prev;
-        return [...prev, { ...data, profilePicUrl: null, dropLocationLabel: '' }];
-      });
+    socket.on('discovery:user-joined', async () => {
+      try {
+        const fresh = await discoveryApi.getNearby();
+        if (fresh && Array.isArray(fresh.users)) {
+          setNearbyUsers(fresh.users);
+        }
+      } catch {
+        // silent
+      }
     });
 
     socket.on('discovery:user-left', (data: { userId: string }) => {
@@ -693,50 +699,82 @@ export default function Home() {
               </div>
             ) : (
               /* Radial layout when riders found */
-              <div className="flex flex-col items-center">
-                <div className="relative flex items-center justify-center" style={{ minHeight: '320px', width: '320px' }}>
-                  {/* Center indicator */}
-                  <div className="absolute flex flex-col items-center">
-                    <div className="w-4 h-4 bg-white rounded-full animate-pulse-ring" />
-                    <p className="mt-2 text-white/60 text-xs">You</p>
-                  </div>
+              (() => {
+                const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+                const maxRadar = isMobile ? 4 : 6;
+                const visibleRadarUsers = nearbyUsers.slice(0, maxRadar);
+                const extraCount = nearbyUsers.length - visibleRadarUsers.length;
 
-                  {nearbyUsers.map((nUser, i) => {
-                    const pos = getUserPosition(i, nearbyUsers.length);
-                    return (
+                return (
+                  <div className="flex flex-col items-center">
+                    <div className="relative flex items-center justify-center" style={{ minHeight: '320px', width: '320px' }}>
+                      {/* Center indicator */}
+                      <div className="absolute flex flex-col items-center z-10">
+                        <div className="w-4 h-4 bg-white rounded-full animate-pulse-ring" />
+                        <p className="mt-2 text-white/60 text-xs font-medium">You</p>
+                      </div>
+
+                      {visibleRadarUsers.map((nUser, i) => {
+                        const pos = getUserPosition(i, visibleRadarUsers.length);
+                        const name = nUser?.fullName || 'Rider';
+                        const firstName = name.split(' ')[0] || 'Rider';
+                        return (
+                          <button
+                            key={nUser.userId || i}
+                            onClick={() => { setSelectedUser(nUser); setViewState('user-detail'); }}
+                            className="absolute flex flex-col items-center gap-1 transition-all hover:scale-110 active:scale-95 cursor-pointer z-20"
+                            style={{
+                              transform: `translate(${pos.x}px, ${pos.y}px)`,
+                            }}
+                          >
+                            <div className="relative">
+                              <Avatar name={name} imageUrl={nUser.profilePicUrl} size="lg" />
+                              {nUser.rating && (
+                                <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 bg-amber-400 text-slate-950 text-[10px] font-black rounded-full shadow-md flex items-center gap-0.5 border border-black/20">
+                                  ★ {nUser.rating.toFixed(1)}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-white text-xs font-semibold max-w-[80px] truncate text-video-overlay">
+                              {firstName}
+                            </span>
+                            <span className="text-white/60 text-[10px] font-medium bg-black/40 px-1.5 py-0.5 rounded-full backdrop-blur-sm">
+                              {formatDistance(nUser.distanceMeters || 0)}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* View all active riders button */}
+                    {nearbyUsers.length > 2 && (
                       <button
-                        key={nUser.userId}
-                        onClick={() => { setSelectedUser(nUser); setViewState('user-detail'); }}
-                        className="absolute flex flex-col items-center gap-1 transition-all hover:scale-110"
-                        style={{
-                          transform: `translate(${pos.x}px, ${pos.y}px)`,
-                        }}
+                        type="button"
+                        onClick={() => setShowAllRidersModal(true)}
+                        className="mt-3 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 border border-white/20 backdrop-blur-xl text-white text-xs font-semibold transition-all flex items-center gap-2 shadow-lg cursor-pointer"
                       >
-                        <Avatar name={nUser.fullName} imageUrl={nUser.profilePicUrl} size="lg" />
-                        <span className="text-white text-xs font-medium max-w-[80px] truncate text-video-overlay">
-                          {nUser.fullName.split(' ')[0]}
-                        </span>
-                        <span className="text-white/50 text-[10px]">
-                          {formatDistance(nUser.distanceMeters)}
-                        </span>
+                        <span>👥 View all riders ({nearbyUsers.length})</span>
+                        {extraCount > 0 && (
+                          <span className="text-blue-400 font-bold">+{extraCount} more →</span>
+                        )}
                       </button>
-                    );
-                  })}
-                </div>
+                    )}
 
-                {/* Cancel booking button */}
-                <button
-                  type="button"
-                  onClick={handleStopBooking}
-                  className="home-cancel-booking-btn mt-6"
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                  <span>Cancel Booking</span>
-                </button>
-              </div>
+                    {/* Cancel booking button */}
+                    <button
+                      type="button"
+                      onClick={handleStopBooking}
+                      className="home-cancel-booking-btn mt-5"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                      <span>Cancel Booking</span>
+                    </button>
+                  </div>
+                );
+              })()
             )}
           </div>
         )}
@@ -904,50 +942,146 @@ export default function Home() {
         </div>
       )}
 
-      {/* Incoming Connection Invitation Popup */}
+      {/* Incoming Connection Invitation Popup — Dynamic Island Glass Style */}
       {incomingInvite && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md bg-[#121622]/95 backdrop-blur-2xl border border-blue-400/40 rounded-2xl p-4 shadow-2xl animate-fade-in-up">
-          <div className="flex items-center justify-between gap-3 mb-3">
-            <div className="flex items-center gap-3">
-              <Avatar name={incomingInvite.inviterName} imageUrl={incomingInvite.inviterPicUrl} size="md" />
-              <div>
-                <p className="text-sm font-bold text-white leading-tight">
-                  {incomingInvite.inviterName}
-                </p>
-                <p className="text-xs text-blue-300">
-                  wants to connect and ride together!
-                </p>
-              </div>
+        <div className="wayza-dynamic-invite animate-fade-in-down">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-[10px] font-bold tracking-wider text-emerald-400 uppercase">
+                Ride Request
+              </span>
             </div>
             <button
               onClick={() => setIncomingInvite(null)}
-              className="text-white/40 hover:text-white p-1 text-sm cursor-pointer"
+              className="text-white/40 hover:text-white p-1 text-xs cursor-pointer rounded-full hover:bg-white/10 transition-colors"
               aria-label="Dismiss"
             >
               ✕
             </button>
           </div>
-          <div className="flex gap-2">
+
+          <div className="flex items-center gap-3 mb-3">
+            <div className="relative flex-shrink-0">
+              <Avatar name={incomingInvite.inviterName} imageUrl={incomingInvite.inviterPicUrl} size="md" />
+              <div className="absolute -inset-0.5 rounded-full border border-blue-400/50 animate-pulse pointer-events-none" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-white truncate leading-snug">
+                {incomingInvite.inviterName}
+              </p>
+              <p className="text-xs text-white/60 leading-tight">
+                wants to share a ride with you
+              </p>
+              {incomingInvite.dropLocationLabel && (
+                <p className="text-[11px] text-blue-300 mt-0.5 truncate flex items-center gap-1 font-medium">
+                  <span>📍</span>
+                  <span>To: {incomingInvite.dropLocationLabel}</span>
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
             <button
               onClick={() => {
                 const grpId = incomingInvite.groupId;
                 setIncomingInvite(null);
                 navigate(`/chat/${grpId}`);
               }}
-              className="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md active:scale-95 text-center flex items-center justify-center gap-1.5 cursor-pointer"
+              className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-lg shadow-blue-500/25 active:scale-95 text-center flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <span>Connect & Chat Now</span>
+              <span>Accept & Chat</span>
               <span>→</span>
             </button>
             <button
               onClick={() => setIncomingInvite(null)}
-              className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white/70 text-xs font-medium transition-all cursor-pointer"
+              className="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 active:scale-95 text-white/70 text-xs font-medium transition-all cursor-pointer"
             >
-              Dismiss
+              Decline
             </button>
           </div>
         </div>
       )}
+
+      {/* All Active Riders Modal / Drawer */}
+      <Modal open={showAllRidersModal} onClose={() => setShowAllRidersModal(false)}>
+        <div className="p-4 sm:p-5 max-w-lg mx-auto text-left">
+          <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-lg">👥</span>
+                <h3 className="text-xl font-instrument text-white">Active Riders</h3>
+                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-semibold">
+                  {nearbyUsers.length} online
+                </span>
+              </div>
+              <p className="text-xs text-white/50 mt-0.5">
+                Sorted by highest reviews, rating & closest distance
+              </p>
+            </div>
+            <button
+              onClick={() => setShowAllRidersModal(false)}
+              className="text-white/40 hover:text-white text-sm p-1 rounded-lg cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="flex flex-col gap-2 max-h-[380px] overflow-y-auto pr-1">
+            {nearbyUsers.map((rider) => {
+              const name = rider.fullName || 'Rider';
+              return (
+                <div
+                  key={rider.userId}
+                  className="p-3 rounded-xl bg-white/5 hover:bg-white/[0.08] border border-white/10 flex items-center justify-between gap-3 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="relative flex-shrink-0">
+                      <Avatar name={name} imageUrl={rider.profilePicUrl} size="md" />
+                      <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#121622]" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-white truncate">
+                          {name}
+                        </span>
+                        {rider.rating && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-bold border border-amber-400/30 flex items-center gap-0.5">
+                            ★ {rider.rating.toFixed(1)}
+                            {rider.reviewsCount ? ` (${rider.reviewsCount})` : ''}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-white/50 mt-0.5">
+                        <span className="text-blue-300 truncate">
+                          📍 {rider.dropLocationLabel || 'Campus'}
+                        </span>
+                        <span>•</span>
+                        <span>{formatDistance(rider.distanceMeters || 0)}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setShowAllRidersModal(false);
+                      handleConnect(rider.userId);
+                    }}
+                    className="flex-shrink-0 py-1.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs font-semibold shadow-md transition-all cursor-pointer flex items-center gap-1"
+                  >
+                    <span>Connect</span>
+                    <span>→</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </Modal>
 
       {/* Ride History Modal */}
       <Modal open={showHistoryModal} onClose={() => setShowHistoryModal(false)}>

@@ -1,19 +1,26 @@
 import prisma from '../../config/db';
+import { redis } from '../../config/redis';
 import { createError } from '../../middleware/errorHandler';
 
 export class FareService {
   /**
-   * Submit fare split
+   * Submit fare split (supports equal or smart destination-based split)
    */
-  async submitFare(groupId: string, userId: string, totalFare: number, splitBetween: string[]) {
+  async submitFare(
+    groupId: string,
+    userId: string,
+    totalFare: number,
+    splitBetween: string[],
+    splits?: Array<{ userId: string; amount: number }>
+  ) {
     const group = await prisma.group.findUnique({
       where: { id: groupId },
-      include: { members: true, fareSplit: true },
+      include: { members: true, fareSplit: true, journey: true },
     });
 
     if (!group) throw createError('Group not found', 404);
-    if (group.status !== 'JOURNEY_ENDED') {
-      throw createError('Journey must be ended before splitting fare', 400);
+    if (group.status === 'DISBANDED') {
+      throw createError('Group has already ended or disbanded', 400);
     }
     if (group.fareSplit) {
       throw createError('Fare has already been submitted for this group', 400);
@@ -31,7 +38,27 @@ export class FareService {
       }
     }
 
-    const amountPerPerson = Math.round((totalFare / splitBetween.length) * 100) / 100;
+    let participantData: Array<{ userId: string; amount: number; acknowledged: boolean }> = [];
+
+    if (splits && splits.length > 0) {
+      // Smart destination/distance-based split
+      participantData = group.members.map((m: any) => {
+        const custom = splits.find((s) => s.userId === m.userId);
+        return {
+          userId: m.userId,
+          amount: custom ? Math.round(custom.amount * 100) / 100 : 0,
+          acknowledged: m.userId === userId, // Submitter is acknowledged by default
+        };
+      });
+    } else {
+      // Equal split
+      const amountPerPerson = Math.round((totalFare / splitBetween.length) * 100) / 100;
+      participantData = group.members.map((m: any) => ({
+        userId: m.userId,
+        amount: splitBetween.includes(m.userId) ? amountPerPerson : 0,
+        acknowledged: m.userId === userId,
+      }));
+    }
 
     const fareSplit = await prisma.fareSplit.create({
       data: {
@@ -39,11 +66,7 @@ export class FareService {
         totalFare,
         submittedBy: userId,
         participants: {
-          create: group.members.map((m: any) => ({
-            userId: m.userId,
-            amount: splitBetween.includes(m.userId) ? amountPerPerson : 0,
-            acknowledged: false,
-          })),
+          create: participantData,
         },
       },
       include: {
@@ -51,11 +74,31 @@ export class FareService {
       },
     });
 
-    // Update group status
+    // Update group status to SPLIT_DONE
     await prisma.group.update({
       where: { id: groupId },
       data: { status: 'SPLIT_DONE' },
     });
+
+    // Mark journey ended if active
+    if (group.journey) {
+      await prisma.journey.update({
+        where: { id: group.journey.id },
+        data: { allEnded: true, endedAt: new Date() },
+      }).catch(() => {});
+    }
+
+    // Mark all members as finished with journey & split
+    await prisma.groupMember.updateMany({
+      where: { groupId },
+      data: { endedJourney: true, confirmedSplit: true },
+    });
+
+    // Clean up active location sessions for all members so their booking state is reset
+    for (const m of group.members) {
+      await redis.del(`active:${m.userId}`).catch(() => {});
+      await redis.zrem('active:users:index', m.userId).catch(() => {});
+    }
 
     // Get user names for the response
     const users = await prisma.user.findMany({
@@ -64,13 +107,13 @@ export class FareService {
     });
     const userMap = new Map(users.map((u: any) => [u.id, u.fullName]));
 
-    const splits = fareSplit.participants.map((p: any) => ({
+    const resultSplits = fareSplit.participants.map((p: any) => ({
       userId: p.userId,
       fullName: userMap.get(p.userId) || 'Unknown',
       amount: p.amount,
     }));
 
-    return { splitId: fareSplit.id, splits };
+    return { splitId: fareSplit.id, splits: resultSplits };
   }
 
   /**
