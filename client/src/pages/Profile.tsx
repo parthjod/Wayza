@@ -98,37 +98,54 @@ export default function Profile() {
 
   return (
     <div className="profile-page-shell">
-      {/* Back navigation */}
-      <button
-        onClick={() => navigate('/home')}
-        className="profile-back-btn"
-        aria-label="Go back"
-      >
-        ← Back
-      </button>
+      {/* Top Header / Back navigation */}
+      <div className="w-full max-w-md flex items-center justify-between mb-4 z-20">
+        <button
+          onClick={() => navigate('/home')}
+          className="profile-back-btn flex items-center gap-1.5 cursor-pointer hover:opacity-85 transition-opacity"
+          aria-label="Go back to Home"
+        >
+          <span>←</span>
+          <span className="font-instrument tracking-wider text-sm font-normal text-white/90">WAYZA</span>
+        </button>
+      </div>
 
       {/* Profile card */}
       <div className="profile-card animate-fade-in-up">
         {/* Avatar section */}
         <div className="profile-avatar-section">
-          <div className="relative inline-block">
+          <div
+            className="relative inline-block cursor-pointer group"
+            onClick={() => fileInputRef.current?.click()}
+            title="Click to upload profile picture"
+          >
             <Avatar
               name={fullName || user?.fullName || ''}
               imageUrl={previewUrl || profilePicUrl}
               size="xl"
-              className="profile-avatar"
+              className="profile-avatar group-hover:opacity-90 transition-opacity"
             />
+            {/* Camera badge overlay */}
+            <div className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-blue-600 border-2 border-[#121218] flex items-center justify-center text-white text-xs shadow-md group-hover:bg-blue-500 transition-colors">
+              📷
+            </div>
             {uploading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+              <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full">
                 <Spinner size="sm" />
               </div>
             )}
           </div>
+
           <button
+            type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="profile-change-photo-btn"
+            className="profile-change-photo-btn cursor-pointer flex items-center gap-1.5 mt-2"
           >
-            Change photo
+            {previewUrl || profilePicUrl ? (
+              <span>Change photo</span>
+            ) : (
+              <span className="font-semibold text-blue-400">+ Add Profile Picture</span>
+            )}
           </button>
           <input
             ref={fileInputRef}

@@ -35,6 +35,12 @@ export default function Chat() {
   const [showFareSplitModal, setShowFareSplitModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showMenuPanel, setShowMenuPanel] = useState(false);
+  const [rideFinishedModal, setRideFinishedModal] = useState(false);
+
+  // Attachment & Image preview state
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // Fare split state
   const [totalFare, setTotalFare] = useState('');
@@ -47,6 +53,7 @@ export default function Chat() {
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
   const isLeavingRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -103,7 +110,10 @@ export default function Chat() {
     socket.on('journey:all-ended', () => {
       if (isLeavingRef.current) return;
       loadGroup();
-      setShowFareSplitModal(true);
+      setRideFinishedModal(true);
+      setTimeout(() => {
+        navigate('/home', { replace: true });
+      }, 3500);
     });
     socket.on('fare:split-submitted', (data: any) => {
       if (isLeavingRef.current) return;
@@ -239,15 +249,64 @@ export default function Chat() {
     }
   };
 
+  const handleImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !groupId) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Image too large. Max 5MB.', 'error');
+      return;
+    }
+    setUploadingImage(true);
+    setShowAttachMenu(false);
+    try {
+      showToast('Uploading photo...', 'info');
+      await chatApi.uploadImage(groupId, file);
+      showToast('Photo sent ✓', 'success');
+    } catch (err: any) {
+      showToast(err.response?.data?.error || 'Failed to upload photo', 'error');
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleShareLiveLocation = () => {
+    setShowAttachMenu(false);
+    if (!navigator.geolocation) {
+      showToast('Geolocation is not supported by your browser', 'error');
+      return;
+    }
+    showToast('Getting live location...', 'info');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const mapsLink = `📍 My Location: https://maps.google.com/?q=${latitude},${longitude}`;
+        if (!socket || !socket.connected) {
+          showToast('Connecting to chat server, please wait...', 'info');
+          return;
+        }
+        socket.emit('chat:send-message', { groupId, content: mapsLink });
+        showToast('Location shared ✓', 'success');
+      },
+      (err) => {
+        showToast('Unable to get location: ' + err.message, 'error');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const handleEndJourney = async () => {
     if (!groupId) return;
     try {
       const result = await journeyApi.end(groupId);
       if (result.allEnded) {
-        showToast('Journey ended!', 'success');
-        setShowFareSplitModal(true);
+        showToast('Ride completed! 🎉', 'success');
+        setRideFinishedModal(true);
+        setTimeout(() => {
+          navigate('/home', { replace: true });
+        }, 3500);
       } else {
-        showToast('Waiting for others to end...', 'info');
+        showToast('Waiting for co-riders to end...', 'info');
       }
       setShowEndJourneyModal(false);
       await loadGroup();
@@ -370,10 +429,11 @@ export default function Chat() {
       <div className="chat-header">
         <button
           onClick={() => navigate('/home')}
-          className="chat-back-btn"
-          aria-label="Go back"
+          className="chat-back-btn flex items-center gap-1.5 cursor-pointer hover:opacity-85 transition-opacity"
+          aria-label="Go to Home"
         >
-          ←
+          <span>←</span>
+          <span className="font-instrument tracking-wider text-xs sm:text-sm font-normal text-white/90">WAYZA</span>
         </button>
         <div className="flex items-center gap-2.5 flex-1 min-w-0">
           {otherMembers.slice(0, 2).map((m) => (
@@ -502,7 +562,30 @@ export default function Chat() {
                 {!isOwn && group.members.length > 2 && (
                   <p className="text-[10px] font-semibold mb-0.5 opacity-60">{msg.senderName}</p>
                 )}
-                <p className="text-sm whitespace-pre-wrap break-words leading-snug">{msg.content}</p>
+                {msg.content.startsWith('[IMG]') ? (
+                  <div className="my-1">
+                    <img
+                      src={msg.content.replace('[IMG]', '')}
+                      alt="Shared attachment"
+                      className="max-w-[200px] sm:max-w-[240px] max-h-[220px] rounded-xl object-cover cursor-pointer hover:opacity-90 shadow-md transition-opacity"
+                      onClick={() => setPreviewImage(msg.content.replace('[IMG]', ''))}
+                    />
+                  </div>
+                ) : msg.content.includes('https://maps.google.com/?q=') ? (
+                  <div className="my-1">
+                    <p className="text-sm">{msg.content.split('https://')[0]}</p>
+                    <a
+                      href={`https://${msg.content.split('https://')[1]}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 mt-1 px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-300 hover:text-white text-xs font-semibold underline transition-colors"
+                    >
+                      <span>📍 Open in Google Maps ↗</span>
+                    </a>
+                  </div>
+                ) : (
+                  <p className="text-sm whitespace-pre-wrap break-words leading-snug">{msg.content}</p>
+                )}
                 <p className={`text-[10px] mt-1 ${isOwn ? 'text-white/45' : 'text-white/35'}`}>
                   {formatRelativeTime(msg.createdAt)}
                 </p>
@@ -516,17 +599,56 @@ export default function Chat() {
       {/* Bottom Actions */}
       <div className="chat-composer">
         {/* Message input row */}
-        <div className="chat-input-row">
+        <div className="chat-input-row relative">
           {/* Attachment / paperclip button */}
-          <button
-            type="button"
-            className="chat-attach-btn"
-            aria-label="Attach file"
-          >
-            <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-            </svg>
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowAttachMenu(!showAttachMenu)}
+              className="chat-attach-btn cursor-pointer"
+              aria-label="Attach photo or location"
+              disabled={uploadingImage}
+            >
+              {uploadingImage ? (
+                <Spinner size="sm" />
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+                </svg>
+              )}
+            </button>
+
+            {/* Hidden native file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleImageSelected}
+              className="hidden"
+            />
+
+            {/* Attachment popover menu */}
+            {showAttachMenu && (
+              <div className="absolute bottom-full mb-3 left-0 bg-[#161a26]/95 backdrop-blur-xl border border-white/15 rounded-2xl p-1.5 shadow-2xl flex flex-col gap-1 min-w-[195px] z-30 animate-fade-in-up">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full text-left px-3 py-2 rounded-xl text-xs text-white/90 hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <span className="text-base">📷</span>
+                  <span>Photo / Cab Details</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleShareLiveLocation}
+                  className="w-full text-left px-3 py-2 rounded-xl text-xs text-white/90 hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer"
+                >
+                  <span className="text-base">📍</span>
+                  <span>Share Live Location</span>
+                </button>
+              </div>
+            )}
+          </div>
           <input
             type="text"
             value={messageInput}
@@ -932,6 +1054,52 @@ export default function Chat() {
               {isSubmittingReport ? 'Submitting...' : 'Submit Report'}
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Ride Finished & Redirection Modal */}
+      {rideFinishedModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+          <div className="p-6 rounded-3xl bg-[#121622]/95 border border-white/20 text-center max-w-sm w-full shadow-2xl animate-fade-in-up">
+            <span className="text-4xl block mb-2">🎉</span>
+            <h3 className="text-xl font-instrument text-white mb-2">Ride Completed!</h3>
+            <p className="text-xs text-white/70 mb-5 leading-relaxed">
+              You and {otherNames} have finished the ride. Returning to home...
+            </p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => navigate('/home', { replace: true })}
+                className="w-full py-3 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wider cursor-pointer transition-all shadow-md active:scale-95"
+              >
+                Go to Home Now →
+              </button>
+              {group?.fareSplit ? (
+                <button
+                  onClick={() => {
+                    setRideFinishedModal(false);
+                    setShowFareSplitModal(true);
+                  }}
+                  className="w-full py-2.5 rounded-full bg-white/10 hover:bg-white/15 text-white/80 text-xs font-medium transition-all cursor-pointer"
+                >
+                  View Fare Split
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Preview Fullscreen Modal */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
+          onClick={() => setPreviewImage(null)}
+        >
+          <img
+            src={previewImage}
+            alt="Preview"
+            className="max-w-full max-h-[90vh] rounded-2xl shadow-2xl object-contain"
+          />
         </div>
       )}
     </div>

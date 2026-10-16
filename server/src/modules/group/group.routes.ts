@@ -14,6 +14,16 @@ router.post(
 );
 
 router.get(
+  '/active',
+  (req, res, next) => groupController.getActive(req, res, next)
+);
+
+router.get(
+  '/history',
+  (req, res, next) => groupController.getHistory(req, res, next)
+);
+
+router.get(
   '/:groupId',
   validate({ params: groupIdParamSchema }),
   (req, res, next) => groupController.getGroup(req, res, next)

@@ -99,6 +99,24 @@ export class GroupController {
       next(err);
     }
   }
+
+  async getActive(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await groupService.getActiveGroup(req.user!.userId);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await groupService.getRideHistory(req.user!.userId);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const groupController = new GroupController();

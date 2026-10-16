@@ -13,6 +13,21 @@ export class ChatController {
       next(err);
     }
   }
+
+  async uploadImage(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.file) {
+        res.status(400).json({ error: 'Image file required' });
+        return;
+      }
+      const groupId = req.params.groupId as string;
+      const io = req.app.get('io');
+      const result = await chatService.uploadImage(groupId, req.user!.userId, req.file, io);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const chatController = new ChatController();

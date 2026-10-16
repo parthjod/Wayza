@@ -40,6 +40,16 @@ export default function Home() {
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [autocompleteResults, setAutocompleteResults] = useState<AutocompleteResult[]>([]);
   const [locationPermissionModal, setLocationPermissionModal] = useState(false);
+  const [activeRide, setActiveRide] = useState<any | null>(null);
+  const [incomingInvite, setIncomingInvite] = useState<{
+    groupId: string;
+    inviterId: string;
+    inviterName: string;
+    inviterPicUrl: string | null;
+  } | null>(null);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [rideHistory, setRideHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -55,9 +65,31 @@ export default function Home() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Socket events for discovery
+  // Check for active ride session on mount
+  useEffect(() => {
+    groupApi
+      .getActive()
+      .then((data) => {
+        if (data?.activeGroup) {
+          setActiveRide(data.activeGroup);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Socket events for discovery and incoming connection requests
   useEffect(() => {
     if (!socket) return;
+
+    socket.on('group:invite-received', (data: any) => {
+      setIncomingInvite({
+        groupId: data.groupId,
+        inviterId: data.inviterId,
+        inviterName: data.inviterName || 'A rider',
+        inviterPicUrl: data.inviterPicUrl || null,
+      });
+      showToast(`${data.inviterName || 'A rider'} wants to connect!`, 'info');
+    });
 
     socket.on('discovery:user-joined', (data: { userId: string; fullName: string; distanceMeters: number }) => {
       setNearbyUsers((prev) => {
@@ -71,10 +103,24 @@ export default function Home() {
     });
 
     return () => {
+      socket.off('group:invite-received');
       socket.off('discovery:user-joined');
       socket.off('discovery:user-left');
     };
   }, [socket]);
+
+  const openHistory = async () => {
+    setShowHistoryModal(true);
+    setLoadingHistory(true);
+    try {
+      const data = await groupApi.getHistory();
+      setRideHistory(data.rides || []);
+    } catch {
+      showToast('Failed to load ride history', 'error');
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   // Cleanup polling on unmount
   useEffect(() => {
@@ -264,7 +310,14 @@ export default function Home() {
               <span>Back</span>
             </button>
           )}
-          <span className="text-white text-[32px] sm:text-[36px] font-instrument tracking-[0.14em] drop-shadow-md leading-none select-none font-normal">
+          <span
+            onClick={() => {
+              if (viewState !== 'booking') handleStopBooking();
+              else navigate('/home');
+            }}
+            className="text-white text-[32px] sm:text-[36px] font-instrument tracking-[0.14em] drop-shadow-md leading-none select-none font-normal cursor-pointer hover:opacity-85 transition-opacity"
+            title="Wayza Home"
+          >
             WAYZA
           </span>
         </div>
@@ -308,6 +361,29 @@ export default function Home() {
                     <span>Profile</span>
                   </button>
 
+                  {/* Current Active Ride (if connected) */}
+                  {activeRide && (
+                    <button
+                      onClick={() => { navigate(`/chat/${activeRide.id}`); setShowDropdown(false); }}
+                      className="wayza-avatar-dropdown-item text-blue-400 hover:bg-blue-500/10"
+                    >
+                      <span className="text-base flex-shrink-0">🚗</span>
+                      <span className="font-medium text-blue-300">Current Ride</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 ml-auto animate-pulse flex-shrink-0" />
+                    </button>
+                  )}
+
+                  {/* Last Rides / Ride History */}
+                  <button
+                    onClick={() => { openHistory(); setShowDropdown(false); }}
+                    className="wayza-avatar-dropdown-item text-white/90"
+                  >
+                    <svg className="w-[18px] h-[18px] text-white/80 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Last Rides</span>
+                  </button>
+
                   {/* Stop booking */}
                   {viewState === 'discovering' && (
                     <button
@@ -341,6 +417,32 @@ export default function Home() {
       <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-10">
         {viewState === 'booking' && (
           <div className="home-booking-card w-full text-center animate-fade-in-up">
+            {/* Active Ride Banner */}
+            {activeRide && (
+              <div
+                onClick={() => navigate(`/chat/${activeRide.id}`)}
+                className="w-full mb-6 p-3.5 rounded-2xl bg-blue-500/15 border border-blue-400/35 backdrop-blur-md cursor-pointer hover:bg-blue-500/25 transition-all flex items-center justify-between text-left group shadow-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-blue-500/20 flex items-center justify-center text-lg flex-shrink-0">
+                    🚗
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-white">Current Ride in Progress</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+                    </div>
+                    <p className="text-xs text-white/70 truncate max-w-[200px] sm:max-w-xs">
+                      With {activeRide.members?.filter((m: any) => m.userId !== user?.id).map((m: any) => m.fullName).join(', ') || 'co-passenger'}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-blue-300 group-hover:text-white transition-colors bg-white/10 px-3 py-1.5 rounded-full flex-shrink-0">
+                  Resume Chat →
+                </span>
+              </div>
+            )}
+
             <h2 style={{ marginBottom: "50px" }} className="text-[clamp(30px,3.8vw,40px)] font-instrument italic text-white mb-7 leading-tight select-none">
               Where are you heading?
             </h2>
@@ -801,6 +903,108 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Incoming Connection Invitation Popup */}
+      {incomingInvite && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md bg-[#121622]/95 backdrop-blur-2xl border border-blue-400/40 rounded-2xl p-4 shadow-2xl animate-fade-in-up">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div className="flex items-center gap-3">
+              <Avatar name={incomingInvite.inviterName} imageUrl={incomingInvite.inviterPicUrl} size="md" />
+              <div>
+                <p className="text-sm font-bold text-white leading-tight">
+                  {incomingInvite.inviterName}
+                </p>
+                <p className="text-xs text-blue-300">
+                  wants to connect and ride together!
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setIncomingInvite(null)}
+              className="text-white/40 hover:text-white p-1 text-sm cursor-pointer"
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const grpId = incomingInvite.groupId;
+                setIncomingInvite(null);
+                navigate(`/chat/${grpId}`);
+              }}
+              className="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md active:scale-95 text-center flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <span>Connect & Chat Now</span>
+              <span>→</span>
+            </button>
+            <button
+              onClick={() => setIncomingInvite(null)}
+              className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white/70 text-xs font-medium transition-all cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Ride History Modal */}
+      <Modal open={showHistoryModal} onClose={() => setShowHistoryModal(false)}>
+        <div className="p-3 sm:p-5 max-w-lg mx-auto text-left">
+          <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">📜</span>
+              <h3 className="text-xl font-instrument text-white">Ride History</h3>
+            </div>
+            <span className="text-xs text-white/50">{rideHistory.length} rides</span>
+          </div>
+          {loadingHistory ? (
+            <div className="py-12 flex justify-center">
+              <Spinner size="md" />
+            </div>
+          ) : rideHistory.length === 0 ? (
+            <div className="py-10 text-center text-white/50 text-sm">
+              <p className="text-3xl mb-2">🚗</p>
+              <p className="font-medium text-white/70">No past rides yet</p>
+              <p className="text-xs text-white/35 mt-1">Your completed and past rides will show up here.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2.5 max-h-[380px] overflow-y-auto pr-1">
+              {rideHistory.map((ride: any) => {
+                const date = new Date(ride.createdAt).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                });
+                const coRiders = ride.members?.filter((m: any) => m.userId !== user?.id) || [];
+                return (
+                  <div key={ride.id} className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between gap-3">
+                    <div className="flex flex-col gap-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-white truncate">
+                          {ride.dropLocation || 'Campus Trip'}
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/70 font-mono">
+                          {ride.status === 'SPLIT_DONE' || ride.status === 'JOURNEY_ENDED' ? 'Completed' : ride.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-white/50">
+                        {date} • with {coRiders.map((m: any) => m.fullName).join(', ') || 'Co-riders'}
+                      </p>
+                    </div>
+                    {ride.totalFare ? (
+                      <span className="text-sm font-bold text-emerald-400 flex-shrink-0">
+                        ₹{ride.totalFare}
+                      </span>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </Modal>
 
       {/* Feedback Form */}
       <FeedbackForm open={showFeedback} onClose={() => setShowFeedback(false)} />

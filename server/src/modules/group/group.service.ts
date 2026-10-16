@@ -29,12 +29,34 @@ export class GroupService {
       data: {
         status: 'DISBANDED',
       },
-    });
+    }).catch(() => {});
 
-    // 1. Check if an active FORMING group currently exists between these two users
+    const notifyTarget = async (grpId: string) => {
+      if (!io) return;
+      try {
+        const initiator = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { id: true, fullName: true, profilePicKey: true },
+        });
+        const initiatorPicUrl = initiator?.profilePicKey
+          ? `https://${env.AWS_CLOUDFRONT_DOMAIN}/${initiator.profilePicKey}`
+          : null;
+
+        io.to(`user:${targetUserId}`).emit('group:invite-received', {
+          groupId: grpId,
+          inviterId: userId,
+          inviterName: initiator?.fullName || 'A rider',
+          inviterPicUrl: initiatorPicUrl,
+        });
+      } catch (e) {
+        console.warn('Failed to emit group:invite-received:', e);
+      }
+    };
+
+    // 1. Check if an active group currently exists between these two users
     const existingGroup = await prisma.group.findFirst({
       where: {
-        status: 'FORMING',
+        status: { in: ['FORMING', 'CONFIRMED', 'JOURNEY_STARTED'] },
         updatedAt: { gte: activeThreshold },
         AND: [
           { members: { some: { userId } } },
@@ -47,75 +69,104 @@ export class GroupService {
 
     if (existingGroup) {
       await this.recordUserJoined(existingGroup.id, userId, io);
+      await notifyTarget(existingGroup.id);
       return { groupId: existingGroup.id };
     }
 
-    // 2. Check if targetUserId is waiting in an active FORMING group that still has space
-    const targetGroup = await prisma.group.findFirst({
-      where: {
-        status: 'FORMING',
-        updatedAt: { gte: activeThreshold },
-        members: { some: { userId: targetUserId } },
-      },
-      include: { members: true },
-      orderBy: { updatedAt: 'desc' },
-    });
-
-    if (targetGroup && targetGroup.members.length < env.MAX_GROUP_SIZE) {
-      // Add current user to target's existing group
-      await prisma.groupMember.create({
-        data: { groupId: targetGroup.id, userId },
-      });
-      await prisma.groupMember.updateMany({
-        where: { groupId: targetGroup.id },
-        data: { confirmedGoWith: false },
-      });
-      await this.recordUserJoined(targetGroup.id, userId, io);
-      return { groupId: targetGroup.id };
-    }
-
-    // 3. Check if userId is waiting in an active FORMING group that still has space
-    const userGroup = await prisma.group.findFirst({
-      where: {
-        status: 'FORMING',
-        updatedAt: { gte: activeThreshold },
-        members: { some: { userId } },
-      },
-      include: { members: true },
-      orderBy: { updatedAt: 'desc' },
-    });
-
-    if (userGroup && userGroup.members.length < env.MAX_GROUP_SIZE) {
-      // Add target user to current user's existing group
-      await prisma.groupMember.create({
-        data: { groupId: userGroup.id, userId: targetUserId },
-      });
-      await prisma.groupMember.updateMany({
-        where: { groupId: userGroup.id },
-        data: { confirmedGoWith: false },
-      });
-      await this.recordUserJoined(userGroup.id, targetUserId, io);
-      return { groupId: userGroup.id };
-    }
-
-    // 4. Otherwise, create a brand-new group with fresh members and clean chat
-    const group = await prisma.group.create({
-      data: {
-        status: 'FORMING',
-        dropLocation: 'To be determined',
-        members: {
-          create: [
-            { userId },
-            { userId: targetUserId },
-          ],
+    try {
+      // 2. Check if targetUserId is waiting in an active FORMING group that still has space
+      const targetGroup = await prisma.group.findFirst({
+        where: {
+          status: 'FORMING',
+          updatedAt: { gte: activeThreshold },
+          members: { some: { userId: targetUserId } },
         },
-      },
-    });
+        include: { members: true },
+        orderBy: { updatedAt: 'desc' },
+      });
 
-    // Record initiator joining
-    await this.recordUserJoined(group.id, userId, io);
+      if (targetGroup && targetGroup.members.length < env.MAX_GROUP_SIZE) {
+        // Add current user to target's existing group
+        await prisma.groupMember.create({
+          data: { groupId: targetGroup.id, userId },
+        }).catch((err: any) => {
+          if (err.code !== 'P2002') throw err;
+        });
+        await prisma.groupMember.updateMany({
+          where: { groupId: targetGroup.id },
+          data: { confirmedGoWith: false },
+        });
+        await this.recordUserJoined(targetGroup.id, userId, io);
+        await notifyTarget(targetGroup.id);
+        return { groupId: targetGroup.id };
+      }
 
-    return { groupId: group.id };
+      // 3. Check if userId is waiting in an active FORMING group that still has space
+      const userGroup = await prisma.group.findFirst({
+        where: {
+          status: 'FORMING',
+          updatedAt: { gte: activeThreshold },
+          members: { some: { userId } },
+        },
+        include: { members: true },
+        orderBy: { updatedAt: 'desc' },
+      });
+
+      if (userGroup && userGroup.members.length < env.MAX_GROUP_SIZE) {
+        // Add target user to current user's existing group
+        await prisma.groupMember.create({
+          data: { groupId: userGroup.id, userId: targetUserId },
+        }).catch((err: any) => {
+          if (err.code !== 'P2002') throw err;
+        });
+        await prisma.groupMember.updateMany({
+          where: { groupId: userGroup.id },
+          data: { confirmedGoWith: false },
+        });
+        await this.recordUserJoined(userGroup.id, targetUserId, io);
+        await notifyTarget(userGroup.id);
+        return { groupId: userGroup.id };
+      }
+
+      // 4. Otherwise, create a brand-new group with fresh members and clean chat
+      const group = await prisma.group.create({
+        data: {
+          status: 'FORMING',
+          dropLocation: 'To be determined',
+          members: {
+            create: [
+              { userId },
+              { userId: targetUserId },
+            ],
+          },
+        },
+      });
+
+      // Record initiator joining
+      await this.recordUserJoined(group.id, userId, io);
+      await notifyTarget(group.id);
+
+      return { groupId: group.id };
+    } catch (err: any) {
+      if (err.code === 'P2002') {
+        // Handle race condition: simultaneous creation by both devices
+        const fallbackGroup = await prisma.group.findFirst({
+          where: {
+            status: { in: ['FORMING', 'CONFIRMED', 'JOURNEY_STARTED'] },
+            AND: [
+              { members: { some: { userId } } },
+              { members: { some: { userId: targetUserId } } },
+            ],
+          },
+          orderBy: { updatedAt: 'desc' },
+        });
+        if (fallbackGroup) {
+          await notifyTarget(fallbackGroup.id);
+          return { groupId: fallbackGroup.id };
+        }
+      }
+      throw err;
+    }
   }
 
   /**
@@ -486,6 +537,90 @@ export class GroupService {
     }
 
     return payload;
+  }
+
+  /**
+   * Get user's current active group if any (to resume ride)
+   */
+  async getActiveGroup(userId: string) {
+    const activeThreshold = new Date(Date.now() - 4 * 60 * 60 * 1000); // 4 hours
+    const activeGroup = await prisma.group.findFirst({
+      where: {
+        status: { in: ['FORMING', 'CONFIRMED', 'JOURNEY_STARTED'] },
+        updatedAt: { gte: activeThreshold },
+        members: { some: { userId } },
+      },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: { id: true, fullName: true, profilePicKey: true },
+            },
+          },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    if (!activeGroup) return { activeGroup: null };
+
+    return {
+      activeGroup: {
+        id: activeGroup.id,
+        status: activeGroup.status,
+        dropLocation: activeGroup.dropLocation,
+        members: activeGroup.members.map((m: any) => ({
+          userId: m.userId,
+          fullName: m.user.fullName,
+          profilePicUrl: m.user.profilePicKey
+            ? `https://${env.AWS_CLOUDFRONT_DOMAIN}/${m.user.profilePicKey}`
+            : null,
+          confirmedGoWith: m.confirmedGoWith,
+        })),
+      },
+    };
+  }
+
+  /**
+   * Get ride history (past completed/ended rides)
+   */
+  async getRideHistory(userId: string) {
+    const rides = await prisma.group.findMany({
+      where: {
+        members: { some: { userId } },
+        status: { in: ['JOURNEY_ENDED', 'SPLIT_DONE', 'DISBANDED'] },
+      },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: { id: true, fullName: true, profilePicKey: true },
+            },
+          },
+        },
+        fareSplit: true,
+        journey: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
+    return {
+      rides: rides.map((g: any) => ({
+        id: g.id,
+        status: g.status,
+        dropLocation: g.dropLocation,
+        createdAt: g.createdAt,
+        totalFare: g.fareSplit?.totalFare || null,
+        members: g.members.map((m: any) => ({
+          userId: m.userId,
+          fullName: m.user.fullName,
+          profilePicUrl: m.user.profilePicKey
+            ? `https://${env.AWS_CLOUDFRONT_DOMAIN}/${m.user.profilePicKey}`
+            : null,
+        })),
+      })),
+    };
   }
 }
 

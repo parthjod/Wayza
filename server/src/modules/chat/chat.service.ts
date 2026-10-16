@@ -1,5 +1,9 @@
 import prisma from '../../config/db';
+import { env } from '../../config/env';
+import { uploadToS3 } from '../../config/s3';
 import { createError } from '../../middleware/errorHandler';
+import sharp from 'sharp';
+import { v4 as uuidv4 } from 'uuid';
 
 export class ChatService {
   /**
@@ -81,6 +85,50 @@ export class ChatService {
       content: message.content,
       createdAt: message.createdAt.toISOString(),
     };
+  }
+
+  /**
+   * Upload an image attachment in chat and broadcast message
+   */
+  async uploadImage(groupId: string, userId: string, file: Express.Multer.File, io?: any) {
+    const member = await prisma.groupMember.findUnique({
+      where: { groupId_userId: { groupId, userId } },
+    });
+    if (!member) throw createError('Not a member of this group', 403);
+
+    const metadata = await sharp(file.buffer).metadata();
+    const allowedFormats = ['jpeg', 'png', 'webp'];
+    if (!metadata.format || !allowedFormats.includes(metadata.format)) {
+      throw createError('Invalid image format. Use JPEG, PNG, or WebP.', 400);
+    }
+
+    const processedImage = await sharp(file.buffer)
+      .rotate()
+      .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+      .toFormat(metadata.format as any)
+      .toBuffer();
+
+    const ext = metadata.format === 'jpeg' ? 'jpg' : metadata.format;
+    const key = `chat/${groupId}/${uuidv4()}.${ext}`;
+    const contentType = `image/${metadata.format}`;
+
+    const url = await uploadToS3(key, processedImage, contentType);
+
+    const message = await this.saveMessage(groupId, userId, `[IMG]${url}`);
+
+    if (io) {
+      io.to(`group:${groupId}`).emit('chat:message', {
+        id: message.id,
+        messageId: message.id,
+        groupId,
+        senderId: message.senderId,
+        senderName: message.senderName,
+        content: message.content,
+        createdAt: message.createdAt,
+      });
+    }
+
+    return { message, imageUrl: url };
   }
 }
 

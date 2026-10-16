@@ -22,4 +22,10 @@ export const groupApi = {
 
   leave: (groupId: string) =>
     api.post(`/group/${groupId}/leave`).then((r) => r.data),
+
+  getActive: () =>
+    api.get<{ activeGroup: any | null }>('/group/active').then((r) => r.data),
+
+  getHistory: () =>
+    api.get<{ rides: any[] }>('/group/history').then((r) => r.data),
 };
