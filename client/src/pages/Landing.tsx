@@ -553,7 +553,7 @@ export default function Landing() {
           {/* Email Input Box (Pill Shape) */}
           <div className="w-full" style={{ marginBottom: '14px' }}>
             <div
-              className={`wayza-phone-pill relative flex items-center w-full px-6 shadow-inner ${
+              className={`wayza-phone-pill relative flex items-center justify-center w-full px-8 shadow-inner ${
                 emailError
                   ? 'border-red-400/80 bg-red-500/[0.08] ring-2 ring-red-400/20'
                   : ''
@@ -573,20 +573,19 @@ export default function Landing() {
                 value={email}
                 onChange={handleEmailChange}
                 onKeyDown={(e) => e.key === 'Enter' && handleCheckEmail()}
-                className="w-full bg-transparent border-none text-white text-[16px] sm:text-[17px] tracking-wide placeholder:text-white/40 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 font-normal disabled:opacity-50"
+                className="w-full bg-transparent border-none text-white text-[16px] sm:text-[17px] tracking-wide placeholder:text-white/40 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 font-normal disabled:opacity-50 text-center placeholder:text-center"
                 disabled={flowState === 'checking'}
               />
 
               {email && flowState !== 'checking' && (
                 <button
-                  style={{ marginRight: '6px' }}
                   type="button"
                   onClick={() => {
                     setEmail('');
                     setEmailError('');
                     emailInputRef.current?.focus();
                   }}
-                  className="w-6 h-6 rounded-full bg-white/15 hover:bg-white/25 text-white/70 hover:text-white flex items-center justify-center transition-colors text-xs flex-shrink-0 cursor-pointer ml-2"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-white/15 hover:bg-white/25 text-white/70 hover:text-white flex items-center justify-center transition-colors text-xs flex-shrink-0 cursor-pointer"
                   aria-label="Clear input"
                 >
                   ✕
