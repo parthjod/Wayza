@@ -24,8 +24,8 @@ const io = new Server(server, {
   pingTimeout: 20000,
 });
 
-// Redis adapter for multi-instance support (production)
-if (env.NODE_ENV === 'production') {
+// Redis adapter for multi-instance support (optional - AWS ElastiCache cluster/serverless blocks PSUBSCRIBE)
+if (process.env.USE_REDIS_ADAPTER === 'true') {
   try {
     const pubClient = createRedisPubClient();
     const subClient = createRedisSubClient();
@@ -34,6 +34,8 @@ if (env.NODE_ENV === 'production') {
   } catch (err: any) {
     console.warn('Socket.io Redis adapter fallback to in-memory:', err.message);
   }
+} else {
+  console.log('Socket.io running with default in-memory adapter');
 }
 
 // Setup socket handlers

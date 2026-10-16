@@ -87,7 +87,18 @@ export async function revokeRefreshToken(
  * Revoke all refresh tokens for a user
  */
 export async function revokeAllUserTokens(userId: string): Promise<void> {
-  const keys = await redis.keys(`rt:${userId}:*`);
+  const keys: string[] = [];
+  try {
+    let cursor = '0';
+    do {
+      const [nextCursor, matchedKeys] = await redis.scan(cursor, 'MATCH', `rt:${userId}:*`, 'COUNT', 100);
+      cursor = nextCursor;
+      keys.push(...matchedKeys);
+    } while (cursor !== '0');
+  } catch (err) {
+    console.warn('Failed to scan refresh token keys for user:', userId, err);
+  }
+
   if (keys.length > 0) {
     // Mark each as revoked
     const pipeline = redis.pipeline();

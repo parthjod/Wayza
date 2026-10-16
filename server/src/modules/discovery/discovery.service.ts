@@ -17,6 +17,8 @@ interface ActiveUserData {
   publishedAt: string;
 }
 
+const ACTIVE_INDEX_KEY = 'active:users:index';
+
 export class DiscoveryService {
   /**
    * Publish user's location for discovery
@@ -75,7 +77,44 @@ export class DiscoveryService {
       JSON.stringify(activeData)
     );
 
+    // Keep active user index up to date (sorted set scored by expiry timestamp)
+    await redis.zadd(ACTIVE_INDEX_KEY, Date.now() + env.LOCATION_TTL_SECONDS * 1000, userId).catch(() => {});
+
     return { ok: true };
+  }
+
+  /**
+   * Helper to fetch candidate active user IDs safely without using blocking KEYS command
+   */
+  private async getActiveCandidateUserIds(): Promise<string[]> {
+    try {
+      // Prune expired entries from index
+      await redis.zremrangebyscore(ACTIVE_INDEX_KEY, '-inf', Date.now());
+      const ids = await redis.zrange(ACTIVE_INDEX_KEY, 0, -1);
+      if (ids && ids.length > 0) {
+        return ids;
+      }
+    } catch {
+      // fallback to SCAN
+    }
+
+    // Non-blocking SCAN fallback (allowed on AWS ElastiCache, unlike KEYS)
+    try {
+      let cursor = '0';
+      const userIds: string[] = [];
+      do {
+        const [nextCursor, matchedKeys] = await redis.scan(cursor, 'MATCH', 'active:*', 'COUNT', 100);
+        cursor = nextCursor;
+        for (const key of matchedKeys) {
+          if (key !== ACTIVE_INDEX_KEY) {
+            userIds.push(key.replace('active:', ''));
+          }
+        }
+      } while (cursor !== '0');
+      return userIds;
+    } catch {
+      return [];
+    }
   }
 
   /**
@@ -90,8 +129,8 @@ export class DiscoveryService {
 
     const self: ActiveUserData = JSON.parse(selfRaw);
 
-    // Scan all active users
-    const keys = await redis.keys('active:*');
+    // Get active user IDs without blocking redis.keys
+    const candidateUserIds = await this.getActiveCandidateUserIds();
     const nearbyUsers: Array<{
       userId: string;
       fullName: string;
@@ -128,14 +167,17 @@ export class DiscoveryService {
       gm.group.members.forEach((m: any) => groupedUserIds.add(m.userId));
     });
 
-    for (const key of keys) {
-      const otherUserId = key.replace('active:', '');
+    for (const otherUserId of candidateUserIds) {
       if (otherUserId === userId) continue;
       if (blacklistedIds.has(otherUserId)) continue;
       if (groupedUserIds.has(otherUserId)) continue;
 
-      const raw = await redis.get(key);
-      if (!raw) continue;
+      const raw = await redis.get(`active:${otherUserId}`);
+      if (!raw) {
+        // Stale or expired index entry, prune
+        redis.zrem(ACTIVE_INDEX_KEY, otherUserId).catch(() => {});
+        continue;
+      }
 
       const other: ActiveUserData = JSON.parse(raw);
       const distance = haversineDistance(self.lat, self.lng, other.lat, other.lng);
@@ -164,6 +206,7 @@ export class DiscoveryService {
    */
   async unpublish(userId: string) {
     await redis.del(`active:${userId}`);
+    await redis.zrem(ACTIVE_INDEX_KEY, userId).catch(() => {});
     return { ok: true };
   }
 
@@ -179,6 +222,7 @@ export class DiscoveryService {
     data.lng = lng;
 
     await redis.setex(`active:${userId}`, env.LOCATION_TTL_SECONDS, JSON.stringify(data));
+    await redis.zadd(ACTIVE_INDEX_KEY, Date.now() + env.LOCATION_TTL_SECONDS * 1000, userId).catch(() => {});
   }
 }
 
