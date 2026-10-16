@@ -560,12 +560,9 @@ export default function Landing() {
               }`}
             >
               {/* Email Envelope Icon */}
-              <div
-                className="flex items-center gap-2 select-none flex-shrink-0"
-                style={{ marginLeft: '6px' }}
-              >
+              <div className="flex items-center justify-center text-[#5bbef7] select-none flex-shrink-0 mr-3.5 pl-1">
                 <svg
-                  className="w-5 h-5 text-[#5bbef7] flex-shrink-0"
+                  className="w-5 h-5 flex-shrink-0"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -578,11 +575,6 @@ export default function Landing() {
                   />
                 </svg>
               </div>
-
-              <div
-                style={{ marginLeft: '12px', marginRight: '12px' }}
-                className="h-6 w-[1px] bg-white/20 flex-shrink-0"
-              />
 
               {/* Input field */}
               <input
