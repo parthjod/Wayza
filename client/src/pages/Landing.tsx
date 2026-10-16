@@ -18,7 +18,7 @@ type FlowState =
 
 export default function Landing() {
   const navigate = useNavigate();
-  const { user, setUser } = useAuthStore();
+  const { setUser } = useAuthStore();
   const { showToast } = useToast();
 
   const [flowState, setFlowState] = useState<FlowState>('idle');
@@ -39,8 +39,12 @@ export default function Landing() {
 
   const emailInputRef = useRef<HTMLInputElement>(null);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated on initial page load
   useEffect(() => {
+    if (useAuthStore.getState().user) {
+      navigate('/home', { replace: true });
+      return;
+    }
     userApi
       .getMe()
       .then((data) => {
@@ -52,11 +56,9 @@ export default function Landing() {
         navigate('/home', { replace: true });
       })
       .catch(() => {
-        if (user) {
-          useAuthStore.getState().clearUser();
-        }
+        // Not authenticated, stay on landing page
       });
-  }, [navigate, setUser, user]);
+  }, []);
 
   // Rotate loading lines while checking
   useEffect(() => {
