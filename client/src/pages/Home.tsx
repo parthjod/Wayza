@@ -300,40 +300,27 @@ export default function Home() {
       {viewState === 'discovering' && (
         <div className="home-discovering-overlay" />
       )}      {/* Navbar */}
-      <header className="fixed top-0 left-0 right-0 z-40 w-full flex items-center justify-between px-8 sm:px-12 md:px-14 py-7 sm:py-8 pointer-events-none">
-        {/* Brand Logo & Back Button when searching */}
-        <div style={{ marginLeft: "10px" }} className="pointer-events-auto select-none flex items-center gap-3">
-          {(viewState === 'discovering' || viewState === 'user-detail') && (
-            <button
-              onClick={handleStopBooking}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white/90 hover:text-white text-sm backdrop-blur-md transition-all border border-white/15 cursor-pointer shadow-sm active:scale-95"
-              title="Cancel booking and return to home"
-              aria-label="Back to home"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-              </svg>
-              <span>Back</span>
-            </button>
-          )}
+      <header className="fixed top-0 left-0 right-0 z-40 w-full flex items-center justify-between px-5 sm:px-10 md:px-14 py-4 sm:py-6 pointer-events-none">
+        {/* Brand Logo - strictly anchored at top-left for mobile & desktop */}
+        <div className="pointer-events-auto select-none flex items-center">
           <span
             onClick={() => {
               if (viewState !== 'booking') handleStopBooking();
               else navigate('/home');
             }}
-            className="text-white text-[32px] sm:text-[36px] font-instrument tracking-[0.14em] drop-shadow-md leading-none select-none font-normal cursor-pointer hover:opacity-85 transition-opacity"
+            className="text-white text-[28px] sm:text-[34px] md:text-[36px] font-instrument tracking-[0.14em] drop-shadow-md leading-none select-none font-normal cursor-pointer hover:opacity-85 transition-opacity"
             title="Wayza Home"
           >
             WAYZA
           </span>
         </div>
 
-        <div className="flex items-center gap-3 pointer-events-auto" style={{ marginRight: '10px', marginTop: "10px" }}>
-          {/* Tell us something — feedback button */}
+        <div className="flex items-center gap-2.5 sm:gap-3 pointer-events-auto">
+          {/* Tell us something — feedback button (hidden on mobile, present in avatar dropdown) */}
           <button
             id="feedback-nav-btn"
             onClick={() => setShowFeedback(true)}
-            className="feedback-nav-btn"
+            className="feedback-nav-btn hidden md:inline-flex"
             aria-label="Share feedback"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -356,6 +343,16 @@ export default function Home() {
 
               {showDropdown && (
                 <div className="absolute right-0 top-full mt-2.5 wayza-avatar-dropdown animate-fade-in-up">
+                  {/* Tell us something (mobile view) */}
+                  <button
+                    onClick={() => { setShowFeedback(true); setShowDropdown(false); }}
+                    className="wayza-avatar-dropdown-item text-white/90 md:hidden"
+                  >
+                    <svg className="w-[18px] h-[18px] text-white/80 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                    <span>Tell us something</span>
+                  </button>
                   {/* Profile */}
                   <button
                     onClick={() => { navigate('/profile'); setShowDropdown(false); }}
@@ -1084,8 +1081,8 @@ export default function Home() {
       </Modal>
 
       {/* Ride History Modal */}
-      <Modal open={showHistoryModal} onClose={() => setShowHistoryModal(false)}>
-        <div className="p-1 sm:p-2 max-w-lg mx-auto text-left">
+      <Modal open={showHistoryModal} onClose={() => setShowHistoryModal(false)} className="!p-4 sm:!p-6 max-w-lg w-full">
+        <div className="w-full text-left">
           <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
             <div className="flex items-center gap-2.5">
               <span className="text-xl">📜</span>
@@ -1114,7 +1111,7 @@ export default function Home() {
               <p className="text-xs text-white/35 mt-1">Your completed campus rides will show up here.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-3 max-h-[360px] overflow-y-auto pr-1">
+            <div className="flex flex-col gap-2.5 max-h-[380px] overflow-y-auto pr-1">
               {rideHistory.map((ride: any) => {
                 const date = new Date(ride.createdAt).toLocaleDateString(undefined, {
                   month: 'short',
@@ -1130,36 +1127,37 @@ export default function Home() {
                 return (
                   <div
                     key={ride.id}
-                    className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-white/20 flex items-center justify-between gap-3 transition-colors"
+                    className="p-3.5 sm:p-4 rounded-xl bg-white/[0.04] border border-white/10 hover:border-white/20 transition-all flex flex-col gap-2"
                   >
-                    <div className="flex flex-col gap-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-white truncate flex items-center gap-1.5">
-                          <span>📍</span>
-                          <span>{dest}</span>
-                        </span>
-                        <span
-                          className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                            isCompleted
-                              ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
-                              : 'bg-white/10 text-white/70'
-                          }`}
-                        >
-                          {isCompleted ? 'Completed' : ride.status}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                        <span className="text-xs shrink-0">📍</span>
+                        <span className="text-sm font-semibold text-white truncate max-w-[190px] sm:max-w-[260px]" title={dest}>
+                          {dest}
                         </span>
                       </div>
-                      <p className="text-xs text-white/50">
+                      <span
+                        className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                          isCompleted
+                            ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
+                            : 'bg-white/10 text-white/70'
+                        }`}
+                      >
+                        {isCompleted ? 'Completed' : ride.status}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-white/5">
+                      <p className="text-xs text-white/50 truncate flex-1 min-w-0" title={`with ${coRiders.map((m: any) => m.fullName).join(', ') || 'Rider'}`}>
                         {date} • with {coRiders.map((m: any) => m.fullName).join(', ') || 'Rider'}
                       </p>
+                      {ride.totalFare ? (
+                        <div className="flex items-baseline gap-1 shrink-0">
+                          <span className="text-sm font-bold text-emerald-400">₹{ride.totalFare}</span>
+                          <span className="text-[10px] text-white/40">split</span>
+                        </div>
+                      ) : null}
                     </div>
-                    {ride.totalFare ? (
-                      <div className="text-right flex-shrink-0">
-                        <span className="text-sm font-bold text-emerald-400 block">
-                          ₹{ride.totalFare}
-                        </span>
-                        <span className="text-[10px] text-white/40">split</span>
-                      </div>
-                    ) : null}
                   </div>
                 );
               })}

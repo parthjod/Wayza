@@ -926,30 +926,18 @@ export default function Chat() {
             <p className="fare-modal-each-pays">
               Each pays: <span className="fare-modal-amount">₹{computedSplit}</span>
             </p>
-            <div className="flex flex-col gap-2 mt-4">
-              <button
-                onClick={handleSubmitFare}
-                disabled={!totalFare || splitMembers.length < 2}
-                className="fare-modal-submit-btn cursor-pointer"
-              >
-                Submit Split
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowFareSplitModal(false);
-                  setRideFinishedModal(true);
-                }}
-                className="w-full py-2.5 rounded-full text-white/60 hover:text-white text-xs transition-colors cursor-pointer"
-              >
-                Back
-              </button>
-            </div>
+            <button
+              onClick={handleSubmitFare}
+              disabled={!totalFare || splitMembers.length < 2}
+              className="fare-modal-submit-btn cursor-pointer"
+            >
+              Submit Split
+            </button>
           </>
         ) : (
           <>
             <h3 className="fare-modal-heading">Fare Split</h3>
-            <div className="fare-modal-splits mb-4">
+            <div className="fare-modal-splits">
               {(fareSplitResult?.splits || group.fareSplit?.participants || []).map((s: any) => (
                 <div key={s.userId} className="fare-modal-split-row">
                   <span className="fare-modal-split-name">{s.fullName}</span>
@@ -957,14 +945,25 @@ export default function Chat() {
                 </div>
               ))}
             </div>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={handleAcknowledgeFare}
-                className="fare-modal-submit-btn cursor-pointer"
-              >
-                Return to Home →
-              </button>
-            </div>
+            <button
+              onClick={handleAcknowledgeFare}
+              className="fare-modal-submit-btn cursor-pointer"
+            >
+              Acknowledge ✓
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowFareSplitModal(false);
+                if (otherMembers.length > 0 && !reportUserId) {
+                  setReportUserId(otherMembers[0].userId);
+                }
+                setShowReportModal(true);
+              }}
+              className="fare-modal-report-btn cursor-pointer"
+            >
+              <span>⚠️</span> Report
+            </button>
           </>
         )}
       </Modal>
@@ -1057,33 +1056,55 @@ export default function Chat() {
 
       {/* Ride Completed Modal */}
       {rideFinishedModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
-          <div className="relative glass-card p-7 sm:p-8 max-w-sm w-full text-center animate-fade-in-up border border-white/15 shadow-2xl">
-            <div className="w-14 h-14 mx-auto mb-3.5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-2xl shadow-inner">
-              🚗
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl">
+          <div
+            className="relative max-w-sm w-full rounded-3xl p-7 sm:p-8 text-center animate-fade-in-up overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-white/12"
+            style={{ background: 'linear-gradient(180deg, #181d28 0%, #0c0f17 100%)' }}
+          >
+            {/* Top ambient luxury glow */}
+            <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
+
+            {/* Premium Icon Badge */}
+            <div className="relative w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-b from-blue-500/20 to-indigo-600/10 border border-blue-500/30 flex items-center justify-center shadow-[0_0_25px_rgba(59,130,246,0.2)]">
+              <svg className="w-8 h-8 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C2.1 10.7 2 10.9 2 11v5c0 .6.4 1 1 1h2" />
+                <circle cx="7" cy="17" r="2" />
+                <path d="M9 17h6" />
+                <circle cx="17" cy="17" r="2" />
+              </svg>
             </div>
-            <h3 className="text-2xl font-instrument text-white mb-1.5 tracking-wide">
+
+            {/* Status Pill */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[11px] font-semibold tracking-wide uppercase mb-2.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Journey Completed
+            </div>
+
+            {/* Heading */}
+            <h3 className="text-2xl font-bold text-white tracking-tight mb-2">
               Ride Completed!
             </h3>
-            <p className="text-xs text-white/65 mb-6 leading-relaxed">
-              Your ride session with <span className="text-white font-medium">{otherNames || 'co-riders'}</span> has ended.
+            <p className="text-xs text-white/60 mb-6 leading-relaxed max-w-[280px] mx-auto">
+              Your ride session with <span className="text-white font-semibold">{otherNames || 'co-riders'}</span> has ended.
             </p>
 
+            {/* Actions */}
             <div className="flex flex-col gap-2.5">
               <button
                 onClick={() => {
                   setRideFinishedModal(false);
                   setShowFareSplitModal(true);
                 }}
-                className="w-full py-3 px-5 rounded-full bg-white text-slate-900 font-semibold text-xs tracking-wide shadow-md hover:bg-slate-100 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-400 active:scale-[0.98] text-white font-semibold text-sm tracking-wide shadow-lg shadow-blue-600/30 transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                <span>₹ Split Fare</span>
-                <span className="text-sm leading-none">→</span>
+                <span className="text-base font-normal">₹</span>
+                <span>Split Fare</span>
+                <span className="text-sm font-bold ml-1">→</span>
               </button>
 
               <button
                 onClick={() => navigate('/home', { replace: true })}
-                className="w-full py-2.5 px-5 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 text-white/75 hover:text-white border border-white/10 text-xs font-medium transition-all cursor-pointer"
+                className="w-full py-3 px-5 rounded-2xl bg-white/[0.05] hover:bg-white/[0.1] active:scale-[0.98] text-white/75 hover:text-white border border-white/10 text-xs font-medium tracking-wide transition-all cursor-pointer"
               >
                 Return to Home
               </button>
