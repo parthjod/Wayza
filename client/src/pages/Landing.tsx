@@ -349,20 +349,9 @@ export default function Landing() {
             <h2 className="signup-name-heading">
               Welcome to <span style={{ color: '#5bbef7' }}>Wayza.</span>
             </h2>
-            <p className="text-white/60 text-sm mb-4 -mt-2">
+            <p className="text-white/60 text-sm mb-6 -mt-2">
               Email verified: <span className="text-[#5bbef7] font-medium">{email}</span> ✓
             </p>
-
-            {/* Prominent Notice: No more phone OTPs */}
-            <div className="bg-[#5bbef7]/10 border border-[#5bbef7]/30 rounded-2xl p-4 mb-5 text-left flex items-start gap-3">
-              <span className="text-xl leading-none mt-0.5">🔒</span>
-              <div className="text-xs text-white/85 leading-relaxed">
-                <strong className="text-[#5bbef7] block font-semibold mb-0.5 text-xs">
-                  No more OTPs on phone number
-                </strong>
-                Authentication only happens through your college email. Your mobile number is used exclusively for co-passengers to coordinate on ride day.
-              </div>
-            </div>
 
             {/* Full Name Input */}
             <div className="signup-name-input-wrap mb-4">
@@ -388,7 +377,7 @@ export default function Landing() {
               )}
             </div>
 
-            {/* Mobile Number Input (for contact / ride coordination) */}
+            {/* Mobile Number Input */}
             <div className="signup-name-input-wrap mb-2">
               <div className="flex items-center w-full relative">
                 <input
@@ -396,7 +385,7 @@ export default function Landing() {
                   value={phone}
                   onChange={handlePhoneChange}
                   onKeyDown={(e) => e.key === 'Enter' && handleSignupSubmit()}
-                  placeholder="Mobile number (for carpool calls)"
+                  placeholder="Mobile number"
                   className="signup-name-input"
                   maxLength={15}
                   disabled={signupLoading}
@@ -435,7 +424,12 @@ export default function Landing() {
               )}
             </button>
 
-            <button onClick={() => setFlowState('signup-otp')} className="signup-name-back">
+            {/* Brief note at bottom */}
+            <p className="text-white/45 text-[12px] text-center mt-4 tracking-wide">
+              No more OTPs — authentication is done through college email.
+            </p>
+
+            <button onClick={() => setFlowState('signup-otp')} className="signup-name-back mt-2">
               ← Back
             </button>
           </div>
