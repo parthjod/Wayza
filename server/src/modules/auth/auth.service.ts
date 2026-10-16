@@ -1,7 +1,7 @@
 import prisma from '../../config/db';
 import { redis } from '../../config/redis';
 import { env } from '../../config/env';
-import { sendOTPByEmail, sendVerificationEmail } from '../../config/ses';
+import { sendOTPByEmail, sendWelcomeEmail } from '../../config/ses';
 import {
   generateOTP,
   hashOTP,
@@ -77,7 +77,7 @@ export class AuthService {
     if (user) {
       // Send login OTP to student email via Resend / SES
       console.log(`[AUTH] Dispatching login OTP to ${cleanEmail}...`);
-      sendOTPByEmail(cleanEmail, otp, user.fullName).catch((err) => {
+      sendOTPByEmail(cleanEmail, otp, { userName: user.fullName, isNewUser: false }).catch((err) => {
         console.error('[AUTH] Background sendOTPByEmail error:', err);
       });
 
@@ -86,7 +86,7 @@ export class AuthService {
 
     // New user — send OTP immediately to verify their college email FIRST!
     console.log(`[AUTH] Dispatching new user verification OTP to ${cleanEmail}...`);
-    sendOTPByEmail(cleanEmail, otp).catch((err) => {
+    sendOTPByEmail(cleanEmail, otp, { isNewUser: true }).catch((err) => {
       console.error('[AUTH] Background signup sendOTPByEmail error:', err);
     });
 
@@ -198,7 +198,7 @@ export class AuthService {
 
     // Send OTP via Email directly to their college email!
     console.log(`[AUTH] Dispatching Signup OTP Email to ${cleanEmail}...`);
-    sendOTPByEmail(cleanEmail, otp, fullName).catch((err) => {
+    sendOTPByEmail(cleanEmail, otp, { isNewUser: true }).catch((err) => {
       console.error('[AUTH] Background signup sendOTPByEmail error:', err);
     });
 
@@ -232,7 +232,11 @@ export class AuthService {
     await storeOTP(cleanEmail, otpHash);
 
     console.log(`[AUTH] Resending OTP Email to ${cleanEmail}...`);
-    sendOTPByEmail(cleanEmail, otp, userName).catch((err) => {
+    const isExistingUser = !!user;
+    sendOTPByEmail(cleanEmail, otp, {
+      userName: isExistingUser ? user.fullName : undefined,
+      isNewUser: !isExistingUser,
+    }).catch((err) => {
       console.error('[AUTH] Background resendOTP error:', err);
     });
 
@@ -536,6 +540,12 @@ export class AuthService {
         phone: cleanPhone,
         emailVerified: true,
       },
+    });
+
+    // Send curated Welcome Onboard Email to the new registered student
+    console.log(`[AUTH] Dispatching Welcome Onboard email to ${cleanEmail}...`);
+    sendWelcomeEmail(cleanEmail, fullName).catch((err) => {
+      console.error('[AUTH] Background sendWelcomeEmail error:', err);
     });
 
     // 6. Generate tokens
