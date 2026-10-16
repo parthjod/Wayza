@@ -15,11 +15,11 @@ export const globalRateLimit = rateLimit({
 });
 
 /**
- * Auth rate limit: 10 requests / 15 min / IP (stricter for auth endpoints in prod, bypassed in dev)
+ * Auth rate limit: 60 requests / 15 min / IP (stricter for auth endpoints in prod, bypassed in dev)
  */
 export const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: env.NODE_ENV === 'development' ? 1000 : 10,
+  max: env.NODE_ENV === 'development' ? 1000 : 60,
   skip: () => env.NODE_ENV === 'development',
   standardHeaders: true,
   legacyHeaders: false,

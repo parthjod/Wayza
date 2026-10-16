@@ -108,7 +108,7 @@ export async function deleteOTP(identifier: string): Promise<void> {
 }
 
 /**
- * Check OTP send rate limit (max 5 per 10 min per identifier in production, bypassed in dev)
+ * Check OTP send rate limit (max 20 per 10 min per identifier in production, bypassed in dev)
  */
 export async function checkOTPRateLimit(identifier: string): Promise<{
   allowed: boolean;
@@ -125,7 +125,7 @@ export async function checkOTPRateLimit(identifier: string): Promise<{
 
   try {
     const current = await redis.get(key);
-    if (current && parseInt(current, 10) >= 5) {
+    if (current && parseInt(current, 10) >= env.OTP_MAX_REQUESTS) {
       const ttl = await redis.ttl(key);
       return { allowed: false, retryAfterSeconds: ttl > 0 ? ttl : windowSeconds };
     }
