@@ -25,7 +25,9 @@ export class UserService {
     return {
       ...user,
       profilePicUrl: user.profilePicKey
-        ? `https://${env.AWS_CLOUDFRONT_DOMAIN}/${user.profilePicKey}`
+        ? user.profilePicKey.startsWith('http') || user.profilePicKey.startsWith('data:')
+          ? user.profilePicKey
+          : `https://${env.AWS_CLOUDFRONT_DOMAIN}/${user.profilePicKey}`
         : null,
     };
   }
@@ -58,12 +60,12 @@ export class UserService {
     const key = `avatars/${userId}/${uuidv4()}.${ext}`;
     const contentType = `image/${metadata.format}`;
 
-    // Delete old avatar if exists
+    // Delete old avatar if exists and not a data URI
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { profilePicKey: true },
     });
-    if (user?.profilePicKey) {
+    if (user?.profilePicKey && !user.profilePicKey.startsWith('data:')) {
       try {
         await deleteFromS3(user.profilePicKey);
       } catch {
@@ -71,16 +73,25 @@ export class UserService {
       }
     }
 
-    // Upload new avatar
-    const url = await uploadToS3(key, processedImage, contentType);
+    // Upload new avatar to S3 with resilient fallback
+    let finalUrl: string;
+    let dbKey: string;
+    try {
+      finalUrl = await uploadToS3(key, processedImage, contentType);
+      dbKey = key;
+    } catch (s3Err: any) {
+      console.warn('[Avatar] S3 upload failed, falling back to data URI:', s3Err?.message || s3Err);
+      finalUrl = `data:${contentType};base64,${processedImage.toString('base64')}`;
+      dbKey = finalUrl;
+    }
 
     // Update DB
     await prisma.user.update({
       where: { id: userId },
-      data: { profilePicKey: key },
+      data: { profilePicKey: dbKey },
     });
 
-    return { profilePicUrl: url };
+    return { profilePicUrl: finalUrl };
   }
 
   async deleteAccount(userId: string) {

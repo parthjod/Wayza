@@ -140,10 +140,19 @@ export class GroupService {
       }
 
       // 4. Otherwise, create a brand-new group with fresh members and clean chat
+      let resolvedDropLocation = 'MIT-WPU Campus';
+      try {
+        const rawInit = await redis.get(`active:${userId}`);
+        const rawTarget = await redis.get(`active:${targetUserId}`);
+        const parsedInit = rawInit ? JSON.parse(rawInit) : null;
+        const parsedTarget = rawTarget ? JSON.parse(rawTarget) : null;
+        resolvedDropLocation = parsedInit?.dropLocationLabel || parsedTarget?.dropLocationLabel || 'MIT-WPU Campus';
+      } catch {}
+
       const group = await prisma.group.create({
         data: {
           status: 'FORMING',
-          dropLocation: 'To be determined',
+          dropLocation: resolvedDropLocation,
           members: {
             create: [
               { userId },

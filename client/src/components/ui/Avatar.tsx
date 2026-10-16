@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { getInitials, getColorFromName } from '../../utils/initials';
 
 interface AvatarProps {
@@ -15,14 +16,20 @@ const sizeClasses = {
 };
 
 export function Avatar({ name, imageUrl, size = 'md', className = '' }: AvatarProps) {
+  const [imgError, setImgError] = useState(false);
   const initials = getInitials(name);
   const color = getColorFromName(name);
 
-  if (imageUrl) {
+  useEffect(() => {
+    setImgError(false);
+  }, [imageUrl]);
+
+  if (imageUrl && !imgError) {
     return (
       <img
         src={imageUrl}
         alt={`${name}'s avatar`}
+        onError={() => setImgError(true)}
         className={`rounded-full object-cover ${sizeClasses[size]} ${className}`}
       />
     );

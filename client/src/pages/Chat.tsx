@@ -45,8 +45,6 @@ export default function Chat() {
   // Fare split state
   const [totalFare, setTotalFare] = useState('');
   const [splitMembers, setSplitMembers] = useState<string[]>([]);
-  const [splitMode, setSplitMode] = useState<'smart' | 'equal'>('smart');
-  const [memberDistances, setMemberDistances] = useState<Record<string, number>>({});
   const [fareSplitResult, setFareSplitResult] = useState<any>(null);
 
   // Report state
@@ -113,20 +111,14 @@ export default function Chat() {
       if (isLeavingRef.current) return;
       loadGroup();
       setRideFinishedModal(true);
-      setTimeout(() => {
-        navigate('/home', { replace: true });
-      }, 3500);
     });
     socket.on('fare:split-submitted', (data: any) => {
       if (isLeavingRef.current) return;
       setFareSplitResult(data);
-      setShowFareSplitModal(false);
-      setRideFinishedModal(true);
+      setShowFareSplitModal(true);
+      setRideFinishedModal(false);
       loadGroup();
-      showToast('Ride ended & Fare split submitted! 🎉', 'success');
-      setTimeout(() => {
-        navigate('/home', { replace: true });
-      }, 3500);
+      showToast('Fare split submitted! 🎉', 'success');
     });
 
     return () => {
@@ -164,15 +156,6 @@ export default function Chat() {
       // Initialize split members with all member IDs
       if (data.members) {
         setSplitMembers(data.members.map((m) => m.userId));
-        setMemberDistances((prev) => {
-          const next = { ...prev };
-          data.members.forEach((m, idx) => {
-            if (!next[m.userId]) {
-              next[m.userId] = idx === 0 ? 2.0 : 3.5;
-            }
-          });
-          return next;
-        });
       }
     } catch (err: any) {
       if (isLeavingRef.current) return;
@@ -319,9 +302,6 @@ export default function Chat() {
       if (result.allEnded) {
         showToast('Ride completed! 🎉', 'success');
         setRideFinishedModal(true);
-        setTimeout(() => {
-          navigate('/home', { replace: true });
-        }, 3500);
       } else {
         showToast('Waiting for co-riders to end...', 'info');
       }
@@ -332,55 +312,14 @@ export default function Chat() {
     }
   };
 
-  // Smart split calculation
-  const calculateSmartSplits = () => {
-    const total = parseFloat(totalFare) || 0;
-    if (total <= 0 || splitMembers.length === 0) return {};
-
-    if (splitMode === 'equal') {
-      const perPerson = Math.round((total / splitMembers.length) * 100) / 100;
-      const res: Record<string, number> = {};
-      splitMembers.forEach((id) => (res[id] = perPerson));
-      return res;
-    }
-
-    const totalDist = splitMembers.reduce((sum, id) => sum + (memberDistances[id] || 1), 0);
-    if (totalDist <= 0) return {};
-
-    const res: Record<string, number> = {};
-    let allocated = 0;
-    splitMembers.forEach((id, index) => {
-      if (index === splitMembers.length - 1) {
-        res[id] = Math.max(0, Math.round((total - allocated) * 100) / 100);
-      } else {
-        const share = Math.round((((memberDistances[id] || 1) / totalDist) * total) * 100) / 100;
-        res[id] = share;
-        allocated += share;
-      }
-    });
-    return res;
-  };
-
   const handleSubmitFare = async () => {
     if (!groupId || !totalFare || splitMembers.length < 2) return;
     try {
       const fareNum = parseFloat(totalFare);
-      const computedSplitsMap = calculateSmartSplits();
-      const customSplits = splitMembers.map((uid) => ({
-        userId: uid,
-        amount: computedSplitsMap[uid] ?? Math.round((fareNum / splitMembers.length) * 100) / 100,
-      }));
-
-      const result = await fareApi.submit(groupId, fareNum, splitMembers, customSplits);
+      const result = await fareApi.submit(groupId, fareNum, splitMembers);
       setFareSplitResult(result);
-      setShowFareSplitModal(false);
-      setRideFinishedModal(true);
-      showToast('Ride ended & Fare split submitted! 🎉', 'success');
+      showToast('Fare split submitted! 🎉', 'success');
       await loadGroup();
-
-      setTimeout(() => {
-        navigate('/home', { replace: true });
-      }, 3500);
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Failed to submit fare split', 'error');
     }
@@ -391,11 +330,7 @@ export default function Chat() {
     try {
       await fareApi.acknowledge(groupId);
       showToast('Fare split acknowledged ✓', 'success');
-      setShowFareSplitModal(false);
-      setRideFinishedModal(true);
-      setTimeout(() => {
-        navigate('/home', { replace: true });
-      }, 2000);
+      navigate('/home', { replace: true });
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Failed to acknowledge fare', 'error');
     }
@@ -786,17 +721,6 @@ export default function Chat() {
               End Journey ({endedCount}/{group.members.length})
             </button>
           )}
-
-          {/* Split Fare button */}
-          {(group.status === 'JOURNEY_STARTED' || group.status === 'JOURNEY_ENDED' || group.status === 'CONFIRMED') && (
-            <button
-              onClick={() => setShowFareSplitModal(true)}
-              className="chat-action-btn bg-emerald-600/90 hover:bg-emerald-500 text-white font-semibold flex items-center justify-center gap-1.5 shadow-md active:scale-95 cursor-pointer"
-            >
-              <span>💰</span>
-              <span>Split Fare</span>
-            </button>
-          )}
         </div>
 
         {/* Post-journey report button */}
@@ -868,15 +792,6 @@ export default function Chat() {
             </div>
 
             <div className="border-t border-white/10 mt-3 pt-3 flex flex-col gap-1">
-              <button
-                onClick={() => {
-                  setShowMenuPanel(false);
-                  setShowFareSplitModal(true);
-                }}
-                className="w-full text-left text-emerald-400 text-xs hover:text-emerald-300 py-1.5 px-2 rounded-lg hover:bg-emerald-500/10 transition-colors flex items-center gap-2 cursor-pointer font-medium"
-              >
-                <span>💰</span> Split Fare
-              </button>
               <button
                 onClick={handleLeaveGroup}
                 className="w-full text-left text-red-400/80 text-xs hover:text-red-400 py-1.5 px-2 rounded-lg hover:bg-red-500/10 transition-colors flex items-center gap-2"
@@ -968,211 +883,88 @@ export default function Chat() {
         {!fareSplitResult && !group.fareSplit ? (
           <>
             <h3 className="fare-modal-heading">Split the Fare</h3>
-
-            {/* Split Mode Selector */}
-            <div className="flex rounded-xl bg-white/10 p-1 mb-4 border border-white/10">
-              <button
-                type="button"
-                onClick={() => setSplitMode('smart')}
-                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  splitMode === 'smart'
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-white/60 hover:text-white'
-                }`}
-              >
-                ⚡ Smart Destination Split
-              </button>
-              <button
-                type="button"
-                onClick={() => setSplitMode('equal')}
-                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  splitMode === 'equal'
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-white/60 hover:text-white'
-                }`}
-              >
-                Equal Split
-              </button>
-            </div>
-
             <div className="fare-modal-section">
-              <label className="fare-modal-label">Total cab / auto fare (₹)</label>
+              <label className="fare-modal-label">Total fare (₹)</label>
               <input
                 type="number"
                 value={totalFare}
                 onChange={(e) => setTotalFare(e.target.value)}
-                placeholder="e.g. 180"
+                placeholder="0.00"
                 className="fare-modal-input"
                 min="0"
                 step="0.01"
                 style={{ fontSize: '16px' }}
               />
             </div>
-
-            {splitMode === 'smart' ? (
-              <div className="fare-modal-section">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="fare-modal-label mb-0">Riders & Travelled Distance</label>
-                  <span className="text-[10px] text-blue-300 font-medium">Smart distance split</span>
-                </div>
-                <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1">
-                  {group.members.map((m) => {
-                    const isSelf = m.userId === user?.id;
-                    const splitsMap = calculateSmartSplits();
-                    const share = splitsMap[m.userId] || 0;
-                    const dist = memberDistances[m.userId] ?? 2.0;
-                    const isSelected = splitMembers.includes(m.userId);
-
-                    return (
-                      <div
-                        key={m.userId}
-                        className={`p-2.5 rounded-xl border transition-all ${
-                          isSelected
-                            ? 'bg-white/5 border-white/15'
-                            : 'bg-white/[0.02] border-white/5 opacity-50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <label className="flex items-center gap-2 cursor-pointer min-w-0">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSplitMembers((prev) => [...prev, m.userId]);
-                                } else {
-                                  setSplitMembers((prev) => prev.filter((id) => id !== m.userId));
-                                }
-                              }}
-                              className="rounded border-white/20 bg-white/10 text-blue-600 focus:ring-0"
-                            />
-                            <span className="text-xs font-semibold text-white truncate">
-                              {m.fullName} {isSelf ? '(You)' : ''}
-                            </span>
-                          </label>
-                          <span className="text-xs font-bold text-emerald-400">
-                            ₹{share.toFixed(2)}
-                          </span>
-                        </div>
-
-                        {isSelected && (
-                          <div className="flex items-center gap-2 text-xs">
-                            <span className="text-white/50 text-[11px] whitespace-nowrap">Distance:</span>
-                            <div className="flex items-center gap-1.5 flex-1">
-                              <input
-                                type="number"
-                                min="0.1"
-                                max="100"
-                                step="0.5"
-                                value={dist}
-                                onChange={(e) => {
-                                  const val = Math.max(0.1, parseFloat(e.target.value) || 0.1);
-                                  setMemberDistances((prev) => ({ ...prev, [m.userId]: val }));
-                                }}
-                                className="w-16 px-2 py-1 bg-white/10 border border-white/15 rounded-lg text-white text-xs font-mono text-center focus:outline-none focus:border-blue-400"
-                              />
-                              <span className="text-white/40 text-[11px]">km</span>
-                              <div className="flex gap-1 ml-auto">
-                                {[1, 2, 4, 6].map((kmVal) => (
-                                  <button
-                                    key={kmVal}
-                                    type="button"
-                                    onClick={() => setMemberDistances((prev) => ({ ...prev, [m.userId]: kmVal }))}
-                                    className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                                      dist === kmVal
-                                        ? 'bg-blue-600/80 text-white'
-                                        : 'bg-white/5 hover:bg-white/10 text-white/50'
-                                    }`}
-                                  >
-                                    {kmVal}k
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="fare-modal-section">
-                <label className="fare-modal-label">Split equally between:</label>
-                {group.members.map((m) => (
-                  <label key={m.userId} className="fare-modal-checkbox-row">
-                    <span className={`fare-modal-checkbox ${splitMembers.includes(m.userId) ? 'fare-modal-checkbox--checked' : ''}`}>
-                      {splitMembers.includes(m.userId) && (
-                        <svg viewBox="0 0 12 10" fill="none" className="w-3 h-3" stroke="white" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="1,5 4.5,8.5 11,1" />
-                        </svg>
-                      )}
-                      <input
-                        type="checkbox"
-                        checked={splitMembers.includes(m.userId)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSplitMembers((prev) => [...prev, m.userId]);
-                          } else {
-                            setSplitMembers((prev) => prev.filter((id) => id !== m.userId));
-                          }
-                        }}
-                        className="sr-only"
-                      />
-                    </span>
-                    <span className="fare-modal-member-name">{m.fullName}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-
+            <div className="fare-modal-section">
+              <label className="fare-modal-label">Split between:</label>
+              {group.members.map((m) => (
+                <label key={m.userId} className="fare-modal-checkbox-row cursor-pointer">
+                  <span className={`fare-modal-checkbox ${splitMembers.includes(m.userId) ? 'fare-modal-checkbox--checked' : ''}`}>
+                    {splitMembers.includes(m.userId) && (
+                      <svg viewBox="0 0 12 10" fill="none" className="w-3 h-3" stroke="white" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="1,5 4.5,8.5 11,1" />
+                      </svg>
+                    )}
+                    <input
+                      type="checkbox"
+                      checked={splitMembers.includes(m.userId)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSplitMembers((prev) => [...prev, m.userId]);
+                        } else {
+                          setSplitMembers((prev) => prev.filter((id) => id !== m.userId));
+                        }
+                      }}
+                      className="sr-only"
+                    />
+                  </span>
+                  <span className="fare-modal-member-name">{m.fullName}</span>
+                </label>
+              ))}
+            </div>
             <p className="fare-modal-each-pays">
-              {splitMode === 'equal' ? (
-                <>Each pays: <span className="fare-modal-amount">₹{computedSplit}</span></>
-              ) : (
-                <>Smart Calculated Total: <span className="fare-modal-amount">₹{totalFare || '0.00'}</span></>
-              )}
+              Each pays: <span className="fare-modal-amount">₹{computedSplit}</span>
             </p>
-
-            <button
-              onClick={handleSubmitFare}
-              disabled={!totalFare || splitMembers.length < 2}
-              className="fare-modal-submit-btn cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              <span>Submit Split & End Ride</span>
-              <span>🏁</span>
-            </button>
+            <div className="flex flex-col gap-2 mt-4">
+              <button
+                onClick={handleSubmitFare}
+                disabled={!totalFare || splitMembers.length < 2}
+                className="fare-modal-submit-btn cursor-pointer"
+              >
+                Submit Split
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowFareSplitModal(false);
+                  setRideFinishedModal(true);
+                }}
+                className="w-full py-2.5 rounded-full text-white/60 hover:text-white text-xs transition-colors cursor-pointer"
+              >
+                Back
+              </button>
+            </div>
           </>
         ) : (
           <>
-            <h3 className="fare-modal-heading">Fare Split Summary</h3>
+            <h3 className="fare-modal-heading">Fare Split</h3>
             <div className="fare-modal-splits mb-4">
-              {(fareSplitResult?.splits || []).map((s: any) => (
+              {(fareSplitResult?.splits || group.fareSplit?.participants || []).map((s: any) => (
                 <div key={s.userId} className="fare-modal-split-row">
                   <span className="fare-modal-split-name">{s.fullName}</span>
-                  <span className="fare-modal-split-amount font-bold text-emerald-400">₹{s.amount.toFixed(2)}</span>
+                  <span className="fare-modal-split-amount font-bold text-emerald-400">₹{Number(s.amount).toFixed(2)}</span>
                 </div>
               ))}
             </div>
-            <button
-              onClick={handleAcknowledgeFare}
-              className="fare-modal-submit-btn cursor-pointer"
-            >
-              Acknowledge & Finish Ride ✓
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowFareSplitModal(false);
-                if (otherMembers.length > 0 && !reportUserId) {
-                  setReportUserId(otherMembers[0].userId);
-                }
-                setShowReportModal(true);
-              }}
-              className="fare-modal-report-btn"
-            >
-              <span>⚠️</span> Report
-            </button>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleAcknowledgeFare}
+                className="fare-modal-submit-btn cursor-pointer"
+              >
+                Return to Home →
+              </button>
+            </div>
           </>
         )}
       </Modal>
@@ -1263,46 +1055,37 @@ export default function Chat() {
         </div>
       )}
 
-      {/* Ride Finished & Redirection Modal */}
+      {/* Ride Completed Modal */}
       {rideFinishedModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-          <div className="p-6 rounded-3xl bg-[#121622]/95 border border-white/20 text-center max-w-sm w-full shadow-2xl animate-fade-in-up">
-            <span className="text-4xl block mb-2">🎉</span>
-            <h3 className="text-xl font-instrument text-white mb-1.5">Ride Completed!</h3>
-            <p className="text-xs text-white/70 mb-4 leading-relaxed">
-              Your ride session has ended. Redirecting to home screen...
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+          <div className="relative glass-card p-7 sm:p-8 max-w-sm w-full text-center animate-fade-in-up border border-white/15 shadow-2xl">
+            <div className="w-14 h-14 mx-auto mb-3.5 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-2xl shadow-inner">
+              🚗
+            </div>
+            <h3 className="text-2xl font-instrument text-white mb-1.5 tracking-wide">
+              Ride Completed!
+            </h3>
+            <p className="text-xs text-white/65 mb-6 leading-relaxed">
+              Your ride session with <span className="text-white font-medium">{otherNames || 'co-riders'}</span> has ended.
             </p>
 
-            {/* Split Breakdown */}
-            {(fareSplitResult?.splits || group?.fareSplit?.participants) && (
-              <div className="mb-4 p-3 rounded-2xl bg-white/5 border border-white/10 text-left">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-blue-300 mb-2">
-                  Fare Split Breakdown
-                </p>
-                <div className="flex flex-col gap-1.5">
-                  {(fareSplitResult?.splits || group?.fareSplit?.participants || []).map((s: any) => {
-                    const isSelf = s.userId === user?.id;
-                    return (
-                      <div key={s.userId} className="flex items-center justify-between text-xs">
-                        <span className={`truncate ${isSelf ? 'text-white font-semibold' : 'text-white/70'}`}>
-                          {s.fullName || (isSelf ? 'You' : 'Co-rider')}
-                        </span>
-                        <span className="font-bold text-emerald-400">
-                          ₹{Number(s.amount).toFixed(2)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            <div className="flex flex-col gap-2.5">
+              <button
+                onClick={() => {
+                  setRideFinishedModal(false);
+                  setShowFareSplitModal(true);
+                }}
+                className="w-full py-3 px-5 rounded-full bg-white text-slate-900 font-semibold text-xs tracking-wide shadow-md hover:bg-slate-100 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <span>₹ Split Fare</span>
+                <span className="text-sm leading-none">→</span>
+              </button>
 
-            <div className="flex flex-col gap-2">
               <button
                 onClick={() => navigate('/home', { replace: true })}
-                className="w-full py-3 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-wider cursor-pointer transition-all shadow-md active:scale-95"
+                className="w-full py-2.5 px-5 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 text-white/75 hover:text-white border border-white/10 text-xs font-medium transition-all cursor-pointer"
               >
-                Return to Home Now →
+                Return to Home
               </button>
             </div>
           </div>

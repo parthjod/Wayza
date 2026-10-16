@@ -985,21 +985,21 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5 pt-1">
             <button
               onClick={() => {
                 const grpId = incomingInvite.groupId;
                 setIncomingInvite(null);
                 navigate(`/chat/${grpId}`);
               }}
-              className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-lg shadow-blue-500/25 active:scale-95 text-center flex items-center justify-center gap-1.5 cursor-pointer"
+              className="flex-1 py-2.5 px-4 rounded-full bg-white text-slate-900 font-semibold text-xs transition-all shadow-md hover:bg-slate-100 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span>Accept & Chat</span>
-              <span>→</span>
+              <span className="text-sm leading-none">→</span>
             </button>
             <button
               onClick={() => setIncomingInvite(null)}
-              className="py-2 px-3 rounded-xl bg-white/10 hover:bg-white/15 active:scale-95 text-white/70 text-xs font-medium transition-all cursor-pointer"
+              className="py-2.5 px-4 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 text-white/75 hover:text-white border border-white/15 text-xs font-medium transition-all cursor-pointer"
             >
               Decline
             </button>
@@ -1085,14 +1085,24 @@ export default function Home() {
 
       {/* Ride History Modal */}
       <Modal open={showHistoryModal} onClose={() => setShowHistoryModal(false)}>
-        <div className="p-3 sm:p-5 max-w-lg mx-auto text-left">
-          <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">📜</span>
-              <h3 className="text-xl font-instrument text-white">Ride History</h3>
+        <div className="p-1 sm:p-2 max-w-lg mx-auto text-left">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
+            <div className="flex items-center gap-2.5">
+              <span className="text-xl">📜</span>
+              <h3 className="text-xl sm:text-2xl font-instrument text-white tracking-wide">Ride History</h3>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/10 text-white/60 font-mono">
+                {rideHistory.length}
+              </span>
             </div>
-            <span className="text-xs text-white/50">{rideHistory.length} rides</span>
+            <button
+              onClick={() => setShowHistoryModal(false)}
+              className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white flex items-center justify-center transition-colors text-xs cursor-pointer"
+              aria-label="Close"
+            >
+              ✕
+            </button>
           </div>
+
           {loadingHistory ? (
             <div className="py-12 flex justify-center">
               <Spinner size="md" />
@@ -1101,10 +1111,10 @@ export default function Home() {
             <div className="py-10 text-center text-white/50 text-sm">
               <p className="text-3xl mb-2">🚗</p>
               <p className="font-medium text-white/70">No past rides yet</p>
-              <p className="text-xs text-white/35 mt-1">Your completed and past rides will show up here.</p>
+              <p className="text-xs text-white/35 mt-1">Your completed campus rides will show up here.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-2.5 max-h-[380px] overflow-y-auto pr-1">
+            <div className="flex flex-col gap-3 max-h-[360px] overflow-y-auto pr-1">
               {rideHistory.map((ride: any) => {
                 const date = new Date(ride.createdAt).toLocaleDateString(undefined, {
                   month: 'short',
@@ -1112,25 +1122,43 @@ export default function Home() {
                   year: 'numeric',
                 });
                 const coRiders = ride.members?.filter((m: any) => m.userId !== user?.id) || [];
+                const dest = (!ride.dropLocation || ride.dropLocation === 'To be determined')
+                  ? 'MIT-WPU Campus'
+                  : ride.dropLocation;
+                const isCompleted = ride.status === 'SPLIT_DONE' || ride.status === 'JOURNEY_ENDED';
+
                 return (
-                  <div key={ride.id} className="p-3.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between gap-3">
+                  <div
+                    key={ride.id}
+                    className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-white/20 flex items-center justify-between gap-3 transition-colors"
+                  >
                     <div className="flex flex-col gap-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-white truncate">
-                          {ride.dropLocation || 'Campus Trip'}
+                        <span className="text-sm font-semibold text-white truncate flex items-center gap-1.5">
+                          <span>📍</span>
+                          <span>{dest}</span>
                         </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/10 text-white/70 font-mono">
-                          {ride.status === 'SPLIT_DONE' || ride.status === 'JOURNEY_ENDED' ? 'Completed' : ride.status}
+                        <span
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                            isCompleted
+                              ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
+                              : 'bg-white/10 text-white/70'
+                          }`}
+                        >
+                          {isCompleted ? 'Completed' : ride.status}
                         </span>
                       </div>
                       <p className="text-xs text-white/50">
-                        {date} • with {coRiders.map((m: any) => m.fullName).join(', ') || 'Co-riders'}
+                        {date} • with {coRiders.map((m: any) => m.fullName).join(', ') || 'Rider'}
                       </p>
                     </div>
                     {ride.totalFare ? (
-                      <span className="text-sm font-bold text-emerald-400 flex-shrink-0">
-                        ₹{ride.totalFare}
-                      </span>
+                      <div className="text-right flex-shrink-0">
+                        <span className="text-sm font-bold text-emerald-400 block">
+                          ₹{ride.totalFare}
+                        </span>
+                        <span className="text-[10px] text-white/40">split</span>
+                      </div>
                     ) : null}
                   </div>
                 );

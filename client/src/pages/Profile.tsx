@@ -79,6 +79,7 @@ export default function Profile() {
       const result = await userApi.uploadAvatar(file);
       setProfilePicUrl(result.profilePicUrl);
       setUser({ ...user!, profilePicUrl: result.profilePicUrl });
+      setPreviewUrl(null);
       showToast('Photo updated ✓', 'success');
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Failed to upload', 'error');

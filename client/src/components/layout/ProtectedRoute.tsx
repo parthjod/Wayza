@@ -16,7 +16,12 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
     userApi
       .getMe()
-      .then(() => {
+      .then((fresh) => {
+        useAuthStore.getState().setUser({
+          id: fresh.id,
+          fullName: fresh.fullName,
+          profilePicUrl: fresh.profilePicUrl,
+        });
         setChecking(false);
       })
       .catch(() => {
