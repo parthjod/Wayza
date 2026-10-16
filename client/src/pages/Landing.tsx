@@ -215,14 +215,6 @@ export default function Landing() {
     }
   };
 
-  const handleEnterWayza = () => {
-    if (validateCollegeEmail(email)) {
-      handleCheckEmail();
-    } else {
-      emailInputRef.current?.focus();
-    }
-  };
-
   const closeFlow = () => {
     setFlowState('idle');
     setOtp(Array(6).fill(''));
@@ -418,7 +410,7 @@ export default function Landing() {
                 <Spinner size="sm" />
               ) : (
                 <>
-                  <span>Enter Wayza</span>
+                  <span>Continue</span>
                   <span style={{ fontSize: '19px', lineHeight: 1 }}>→</span>
                 </>
               )}
@@ -473,43 +465,6 @@ export default function Landing() {
             WAYZA
           </span>
         </div>
-
-        {/* Action Button: Enter Wayza */}
-        <button
-          onClick={handleEnterWayza}
-          className="wayza-nav-btn pointer-events-auto cursor-pointer"
-          style={{
-            width: '200px',
-            marginRight: '15px',
-            height: '46px',
-            padding: '0px 20px',
-            background: '#F5F7FA',
-            color: '#111827',
-            border: '1px solid #D1D5DB',
-            borderRadius: '9999px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '16px',
-            fontSize: '18px',
-            fontWeight: '500',
-            lineHeight: '1',
-            boxSizing: 'border-box',
-            boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.15)',
-          }}
-        >
-          <span>Enter Wayza</span>
-          <span
-            style={{
-              fontSize: '26px',
-              fontWeight: '400',
-              lineHeight: '1',
-              marginRight: '10px',
-            }}
-          >
-            →
-          </span>
-        </button>
       </header>
 
       {/* Main Center Box Section */}
