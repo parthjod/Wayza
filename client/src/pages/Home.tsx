@@ -249,8 +249,21 @@ export default function Home() {
         <div className="home-discovering-overlay" />
       )}      {/* Navbar */}
       <header className="fixed top-0 left-0 right-0 z-40 w-full flex items-center justify-between px-8 sm:px-12 md:px-14 py-7 sm:py-8 pointer-events-none">
-        {/* Brand Logo */}
-        <div style={{ marginLeft: "10px" }} className="pointer-events-auto select-none">
+        {/* Brand Logo & Back Button when searching */}
+        <div style={{ marginLeft: "10px" }} className="pointer-events-auto select-none flex items-center gap-3">
+          {(viewState === 'discovering' || viewState === 'user-detail') && (
+            <button
+              onClick={handleStopBooking}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white/90 hover:text-white text-sm backdrop-blur-md transition-all border border-white/15 cursor-pointer shadow-sm active:scale-95"
+              title="Cancel booking and return to home"
+              aria-label="Back to home"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+              </svg>
+              <span>Back</span>
+            </button>
+          )}
           <span className="text-white text-[32px] sm:text-[36px] font-instrument tracking-[0.14em] drop-shadow-md leading-none select-none font-normal">
             WAYZA
           </span>
@@ -562,37 +575,65 @@ export default function Home() {
                   <Spinner size="lg" className="home-loading-spinner" />
                 </div>
                 <p className="home-loading-you">You</p>
+
+                {/* Cancel booking button */}
+                <button
+                  type="button"
+                  onClick={handleStopBooking}
+                  className="home-cancel-booking-btn"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                  <span>Cancel Booking</span>
+                </button>
               </div>
             ) : (
               /* Radial layout when riders found */
-              <div className="relative flex items-center justify-center" style={{ minHeight: '320px' }}>
-                {/* Center indicator */}
-                <div className="absolute flex flex-col items-center">
-                  <div className="w-4 h-4 bg-white rounded-full animate-pulse-ring" />
-                  <p className="mt-2 text-white/60 text-xs">You</p>
+              <div className="flex flex-col items-center">
+                <div className="relative flex items-center justify-center" style={{ minHeight: '320px', width: '320px' }}>
+                  {/* Center indicator */}
+                  <div className="absolute flex flex-col items-center">
+                    <div className="w-4 h-4 bg-white rounded-full animate-pulse-ring" />
+                    <p className="mt-2 text-white/60 text-xs">You</p>
+                  </div>
+
+                  {nearbyUsers.map((nUser, i) => {
+                    const pos = getUserPosition(i, nearbyUsers.length);
+                    return (
+                      <button
+                        key={nUser.userId}
+                        onClick={() => { setSelectedUser(nUser); setViewState('user-detail'); }}
+                        className="absolute flex flex-col items-center gap-1 transition-all hover:scale-110"
+                        style={{
+                          transform: `translate(${pos.x}px, ${pos.y}px)`,
+                        }}
+                      >
+                        <Avatar name={nUser.fullName} imageUrl={nUser.profilePicUrl} size="lg" />
+                        <span className="text-white text-xs font-medium max-w-[80px] truncate text-video-overlay">
+                          {nUser.fullName.split(' ')[0]}
+                        </span>
+                        <span className="text-white/50 text-[10px]">
+                          {formatDistance(nUser.distanceMeters)}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
 
-                {nearbyUsers.map((nUser, i) => {
-                  const pos = getUserPosition(i, nearbyUsers.length);
-                  return (
-                    <button
-                      key={nUser.userId}
-                      onClick={() => { setSelectedUser(nUser); setViewState('user-detail'); }}
-                      className="absolute flex flex-col items-center gap-1 transition-all hover:scale-110"
-                      style={{
-                        transform: `translate(${pos.x}px, ${pos.y}px)`,
-                      }}
-                    >
-                      <Avatar name={nUser.fullName} imageUrl={nUser.profilePicUrl} size="lg" />
-                      <span className="text-white text-xs font-medium max-w-[80px] truncate text-video-overlay">
-                        {nUser.fullName.split(' ')[0]}
-                      </span>
-                      <span className="text-white/50 text-[10px]">
-                        {formatDistance(nUser.distanceMeters)}
-                      </span>
-                    </button>
-                  );
-                })}
+                {/* Cancel booking button */}
+                <button
+                  type="button"
+                  onClick={handleStopBooking}
+                  className="home-cancel-booking-btn mt-6"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                  <span>Cancel Booking</span>
+                </button>
               </div>
             )}
           </div>
