@@ -417,7 +417,7 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pt-24 pb-12 sm:pt-28 sm:pb-16">
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-start sm:justify-center px-4 sm:px-6 pt-20 pb-10 sm:py-16">
         {viewState === 'booking' && (
           <div className="home-booking-card w-full text-center animate-fade-in-up">
             {/* Active Ride Banner */}

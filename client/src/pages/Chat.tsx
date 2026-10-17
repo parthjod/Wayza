@@ -624,32 +624,32 @@ export default function Chat() {
 
             {/* Attachment popover menu */}
             {showAttachMenu && (
-              <div className="absolute bottom-full mb-3 left-0 bg-[#161a26]/95 backdrop-blur-xl border border-white/15 rounded-2xl p-1.5 shadow-2xl flex flex-col gap-1 min-w-[205px] max-w-[calc(100vw-32px)] z-30 animate-fade-in-up">
+              <div className="chat-attach-menu animate-fade-in-up">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full text-left px-3 py-2 rounded-xl text-xs text-white/90 hover:bg-white/10 active:bg-white/15 flex items-center gap-2.5 transition-colors cursor-pointer group"
+                  className="chat-attach-item group"
                 >
-                  <div className="w-6 h-6 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0 text-blue-400 group-hover:scale-105 transition-transform">
+                  <div className="chat-attach-icon-wrap bg-blue-500/15 border border-blue-500/30 text-blue-400 group-hover:scale-105 transition-transform">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                       <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                       <circle cx="12" cy="13" r="4" />
                     </svg>
                   </div>
-                  <span className="font-medium text-[13px] tracking-tight">Photo / Cab Details</span>
+                  <span className="font-medium text-[13px] tracking-tight text-white/90">Photo / Cab Details</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleShareLiveLocation}
-                  className="w-full text-left px-3 py-2 rounded-xl text-xs text-white/90 hover:bg-white/10 active:bg-white/15 flex items-center gap-2.5 transition-colors cursor-pointer group"
+                  className="chat-attach-item group"
                 >
-                  <div className="w-6 h-6 rounded-lg bg-rose-500/15 border border-rose-500/30 flex items-center justify-center shrink-0 text-rose-400 group-hover:scale-105 transition-transform">
+                  <div className="chat-attach-icon-wrap bg-rose-500/15 border border-rose-500/30 text-rose-400 group-hover:scale-105 transition-transform">
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                       <circle cx="12" cy="10" r="3" />
                     </svg>
                   </div>
-                  <span className="font-medium text-[13px] tracking-tight">Share Live Location</span>
+                  <span className="font-medium text-[13px] tracking-tight text-white/90">Share Live Location</span>
                 </button>
               </div>
             )}
@@ -799,12 +799,14 @@ export default function Chat() {
               })}
             </div>
 
-            <div className="border-t border-white/12 mt-4 pt-3.5 flex flex-col gap-2">
+            <div className="group-menu-divider" />
+
+            <div className="group-menu-actions">
               <button
                 onClick={handleLeaveGroup}
-                className="w-full text-left text-red-400 hover:text-red-300 text-xs py-2 px-3 rounded-xl bg-red-500/[0.08] hover:bg-red-500/[0.15] border border-red-500/15 transition-all flex items-center gap-2.5 cursor-pointer font-medium active:scale-[0.98]"
+                className="group-menu-action-btn group-menu-action-btn--leave"
               >
-                <svg className="w-4 h-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                   <polyline points="16 17 21 12 16 7" />
                   <line x1="21" y1="12" x2="9" y2="12" />
@@ -819,14 +821,14 @@ export default function Chat() {
                   }
                   setShowReportModal(true);
                 }}
-                className="w-full text-left text-amber-400 hover:text-amber-300 text-xs py-2 px-3 rounded-xl bg-amber-500/[0.08] hover:bg-amber-500/[0.15] border border-amber-500/15 transition-all flex items-center gap-2.5 cursor-pointer font-medium active:scale-[0.98]"
+                className="group-menu-action-btn group-menu-action-btn--report"
               >
-                <svg className="w-4 h-4 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
                   <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                   <line x1="12" y1="9" x2="12" y2="13" />
                   <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
-                <span>Report</span>
+                <span>Report an Issue</span>
               </button>
             </div>
           </div>
