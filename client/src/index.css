@@ -163,37 +163,42 @@ body {
    (Only affects the booking view in Home.tsx)
    ===================================================== */
 .home-booking-card {
-  max-width: 520px;
-  background: rgba(10, 14, 26, 0.76);
+  max-width: 580px;
+
+  background: rgba(18, 24, 36, 0.72);
+
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+
+  border: 1px solid rgba(255, 255, 255, 0.20);
+
   border-radius: 28px;
+
   box-shadow:
     0 28px 75px -12px rgba(0, 0, 0, 0.75),
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.20),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.28),
     inset 0 -1px 0 rgba(255, 255, 255, 0.08);
-  padding: 36px 36px 32px;
+
+  padding: 46px 42px 40px;
+
   box-sizing: border-box;
-  margin: auto;
 }
 
 @media (max-width: 600px) {
   .home-booking-card {
-    width: 100%;
-    max-width: 100%;
-    border-radius: 24px;
-    padding: 24px 20px 24px;
-    margin: auto;
+    width: calc(100% - 32px);
+    max-width: none;
+    border-radius: 22px;
+    padding: 30px 20px 30px;
   }
 }
 
 /* BOOK NOW button — vibrant blue gradient pill */
 .home-book-btn {
-  height: 52px;
+  height: 54px;
   background: linear-gradient(90deg, #1ea5fc 0%, #1059f5 100%);
   border: none;
-  border-radius: 16px;
+  border-radius: 9999px;
   box-shadow:
     0 8px 28px rgba(21, 85, 255, 0.48),
     0 2px 8px rgba(21, 85, 255, 0.30);

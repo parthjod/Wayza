@@ -404,18 +404,18 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main Content — centered vertically and horizontally */}
-      <main className="relative z-10 min-h-screen w-full flex items-center justify-center px-4 sm:px-6 py-6">
+      {/* Main Content */}
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-10">
         {viewState === 'booking' && (
           <div className="home-booking-card w-full text-center animate-fade-in-up">
             {/* Active Ride Banner */}
             {activeRide && (
               <div
                 onClick={() => navigate(`/chat/${activeRide.id}`)}
-                className="w-full mb-4 sm:mb-5 p-3.5 sm:p-4 rounded-2xl bg-blue-500/15 border border-blue-400/35 backdrop-blur-md cursor-pointer hover:bg-blue-500/25 transition-all flex items-center justify-between text-left group shadow-lg"
+                className="w-full mb-6 p-4 rounded-full bg-blue-500/15 border border-blue-400/35 backdrop-blur-md cursor-pointer hover:bg-blue-500/25 transition-all flex items-center justify-between text-left group shadow-lg"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-lg flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-sm flex-shrink-0">
                     🚗
                   </div>
                   <div className="min-w-0">
@@ -423,35 +423,34 @@ export default function Home() {
                       <span className="text-sm font-semibold text-white">Current Ride in Progress</span>
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
                     </div>
-                    <p className="text-xs text-white/70 truncate max-w-[200px] sm:max-w-xs">
-                      With {activeRide.members?.filter((m: any) => m.userId !== user?.id).map((m: any) => m.fullName).join(', ') || 'co-passenger'}
-                    </p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-blue-300 group-hover:text-white transition-colors bg-white/10 px-3 py-1.5 rounded-xl flex-shrink-0">
+                <span className="text-xs font-bold text-blue-300 group-hover:text-white transition-colors bg-white/10 px-3 py-1.5 rounded-full flex-shrink-0">
                   Resume Chat →
                 </span>
               </div>
             )}
 
-            <h2 className="text-[clamp(22px,3.8vw,34px)] font-instrument italic text-white mb-4 sm:mb-6 leading-tight select-none">
+            <h2 style={{ marginBottom: "50px" }} className="text-[clamp(30px,3.8vw,40px)] font-instrument italic text-white mb-7 leading-tight select-none">
               Where are you heading?
             </h2>
 
             {/* Drop location options */}
-            <div className="flex flex-col gap-2.5 sm:gap-3 mb-5 sm:mb-6 w-full">
+            <div style={{ marginBottom: "30px" }} className="flex flex-col gap-[20px] mb-6 w-full">
               {CAMPUS_POIS.map((poi: { label: string; lat: number; lng: number }) => (
                 <button
                   key={poi.label}
                   onClick={() => selectDropLocation(poi.label, poi.lat, poi.lng)}
-                  className={`w-full px-5 py-3 sm:py-3.5 rounded-2xl text-left text-[14px] sm:text-[15px] transition-all flex items-center gap-3.5 cursor-pointer ${dropLabel === poi.label
-                    ? 'bg-white text-gray-950 font-semibold border border-white shadow-md'
-                    : 'bg-white/7 text-white/90 border border-white/16 hover:bg-white/12 hover:border-white/25 font-normal'
+                  className={`w-full px-5 py-3.5 rounded-full text-left text-[16px] transition-all flex items-center gap-3.5 cursor-pointer ${dropLabel === poi.label
+                    ? 'bg-white text-gray-950 font-medium border border-white shadow-sm '
+                    : 'bg-white/7 text-white/90 border border-white/16 hover:bg-white/12 hover:border-white/25 mb-10'
                     }`}
-                  style={{ minHeight: "48px" }}
+                  style={{
+                    minHeight: "48px",
+                  }}
                 >
-                  <svg
-                    className={`w-4 h-4 flex-shrink-0 ${dropLabel === poi.label ? 'text-gray-950' : 'text-white/70'}`}
+                  <svg style={{ marginLeft: "20px" }}
+                    className="w-4 h-4 flex-shrink-0 text-white/70"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -468,32 +467,32 @@ export default function Home() {
                       d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
                     />
                   </svg>
-
                   <span className="truncate">{poi.label}</span>
                 </button>
               ))}
 
+              {/* Custom location option */}
               {!showCustomInput ? (
                 (() => {
                   const isCustomSelected =
-                    Boolean(dropLabel) && !CAMPUS_POIS.some((p) => p.label === dropLabel);
+                    dropLabel && !CAMPUS_POIS.some((p: { label: string }) => p.label === dropLabel);
                   return (
                     <button
-                      onClick={() => {
-                        setCustomLocation(isCustomSelected ? dropLabel : '');
-                        setShowCustomInput(true);
+                      type="button"
+                      onClick={() => setShowCustomInput(true)}
+                      className={`w-full px-5 py-3.5 rounded-full text-left text-[16px] transition-all flex items-center justify-between cursor-pointer ${isCustomSelected
+                        ? 'bg-white text-gray-950 font-medium border border-white shadow-sm'
+                        : 'bg-white/7 text-white/90 border border-white/16 hover:bg-white/12 hover:border-white/25'
+                        }`}
+                      style={{
+                        minHeight: "48px",
                       }}
-                      className={`w-full px-5 py-3 sm:py-3.5 rounded-2xl text-left text-[14px] sm:text-[15px] transition-all flex items-center justify-between cursor-pointer ${
-                        isCustomSelected
-                          ? 'bg-white text-gray-950 font-semibold border border-white shadow-md'
-                          : 'bg-white/7 text-white/65 border border-white/16 hover:bg-white/12 hover:border-white/25'
-                      }`}
-                      style={{ minHeight: "48px" }}
                     >
                       <div className="flex items-center gap-3.5 min-w-0">
                         {isCustomSelected ? (
                           <svg
-                            className="w-4 h-4 flex-shrink-0 text-gray-900"
+                            style={{ marginLeft: "20px" }}
+                            className="w-4 h-4 flex-shrink-0 text-white/70"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -511,14 +510,19 @@ export default function Home() {
                             />
                           </svg>
                         ) : (
-                          <span className="text-lg leading-none text-white/60 font-light">+</span>
+                          <span
+                            style={{ marginLeft: "20px" }}
+                            className="text-lg leading-none text-white/60"
+                          >
+                            +
+                          </span>
                         )}
                         <span className="truncate">
                           {isCustomSelected ? dropLabel : 'Enter custom location'}
                         </span>
                       </div>
                       {isCustomSelected && (
-                        <span className="text-xs text-gray-500 hover:text-gray-900 ml-2 flex-shrink-0 font-medium">
+                        <span className="text-xs text-gray-500 hover:text-gray-900 mr-2 flex-shrink-0">
                           Edit
                         </span>
                       )}
@@ -529,7 +533,7 @@ export default function Home() {
                 <div className="relative">
                   <div className="relative flex items-center">
                     <svg
-                      style={{ left: "16px" }}
+                      style={{ left: "20px" }}
                       className="absolute w-4 h-4 text-white/40 pointer-events-none"
                       fill="none"
                       viewBox="0 0 24 24"
@@ -547,16 +551,16 @@ export default function Home() {
                       value={customLocation}
                       onChange={(e) => setCustomLocation(e.target.value)}
                       placeholder="Type your destination (e.g. Kothrud, Swargate)..."
-                      className="w-full bg-white/7 border border-white/20 rounded-2xl text-white placeholder:text-white/40 focus:border-white/50 focus:outline-none focus:ring-1 focus:ring-white/30"
+                      className="w-full bg-white/7 border border-white/20 rounded-full text-white placeholder:text-white/40 focus:border-white/50 focus:outline-none focus:ring-1 focus:ring-white/30"
                       autoFocus
                       style={{
                         width: "100%",
                         height: "48px",
-                        paddingLeft: "44px",
+                        paddingLeft: "48px",
                         paddingRight: "44px",
-                        fontSize: "15px",
+                        fontSize: "16px",
                         boxSizing: "border-box",
-                        borderRadius: "16px",
+                        borderRadius: "9999px",
                       }}
                     />
                     <button
@@ -573,7 +577,7 @@ export default function Home() {
                   </div>
 
                   {autocompleteResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl bg-[#121622]/95 backdrop-blur-xl border border-white/15 shadow-2xl max-h-56 overflow-y-auto z-30 p-2 flex flex-col gap-1">
+                    <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl bg-[#121622]/95 backdrop-blur-xl border border-white/15 shadow-2xl max-h-56 overflow-y-auto z-30 p-1.5 flex flex-col gap-1">
                       {autocompleteResults.map((result, i) => (
                         <button
                           key={i}
@@ -611,8 +615,8 @@ export default function Home() {
             </div>
 
             {/* Radius selector */}
-            <div className="mb-5 sm:mb-6">
-              <label className="text-white/65 text-[13px] sm:text-[14px] mb-2.5 block text-center tracking-wide font-normal">
+            <div className="mb-7" >
+              <label style={{ marginBottom: "20px" }} className="text-white/65 text-[14px] mb-5 block text-center tracking-wide font-normal">
                 Search within:
               </label>
 
@@ -621,13 +625,13 @@ export default function Home() {
                   <button
                     key={opt.value}
                     onClick={() => setRadius(opt.value)}
-                    className={`rounded-xl text-[13px] sm:text-[14px] transition-all cursor-pointer border ${radius === opt.value
+                    className={`rounded-full text-[14px] transition-all cursor-pointer border ${radius === opt.value
                       ? 'bg-white text-gray-950 font-bold border-white shadow-sm'
                       : 'bg-white/6 text-white/75 border-white/18 hover:bg-white/12 hover:border-white/30 font-medium'
                       }`}
                     style={{
-                      minWidth: "62px",
-                      height: "40px",
+                      minWidth: "64px",
+                      height: "44px",
                       paddingLeft: "14px",
                       paddingRight: "14px",
                     }}
@@ -639,9 +643,9 @@ export default function Home() {
             </div>
 
             {/* Book Now button */}
-            <button
+            <button style={{ marginTop: "20px" }}
               onClick={handleBookNow}
-              className="home-book-btn w-full mt-4 text-white text-[15px] sm:text-[16px] font-bold tracking-widest cursor-pointer flex items-center justify-center select-none active:scale-[0.99] transition-all"
+              className="home-book-btn w-full text-white text-[16px] sm:text-[17px] font-bold tracking-widest cursor-pointer flex items-center justify-center select-none active:scale-[0.99] transition-all"
             >
               {loading ? <Spinner size="sm" className="border-white/20 border-t-white" /> : 'BOOK NOW'}
             </button>
@@ -748,7 +752,7 @@ export default function Home() {
             )}
           </div>
         )}
-      </main>
+      </div>
 
       {/* User Detail Card */}
       {viewState === 'user-detail' && selectedUser && (
@@ -813,25 +817,37 @@ export default function Home() {
         </div>
       </Modal>
 
-      {/* Logout Confirmation Modal — uses standard Modal with backdrop-blur-md */}
-      <Modal open={showLogoutConfirm} onClose={() => setShowLogoutConfirm(false)} className="!max-w-sm !p-6 sm:!p-7 text-center">
-        <h3 className="text-xl sm:text-2xl font-instrument text-white mb-2 tracking-wide">Are you sure?</h3>
-        <p className="text-sm text-white/60 mb-6 leading-relaxed">You'll need to log in again to use Wayza.</p>
-        <div className="flex gap-3">
-          <button
-            onClick={() => setShowLogoutConfirm(false)}
-            className="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-medium text-sm transition-all cursor-pointer"
+      {/* Logout Confirmation Modal — custom overlay so the scenic background remains clearly visible */}
+      {showLogoutConfirm && (
+        <div
+          className="logout-confirm-overlay"
+          onClick={() => setShowLogoutConfirm(false)}
+        >
+          <div
+            className="logout-confirm-card animate-fade-in-up"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
           >
-            Cancel
-          </button>
-          <button
-            onClick={handleLogout}
-            className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-sm shadow-lg shadow-red-600/30 transition-all cursor-pointer"
-          >
-            Yes, Logout
-          </button>
+            <h3 className="logout-confirm-heading">Are you sure?</h3>
+            <p className="logout-confirm-message">You'll need to log in again to use Wayza.</p>
+            <div className="logout-confirm-actions">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="logout-confirm-no-btn"
+              >
+                No
+              </button>
+              <button
+                onClick={handleLogout}
+                className="logout-confirm-yes-btn"
+              >
+                Yes, Logout
+              </button>
+            </div>
+          </div>
         </div>
-      </Modal>
+      )}
 
       {/* Incoming Connection Invitation Popup — Dynamic Island Glass Style */}
       {incomingInvite && (
