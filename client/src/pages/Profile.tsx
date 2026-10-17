@@ -89,7 +89,10 @@ export default function Profile() {
     try {
       const result = await userApi.uploadAvatar(file);
       const rawUrl = result.profilePicUrl;
-      const newPicUrl = rawUrl ? `${rawUrl}${rawUrl.includes('?') ? '&' : '?'}t=${Date.now()}` : null;
+      const newPicUrl = rawUrl
+        ? (rawUrl.startsWith('data:') ? rawUrl : `${rawUrl}${rawUrl.includes('?') ? '&' : '?'}t=${Date.now()}`)
+        : null;
+      setPreviewUrl(null);
       setProfilePicUrl(newPicUrl);
       setUser({ ...user!, profilePicUrl: newPicUrl });
       showToast('Photo updated ✓', 'success');

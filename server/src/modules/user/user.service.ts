@@ -127,14 +127,29 @@ export class UserService {
       }
     }
 
-    // Upload new avatar to S3 with resilient fallback
+    // Check if real AWS S3 credentials are provided
+    const isS3Configured =
+      env.AWS_ACCESS_KEY_ID &&
+      !env.AWS_ACCESS_KEY_ID.includes('your-access') &&
+      env.AWS_SECRET_ACCESS_KEY &&
+      !env.AWS_SECRET_ACCESS_KEY.includes('your-secret') &&
+      env.AWS_S3_BUCKET &&
+      !env.AWS_S3_BUCKET.includes('your-bucket');
+
     let finalUrl: string;
     let dbKey: string;
-    try {
-      finalUrl = await uploadToS3(key, processedImage, contentType);
-      dbKey = key;
-    } catch (s3Err: any) {
-      console.warn('[Avatar] S3 upload failed, falling back to data URI:', s3Err?.message || s3Err);
+
+    if (isS3Configured) {
+      try {
+        finalUrl = await uploadToS3(key, processedImage, contentType);
+        dbKey = key;
+      } catch (s3Err: any) {
+        console.warn('[Avatar] S3 upload failed, falling back to data URI:', s3Err?.message || s3Err);
+        finalUrl = `data:${contentType};base64,${processedImage.toString('base64')}`;
+        dbKey = finalUrl;
+      }
+    } else {
+      // Store processed JPEG data URI directly in database
       finalUrl = `data:${contentType};base64,${processedImage.toString('base64')}`;
       dbKey = finalUrl;
     }
