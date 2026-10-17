@@ -417,14 +417,14 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-10">
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pt-24 pb-12 sm:pt-28 sm:pb-16">
         {viewState === 'booking' && (
           <div className="home-booking-card w-full text-center animate-fade-in-up">
             {/* Active Ride Banner */}
             {activeRide && (
               <div
                 onClick={() => navigate(`/chat/${activeRide.id}`)}
-                className="w-full mb-6 p-3.5 rounded-2xl bg-blue-500/15 border border-blue-400/35 backdrop-blur-md cursor-pointer hover:bg-blue-500/25 transition-all flex items-center justify-between text-left group shadow-lg"
+                className="w-full mb-5 p-3.5 rounded-2xl bg-blue-500/15 border border-blue-400/35 backdrop-blur-md cursor-pointer hover:bg-blue-500/25 transition-all flex items-center justify-between text-left group shadow-lg"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-blue-500/20 flex items-center justify-center text-lg flex-shrink-0">
@@ -446,26 +446,26 @@ export default function Home() {
               </div>
             )}
 
-            <h2 style={{ marginBottom: "50px" }} className="text-[clamp(30px,3.8vw,40px)] font-instrument italic text-white mb-7 leading-tight select-none">
+            <h2 className="text-[clamp(26px,4vw,36px)] font-instrument italic text-white mb-5 sm:mb-6 leading-tight select-none">
               Where are you heading?
             </h2>
 
             {/* Drop location options */}
-            <div style={{ marginBottom: "30px" }} className="flex flex-col gap-[20px] mb-6 w-full">
+            <div className="flex flex-col gap-2.5 sm:gap-3 mb-5 sm:mb-6 w-full">
               {CAMPUS_POIS.map((poi: { label: string; lat: number; lng: number }) => (
                 <button
                   key={poi.label}
                   onClick={() => selectDropLocation(poi.label, poi.lat, poi.lng)}
-                  className={`w-full px-5 py-3.5 rounded-full text-left text-[16px] transition-all flex items-center gap-3.5 cursor-pointer ${dropLabel === poi.label
-                    ? 'bg-white text-gray-950 font-medium border border-white shadow-sm '
-                    : 'bg-white/7 text-white/90 border border-white/16 hover:bg-white/12 hover:border-white/25 mb-10'
+                  className={`w-full px-4 sm:px-5 py-3 sm:py-3.5 rounded-full text-left text-[15px] sm:text-[16px] transition-all flex items-center gap-3 cursor-pointer ${dropLabel === poi.label
+                    ? 'bg-white text-gray-950 font-medium border border-white shadow-sm'
+                    : 'bg-white/7 text-white/90 border border-white/16 hover:bg-white/12 hover:border-white/25'
                     }`}
                   style={{
                     minHeight: "48px",
                   }}
                 >
-                  <svg style={{ marginLeft: "20px" }}
-                    className="w-4 h-4 flex-shrink-0 text-white/70"
+                  <svg
+                    className="w-4 h-4 flex-shrink-0 text-white/70 ml-2"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -497,7 +497,7 @@ export default function Home() {
                         setCustomLocation(isCustomSelected ? dropLabel : '');
                         setShowCustomInput(true);
                       }}
-                      className={`w-full px-5 py-3.5 rounded-full text-left text-[16px] transition-all flex items-center justify-between cursor-pointer ${
+                      className={`w-full px-4 sm:px-5 py-3 sm:py-3.5 rounded-full text-left text-[15px] sm:text-[16px] transition-all flex items-center justify-between cursor-pointer ${
                         isCustomSelected
                           ? 'bg-white text-gray-950 font-medium border border-white shadow-sm'
                           : 'bg-white/7 text-white/60 border border-white/16 hover:bg-white/12 hover:border-white/25'
@@ -506,11 +506,10 @@ export default function Home() {
                         minHeight: "48px",
                       }}
                     >
-                      <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="flex items-center gap-3 min-w-0">
                         {isCustomSelected ? (
                           <svg
-                            style={{ marginLeft: "20px" }}
-                            className="w-4 h-4 flex-shrink-0 text-gray-900"
+                            className="w-4 h-4 flex-shrink-0 text-gray-900 ml-2"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -529,8 +528,7 @@ export default function Home() {
                           </svg>
                         ) : (
                           <span
-                            style={{ marginLeft: "20px" }}
-                            className="text-lg leading-none text-white/60"
+                            className="text-lg leading-none text-white/60 ml-2"
                           >
                             +
                           </span>
@@ -551,7 +549,7 @@ export default function Home() {
                 <div className="relative">
                   <div className="relative flex items-center">
                     <svg
-                      style={{ left: "20px" }}
+                      style={{ left: "16px" }}
                       className="absolute w-4 h-4 text-white/40 pointer-events-none"
                       fill="none"
                       viewBox="0 0 24 24"
@@ -574,7 +572,7 @@ export default function Home() {
                       style={{
                         width: "100%",
                         height: "48px",
-                        paddingLeft: "48px",
+                        paddingLeft: "44px",
                         paddingRight: "44px",
                         fontSize: "16px",
                         boxSizing: "border-box",
@@ -633,25 +631,25 @@ export default function Home() {
             </div>
 
             {/* Radius selector */}
-            <div className="mb-7" >
-              <label style={{ marginBottom: "20px" }} className="text-white/65 text-[14px] mb-5 block text-center tracking-wide font-normal">
+            <div className="mb-5 sm:mb-6">
+              <label className="text-white/65 text-[13px] sm:text-[14px] mb-2.5 block text-center tracking-wide font-normal">
                 Search within:
               </label>
 
-              <div className="flex flex-wrap gap-2.5 justify-center">
+              <div className="flex flex-wrap gap-2 sm:gap-2.5 justify-center">
                 {RADIUS_OPTIONS.map((opt: { label: string; value: number }) => (
                   <button
                     key={opt.value}
                     onClick={() => setRadius(opt.value)}
-                    className={`rounded-full text-[14px] transition-all cursor-pointer border ${radius === opt.value
+                    className={`rounded-full text-[13px] sm:text-[14px] transition-all cursor-pointer border ${radius === opt.value
                       ? 'bg-white text-gray-950 font-bold border-white shadow-sm'
                       : 'bg-white/6 text-white/75 border-white/18 hover:bg-white/12 hover:border-white/30 font-medium'
                       }`}
                     style={{
-                      minWidth: "64px",
-                      height: "44px",
-                      paddingLeft: "14px",
-                      paddingRight: "14px",
+                      minWidth: "60px",
+                      height: "40px",
+                      paddingLeft: "12px",
+                      paddingRight: "12px",
                     }}
                   >
                     {opt.label}
@@ -661,9 +659,9 @@ export default function Home() {
             </div>
 
             {/* Book Now button */}
-            <button style={{ marginTop: "20px" }}
+            <button
               onClick={handleBookNow}
-              className="home-book-btn w-full text-white text-[16px] sm:text-[17px] font-bold tracking-widest cursor-pointer flex items-center justify-center select-none active:scale-[0.99] transition-all"
+              className="home-book-btn w-full mt-3 sm:mt-4 text-white text-[15px] sm:text-[16px] font-bold tracking-widest cursor-pointer flex items-center justify-center select-none active:scale-[0.99] transition-all"
             >
               {loading ? <Spinner size="sm" className="border-white/20 border-t-white" /> : 'BOOK NOW'}
             </button>

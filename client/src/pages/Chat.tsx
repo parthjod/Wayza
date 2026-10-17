@@ -35,7 +35,6 @@ export default function Chat() {
   const [showFareSplitModal, setShowFareSplitModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showMenuPanel, setShowMenuPanel] = useState(false);
-  const [rideFinishedModal, setRideFinishedModal] = useState(false);
 
   // Attachment & Image preview state
   const [showAttachMenu, setShowAttachMenu] = useState(false);
@@ -110,13 +109,12 @@ export default function Chat() {
     socket.on('journey:all-ended', () => {
       if (isLeavingRef.current) return;
       loadGroup();
-      setRideFinishedModal(true);
+      setShowFareSplitModal(true);
     });
     socket.on('fare:split-submitted', (data: any) => {
       if (isLeavingRef.current) return;
       setFareSplitResult(data);
       setShowFareSplitModal(true);
-      setRideFinishedModal(false);
       loadGroup();
       showToast('Fare split submitted! 🎉', 'success');
     });
@@ -300,10 +298,10 @@ export default function Chat() {
     try {
       const result = await journeyApi.end(groupId);
       if (result.allEnded) {
-        showToast('Ride completed! 🎉', 'success');
-        setRideFinishedModal(true);
+        showToast('Ride completed! Please split the fare.', 'info');
+        setShowFareSplitModal(true);
       } else {
-        showToast('Waiting for co-riders to end...', 'info');
+        showToast('You ended your journey. Waiting for co-riders...', 'info');
       }
       setShowEndJourneyModal(false);
       await loadGroup();
@@ -316,10 +314,10 @@ export default function Chat() {
     if (!groupId || !totalFare || splitMembers.length < 2) return;
     try {
       const fareNum = parseFloat(totalFare);
-      const result = await fareApi.submit(groupId, fareNum, splitMembers);
-      setFareSplitResult(result);
+      await fareApi.submit(groupId, fareNum, splitMembers);
       showToast('Fare split submitted! 🎉', 'success');
-      await loadGroup();
+      setShowFareSplitModal(false);
+      navigate('/home', { replace: true });
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Failed to submit fare split', 'error');
     }
@@ -626,22 +624,32 @@ export default function Chat() {
 
             {/* Attachment popover menu */}
             {showAttachMenu && (
-              <div className="absolute bottom-full mb-3 left-0 bg-[#161a26]/95 backdrop-blur-xl border border-white/15 rounded-2xl p-1.5 shadow-2xl flex flex-col gap-1 min-w-[195px] z-30 animate-fade-in-up">
+              <div className="absolute bottom-full mb-3 left-0 bg-[#161a26]/95 backdrop-blur-xl border border-white/15 rounded-2xl p-1.5 shadow-2xl flex flex-col gap-1 min-w-[205px] max-w-[calc(100vw-32px)] z-30 animate-fade-in-up">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full text-left px-3 py-2 rounded-xl text-xs text-white/90 hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer"
+                  className="w-full text-left px-3 py-2 rounded-xl text-xs text-white/90 hover:bg-white/10 active:bg-white/15 flex items-center gap-2.5 transition-colors cursor-pointer group"
                 >
-                  <span className="text-base">📷</span>
-                  <span>Photo / Cab Details</span>
+                  <div className="w-6 h-6 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0 text-blue-400 group-hover:scale-105 transition-transform">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                      <circle cx="12" cy="13" r="4" />
+                    </svg>
+                  </div>
+                  <span className="font-medium text-[13px] tracking-tight">Photo / Cab Details</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleShareLiveLocation}
-                  className="w-full text-left px-3 py-2 rounded-xl text-xs text-white/90 hover:bg-white/10 flex items-center gap-2.5 transition-colors cursor-pointer"
+                  className="w-full text-left px-3 py-2 rounded-xl text-xs text-white/90 hover:bg-white/10 active:bg-white/15 flex items-center gap-2.5 transition-colors cursor-pointer group"
                 >
-                  <span className="text-base">📍</span>
-                  <span>Share Live Location</span>
+                  <div className="w-6 h-6 rounded-lg bg-rose-500/15 border border-rose-500/30 flex items-center justify-center shrink-0 text-rose-400 group-hover:scale-105 transition-transform">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                  </div>
+                  <span className="font-medium text-[13px] tracking-tight">Share Live Location</span>
                 </button>
               </div>
             )}
@@ -791,12 +799,17 @@ export default function Chat() {
               })}
             </div>
 
-            <div className="border-t border-white/10 mt-3 pt-3 flex flex-col gap-1">
+            <div className="border-t border-white/12 mt-4 pt-3.5 flex flex-col gap-2">
               <button
                 onClick={handleLeaveGroup}
-                className="w-full text-left text-red-400/80 text-xs hover:text-red-400 py-1.5 px-2 rounded-lg hover:bg-red-500/10 transition-colors flex items-center gap-2"
+                className="w-full text-left text-red-400 hover:text-red-300 text-xs py-2 px-3 rounded-xl bg-red-500/[0.08] hover:bg-red-500/[0.15] border border-red-500/15 transition-all flex items-center gap-2.5 cursor-pointer font-medium active:scale-[0.98]"
               >
-                <span>🚪</span> Leave group
+                <svg className="w-4 h-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                  <polyline points="16 17 21 12 16 7" />
+                  <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                <span>Leave group</span>
               </button>
               <button
                 onClick={() => {
@@ -806,9 +819,14 @@ export default function Chat() {
                   }
                   setShowReportModal(true);
                 }}
-                className="w-full text-left text-red-400/80 text-xs hover:text-red-400 py-1.5 px-2 rounded-lg hover:bg-red-500/10 transition-colors flex items-center gap-2"
+                className="w-full text-left text-amber-400 hover:text-amber-300 text-xs py-2 px-3 rounded-xl bg-amber-500/[0.08] hover:bg-amber-500/[0.15] border border-amber-500/15 transition-all flex items-center gap-2.5 cursor-pointer font-medium active:scale-[0.98]"
               >
-                <span>⚠️</span> Report
+                <svg className="w-4 h-4 text-amber-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <span>Report</span>
               </button>
             </div>
           </div>
@@ -933,6 +951,19 @@ export default function Chat() {
             >
               Submit Split
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowFareSplitModal(false);
+                if (otherMembers.length > 0 && !reportUserId) {
+                  setReportUserId(otherMembers[0].userId);
+                }
+                setShowReportModal(true);
+              }}
+              className="fare-modal-report-btn cursor-pointer"
+            >
+              <span>⚠️</span> Report
+            </button>
           </>
         ) : (
           <>
@@ -1050,65 +1081,6 @@ export default function Chat() {
             >
               {isSubmittingReport ? 'Submitting...' : 'Submit Report'}
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Ride Completed Modal */}
-      {rideFinishedModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl">
-          <div
-            className="relative max-w-sm w-full rounded-3xl p-7 sm:p-8 text-center animate-fade-in-up overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-white/12"
-            style={{ background: 'linear-gradient(180deg, #181d28 0%, #0c0f17 100%)' }}
-          >
-            {/* Top ambient luxury glow */}
-            <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-24 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
-
-            {/* Premium Icon Badge */}
-            <div className="relative w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-b from-blue-500/20 to-indigo-600/10 border border-blue-500/30 flex items-center justify-center shadow-[0_0_25px_rgba(59,130,246,0.2)]">
-              <svg className="w-8 h-8 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8C2.1 10.7 2 10.9 2 11v5c0 .6.4 1 1 1h2" />
-                <circle cx="7" cy="17" r="2" />
-                <path d="M9 17h6" />
-                <circle cx="17" cy="17" r="2" />
-              </svg>
-            </div>
-
-            {/* Status Pill */}
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-[11px] font-semibold tracking-wide uppercase mb-2.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Journey Completed
-            </div>
-
-            {/* Heading */}
-            <h3 className="text-2xl font-bold text-white tracking-tight mb-2">
-              Ride Completed!
-            </h3>
-            <p className="text-xs text-white/60 mb-6 leading-relaxed max-w-[280px] mx-auto">
-              Your ride session with <span className="text-white font-semibold">{otherNames || 'co-riders'}</span> has ended.
-            </p>
-
-            {/* Actions */}
-            <div className="flex flex-col gap-2.5">
-              <button
-                onClick={() => {
-                  setRideFinishedModal(false);
-                  setShowFareSplitModal(true);
-                }}
-                className="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:via-indigo-500 hover:to-blue-400 active:scale-[0.98] text-white font-semibold text-sm tracking-wide shadow-lg shadow-blue-600/30 transition-all cursor-pointer flex items-center justify-center gap-2"
-              >
-                <span className="text-base font-normal">₹</span>
-                <span>Split Fare</span>
-                <span className="text-sm font-bold ml-1">→</span>
-              </button>
-
-              <button
-                onClick={() => navigate('/home', { replace: true })}
-                className="w-full py-3 px-5 rounded-2xl bg-white/[0.05] hover:bg-white/[0.1] active:scale-[0.98] text-white/75 hover:text-white border border-white/10 text-xs font-medium tracking-wide transition-all cursor-pointer"
-              >
-                Return to Home
-              </button>
-            </div>
           </div>
         </div>
       )}
