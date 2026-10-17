@@ -175,6 +175,8 @@ export class DiscoveryService {
       select: {
         id: true,
         warningCount: true,
+        avgRating: true,
+        reviewsCount: true,
         _count: {
           select: {
             groupMemberships: {
@@ -186,11 +188,13 @@ export class DiscoveryService {
         },
       },
     });
-    const userMetaMap = new Map<string, { warningCount: number; ridesCount: number }>();
+    const userMetaMap = new Map<string, { warningCount: number; ridesCount: number; avgRating: number; reviewsCount: number }>();
     candidateUsers.forEach((u: any) => {
       userMetaMap.set(u.id, {
         warningCount: u.warningCount || 0,
         ridesCount: u._count?.groupMemberships || 0,
+        avgRating: u.avgRating || 0,
+        reviewsCount: u.reviewsCount || 0,
       });
     });
 
@@ -213,10 +217,19 @@ export class DiscoveryService {
         const meta = userMetaMap.get(other.userId);
         const ridesCount = meta?.ridesCount ?? 0;
         const warnings = meta?.warningCount ?? 0;
-        // Realistic rating: base 4.8, up to 5.0 for completed rides, reduced for warnings
-        const calcRating = Math.min(5.0, Math.max(3.8, 4.8 + ridesCount * 0.05 - warnings * 0.4));
-        const rating = Math.round(calcRating * 10) / 10;
-        const reviewsCount = Math.max(1, ridesCount);
+        const storedAvg = meta?.avgRating ?? 0;
+        const storedCount = meta?.reviewsCount ?? 0;
+        // Use real rating if available; fall back to a ride-based estimate for new users
+        let rating: number;
+        let reviewsCount: number;
+        if (storedCount > 0) {
+          rating = storedAvg;
+          reviewsCount = storedCount;
+        } else {
+          const calcRating = Math.min(5.0, Math.max(3.8, 4.8 + ridesCount * 0.05 - warnings * 0.4));
+          rating = Math.round(calcRating * 10) / 10;
+          reviewsCount = Math.max(1, ridesCount);
+        }
 
         nearbyUsers.push({
           userId: other.userId,

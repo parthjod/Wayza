@@ -8,9 +8,11 @@ import { Avatar } from '../components/ui/Avatar';
 import { Spinner } from '../components/ui/Spinner';
 import { Modal } from '../components/ui/Modal';
 import { FeedbackForm } from '../components/ui/FeedbackForm';
+import { RatingModal } from '../components/ui/RatingModal';
 import { discoveryApi } from '../api/discovery.api';
 import { groupApi } from '../api/group.api';
 import { locationApi } from '../api/location.api';
+import { ratingApi } from '../api/rating.api';
 import { HOME_BG_VIDEO, CAMPUS_POIS, RADIUS_OPTIONS } from '../utils/constants';
 import { formatDistance } from '../utils/formatDistance';
 import type { NearbyUser, AutocompleteResult } from '../types';
@@ -52,6 +54,9 @@ export default function Home() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [rideHistory, setRideHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [pendingRatingIds, setPendingRatingIds] = useState<Set<string>>(new Set());
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingGroupId, setRatingGroupId] = useState<string | null>(null);
 
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -119,8 +124,12 @@ export default function Home() {
     setShowHistoryModal(true);
     setLoadingHistory(true);
     try {
-      const data = await groupApi.getHistory();
-      setRideHistory(data.rides || []);
+      const [historyData, pendingData] = await Promise.all([
+        groupApi.getHistory(),
+        ratingApi.getPendingRideIds().catch(() => ({ pendingGroupIds: [] as string[] })),
+      ]);
+      setRideHistory(historyData.rides || []);
+      setPendingRatingIds(new Set(pendingData.pendingGroupIds));
     } catch {
       showToast('Failed to load ride history', 'error');
     } finally {
@@ -1294,6 +1303,19 @@ export default function Home() {
                               </span>
                             </div>
                           )}
+
+                        {/* Pending Rating Badge */}
+                        {isCompleted && pendingRatingIds.has(ride.id) && (
+                          <button
+                            onClick={() => {
+                              setRatingGroupId(ride.id);
+                              setShowRatingModal(true);
+                            }}
+                            className="mt-1.5 flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-400/15 border border-amber-400/40 text-amber-300 text-[10px] font-bold hover:bg-amber-400/25 transition-all cursor-pointer whitespace-nowrap"
+                          >
+                            ⭐ Rate
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -1306,6 +1328,27 @@ export default function Home() {
 
       {/* Feedback Form */}
       <FeedbackForm open={showFeedback} onClose={() => setShowFeedback(false)} />
+
+      {/* Rating Modal — triggered from ride history badge */}
+      {ratingGroupId && (
+        <RatingModal
+          open={showRatingModal}
+          groupId={ratingGroupId}
+          onClose={() => {
+            setShowRatingModal(false);
+            // Refresh pending IDs after rating
+            ratingApi.getPendingRideIds().then((d) => {
+              setPendingRatingIds(new Set(d.pendingGroupIds));
+            }).catch(() => {});
+          }}
+          onDone={() => {
+            setShowRatingModal(false);
+            ratingApi.getPendingRideIds().then((d) => {
+              setPendingRatingIds(new Set(d.pendingGroupIds));
+            }).catch(() => {});
+          }}
+        />
+      )}
     </div>
   );
 }

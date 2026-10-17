@@ -19,6 +19,8 @@ model User {
   warningCount   Int      @default(0)
   blacklisted    Boolean  @default(false)
   role           String   @default("user") @db.VarChar(20) // "user" | "admin"
+  avgRating      Float    @default(0)
+  reviewsCount   Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -29,6 +31,8 @@ model User {
   journeys         JourneyParticipant[]
   fareSplits       FareSplit[]
   feedbacks        Feedback[]
+  ratingsGiven     Rating[]            @relation("RatingFrom")
+  ratingsReceived  Rating[]            @relation("RatingTo")
 
   @@index([phone])
   @@index([collegeEmail])
@@ -47,6 +51,7 @@ model Group {
   chatMessages ChatMessage[]
   journey      Journey?
   fareSplit    FareSplit?
+  ratings      Rating[]
 }
 
 enum GroupStatus {
@@ -176,4 +181,23 @@ model Feedback {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model Rating {
+  id          String   @id @default(uuid())
+  groupId     String
+  fromUserId  String
+  toUserId    String
+  stars       Int      // 1-5
+  tags        String[] // quick-tap tags
+  comment     String?  @db.VarChar(500)
+  createdAt   DateTime @default(now())
+
+  group    Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  fromUser User  @relation("RatingFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User  @relation("RatingTo", fields: [toUserId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, fromUserId, toUserId])
+  @@index([toUserId])
+  @@index([groupId])
 }

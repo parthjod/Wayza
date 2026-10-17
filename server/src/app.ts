@@ -18,6 +18,7 @@ import reportRoutes from './modules/report/report.routes';
 import locationRoutes from './modules/location/location.routes';
 import adminRoutes from './modules/admin/admin.routes';
 import feedbackRoutes from './modules/feedback/feedback.routes';
+import ratingRoutes from './modules/rating/rating.routes';
 
 const app = express();
 
@@ -145,6 +146,7 @@ app.use('/api/report', reportRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/rating', ratingRoutes);
 
 
 // Global error handler (must be last)
