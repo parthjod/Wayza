@@ -1059,6 +1059,7 @@ export default function Home() {
       </Modal>
 
       {/* Ride History Modal — matches exact design mockup */}
+      {/* Ride History Modal */}
       {showHistoryModal && (
         <div
           className="ride-history-overlay"
@@ -1068,90 +1069,150 @@ export default function Home() {
             className="ride-history-card animate-fade-in-up"
             role="dialog"
             aria-modal="true"
+            aria-labelledby="ride-history-title"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">📜</span>
-                <h3 className="text-xl sm:text-2xl font-instrument text-white tracking-wide">Ride History</h3>
-                <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/10 text-white/60 font-mono ml-1">
+            {/* Modal Header */}
+            <div className="ride-history-header">
+              <div className="ride-history-heading">
+                <span className="ride-history-icon" aria-hidden="true">
+                  📜
+                </span>
+
+                <h3 id="ride-history-title" className="ride-history-title">
+                  Ride History
+                </h3>
+
+                <span className="ride-history-count">
                   {rideHistory.length}
                 </span>
               </div>
+
               <button
+                type="button"
                 onClick={() => setShowHistoryModal(false)}
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white flex items-center justify-center transition-colors text-xs cursor-pointer"
-                aria-label="Close"
+                className="ride-history-close"
+                aria-label="Close ride history"
               >
-                ✕
+                ×
               </button>
             </div>
 
+            {/* Loading */}
             {loadingHistory ? (
-              <div className="py-12 flex justify-center">
+              <div className="ride-history-loading">
                 <Spinner size="md" />
               </div>
             ) : rideHistory.length === 0 ? (
-              <div className="py-10 text-center text-white/50 text-sm">
-                <p className="text-3xl mb-2">🚗</p>
-                <p className="font-medium text-white/70">No past rides yet</p>
-                <p className="text-xs text-white/35 mt-1">Your completed campus rides will show up here.</p>
+              /* Empty State */
+              <div className="ride-history-empty">
+                <span className="ride-history-empty-icon">🚗</span>
+                <p className="ride-history-empty-title">
+                  No past rides yet
+                </p>
+                <p className="ride-history-empty-description">
+                  Your completed campus rides will show up here.
+                </p>
               </div>
             ) : (
-              <div className="flex flex-col gap-3 max-h-[380px] overflow-y-auto pr-1">
+              /* Ride History List */
+              <div className="ride-history-list">
                 {rideHistory.map((ride: any) => {
-                  const date = new Date(ride.createdAt).toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  });
-                  const coRiders = ride.members?.filter((m: any) => m.userId !== user?.id) || [];
-                  const dest = (!ride.dropLocation || ride.dropLocation === 'To be determined')
-                    ? 'MIT-WPU Campus'
-                    : ride.dropLocation;
-                  const isCompleted = ride.status === 'SPLIT_DONE' || ride.status === 'JOURNEY_ENDED';
+                  const date = new Date(ride.createdAt).toLocaleDateString(
+                    'en-US',
+                    {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    }
+                  );
+
+                  const coRiders =
+                    ride.members?.filter(
+                      (m: any) => m.userId !== user?.id
+                    ) || [];
+
+                  const dest =
+                    !ride.dropLocation ||
+                    ride.dropLocation === 'To be determined'
+                      ? 'MIT-WPU Campus'
+                      : ride.dropLocation;
+
+                  const isCompleted =
+                    ride.status === 'SPLIT_DONE' ||
+                    ride.status === 'JOURNEY_ENDED';
+
+                  const coRiderNames = coRiders
+                    .map((m: any) => m.fullName)
+                    .filter(Boolean)
+                    .join(', ') || 'Rider';
 
                   return (
                     <div
                       key={ride.id}
-                      className="p-3.5 sm:p-4 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-white/20 transition-all flex items-center justify-between gap-3 shadow-sm"
+                      className="ride-history-item"
                     >
-                      {/* Left: Pin with route track + Destination on top & Date below */}
-                      <div className="flex items-start gap-3 min-w-0 flex-1">
-                        <div className="flex flex-col items-center shrink-0 pt-0.5">
-                          <span className="text-base leading-none">📍</span>
-                          <div className="w-[1.5px] h-3.5 bg-white/20 mt-1 rounded-full" />
+                      {/* Left: Route and ride details */}
+                      <div className="ride-history-left">
+                        <div className="ride-history-route">
+                          <span
+                            className="ride-history-pin"
+                            aria-hidden="true"
+                          >
+                            📍
+                          </span>
+                          <span
+                            className="ride-history-route-line"
+                            aria-hidden="true"
+                          />
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="text-sm sm:text-[15px] font-semibold text-white truncate" title={dest}>
+
+                        <div className="ride-history-info">
+                          <h4
+                            className="ride-history-destination"
+                            title={dest}
+                          >
                             {dest}
                           </h4>
-                          <p className="text-xs text-white/50 truncate mt-1">
-                            {date} • with {coRiders.map((m: any) => m.fullName).join(', ') || 'Rider'}
+
+                          <p className="ride-history-meta">
+                            <span>{date}</span>
+                            <span className="ride-history-meta-dot">•</span>
+                            <span className="ride-history-riders">
+                              with {coRiderNames}
+                            </span>
                           </p>
                         </div>
                       </div>
 
-                      {/* Right: Status badge on top & Fare split below */}
-                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      {/* Right: Status and fare */}
+                      <div className="ride-history-right">
                         <span
-                          className={`text-[11px] px-3 py-1 rounded-full font-medium whitespace-nowrap flex items-center gap-1 ${
+                          className={`ride-history-status ${
                             isCompleted
-                              ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
-                              : 'bg-white/10 text-white/70'
+                              ? 'ride-history-status-completed'
+                              : 'ride-history-status-other'
                           }`}
                         >
-                          {isCompleted && <span>✓</span>}
-                          <span>{isCompleted ? 'Completed' : ride.status}</span>
+                          {isCompleted && (
+                            <span aria-hidden="true">✓</span>
+                          )}
+                          <span>
+                            {isCompleted ? 'Completed' : ride.status}
+                          </span>
                         </span>
 
-                        {ride.totalFare ? (
-                          <div className="flex items-baseline gap-1 px-2.5 py-0.5 rounded-full bg-black/40 border border-white/10">
-                            <span className="text-xs font-bold text-cyan-400">₹{ride.totalFare}</span>
-                            <span className="text-[10px] text-white/40 font-medium">split</span>
-                          </div>
-                        ) : null}
+                        {ride.totalFare != null &&
+                          ride.totalFare !== '' && (
+                            <div className="ride-history-fare">
+                              <span className="ride-history-fare-amount">
+                                ₹{ride.totalFare}
+                              </span>
+                              <span className="ride-history-fare-label">
+                                split
+                              </span>
+                            </div>
+                          )}
                       </div>
                     </div>
                   );

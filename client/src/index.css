@@ -1009,40 +1009,593 @@ body {
 }
 
 /* =====================================================
-   HOME — RIDE HISTORY CARD (Exact Match to Design)
+   WAYZA — RIDE HISTORY MODAL
    ===================================================== */
+
+/* Dark, blurred page backdrop */
 .ride-history-overlay {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 100;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(16px);
+
+  padding: 24px;
+  box-sizing: border-box;
+
+  background: rgba(3, 9, 22, 0.62);
   -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
 }
 
+/* Main modal */
 .ride-history-card {
-  width: 100%;
-  max-width: 490px;
-  background: rgba(10, 22, 46, 0.88);
-  backdrop-filter: blur(28px);
+  width: min(100%, 695px);
+  max-height: min(82vh, 760px);
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 28px 32px 30px;
+
+  background: rgba(7, 17, 34, 0.94);
   -webkit-backdrop-filter: blur(28px);
-  border: 1.5px solid rgba(59, 130, 246, 0.65);
-  box-shadow: 0 0 35px rgba(37, 99, 235, 0.28), inset 0 0 20px rgba(59, 130, 246, 0.08);
-  border-radius: 26px;
-  padding: 26px 24px;
+  backdrop-filter: blur(28px);
+
+  border: 1px solid rgba(59, 130, 246, 0.62);
+  border-radius: 30px;
+
+  box-shadow:
+    0 0 36px rgba(37, 99, 235, 0.17),
+    0 26px 80px rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(147, 197, 253, 0.06);
+
   position: relative;
-  z-index: 20;
+  overflow: hidden;
 }
 
-@media (max-width: 480px) {
+/* =====================================================
+   HEADER
+   ===================================================== */
+
+.ride-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  flex-shrink: 0;
+  margin-bottom: 20px;
+}
+
+.ride-history-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ride-history-icon {
+  font-size: 26px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.ride-history-title {
+  margin: 0;
+  color: #f8fafc;
+
+  font-family: inherit;
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+}
+
+.ride-history-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 38px;
+  height: 38px;
+  padding: 0 9px;
+  box-sizing: border-box;
+
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.13);
+  border: 1px solid rgba(148, 163, 184, 0.08);
+
+  color: rgba(226, 232, 240, 0.76);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.ride-history-close {
+  flex-shrink: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 46px;
+  height: 46px;
+  padding: 0;
+
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.16);
+
+  color: rgba(241, 245, 249, 0.86);
+  font-family: inherit;
+  font-size: 29px;
+  font-weight: 300;
+  line-height: 1;
+
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.ride-history-close:hover {
+  background: rgba(148, 163, 184, 0.27);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.ride-history-close:active {
+  transform: scale(0.94);
+}
+
+/* =====================================================
+   SCROLLABLE LIST
+   ===================================================== */
+
+.ride-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  min-height: 0;
+  max-height: min(58vh, 520px);
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding: 0 1px 2px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+.ride-history-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ride-history-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ride-history-list::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+}
+
+.ride-history-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.48);
+}
+
+/* =====================================================
+   INDIVIDUAL RIDE CARD
+   ===================================================== */
+
+.ride-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+
+  flex-shrink: 0;
+  width: 100%;
+  min-height: 112px;
+  box-sizing: border-box;
+  padding: 17px 18px;
+
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 23px;
+
+  background: linear-gradient(
+    125deg,
+    rgba(30, 41, 63, 0.64),
+    rgba(17, 29, 49, 0.8)
+  );
+
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.018);
+
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.ride-history-item:hover {
+  background: linear-gradient(
+    125deg,
+    rgba(37, 51, 76, 0.76),
+    rgba(20, 34, 56, 0.9)
+  );
+  border-color: rgba(96, 165, 250, 0.3);
+}
+
+/* Left side */
+.ride-history-left {
+  display: flex;
+  align-items: stretch;
+  gap: 15px;
+
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+}
+
+/* Pin and route connector */
+.ride-history-route {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  width: 25px;
+  min-height: 100%;
+
+  flex-shrink: 0;
+}
+
+.ride-history-pin {
+  position: relative;
+  z-index: 1;
+
+  display: block;
+  margin-top: -1px;
+
+  font-size: 21px;
+  line-height: 1.1;
+}
+
+.ride-history-route-line {
+  position: absolute;
+  top: 24px;
+  bottom: 0;
+  left: 50%;
+
+  width: 1.5px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.38);
+
+  transform: translateX(-50%);
+}
+
+/* Destination and metadata */
+.ride-history-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 9px;
+
+  min-width: 0;
+  flex: 1;
+}
+
+.ride-history-destination {
+  margin: 0;
+
+  color: #f8fafc;
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ride-history-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 7px;
+
+  margin: 0;
+  min-width: 0;
+
+  color: rgba(203, 213, 225, 0.72);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.ride-history-meta > span:first-child {
+  flex-shrink: 0;
+}
+
+.ride-history-meta-dot {
+  flex-shrink: 0;
+  color: rgba(203, 213, 225, 0.48);
+}
+
+.ride-history-riders {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =====================================================
+   RIGHT SIDE — STATUS AND FARE
+   ===================================================== */
+
+.ride-history-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: space-between;
+  align-self: stretch;
+
+  flex-shrink: 0;
+  min-width: 114px;
+  gap: 10px;
+}
+
+/* Status badge */
+.ride-history-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 5px 10px;
+
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.ride-history-status-completed {
+  color: #00d7a0;
+  background: rgba(0, 210, 155, 0.13);
+  border: 1px solid rgba(0, 210, 155, 0.16);
+}
+
+.ride-history-status-other {
+  color: rgba(226, 232, 240, 0.78);
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.13);
+}
+
+/* Fare */
+.ride-history-fare {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+
+  white-space: nowrap;
+}
+
+.ride-history-fare-amount {
+  color: #13d9f2;
+  font-size: 17px;
+  font-weight: 750;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.ride-history-fare-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 4px 8px;
+  border-radius: 999px;
+
+  background: rgba(148, 163, 184, 0.13);
+  color: rgba(203, 213, 225, 0.74);
+
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* =====================================================
+   LOADING AND EMPTY STATES
+   ===================================================== */
+
+.ride-history-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+}
+
+.ride-history-empty {
+  padding: 34px 12px 28px;
+  text-align: center;
+}
+
+.ride-history-empty-icon {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 32px;
+}
+
+.ride-history-empty-title {
+  margin: 0;
+  color: rgba(248, 250, 252, 0.88);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.ride-history-empty-description {
+  margin: 7px 0 0;
+  color: rgba(203, 213, 225, 0.58);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 640px) {
+  .ride-history-overlay {
+    padding: 16px;
+  }
+
   .ride-history-card {
-    max-width: calc(100% - 24px);
-    padding: 20px 16px;
-    border-radius: 22px;
+    width: 100%;
+    max-height: 82dvh;
+    padding: 22px 18px;
+    border-radius: 24px;
+  }
+
+  .ride-history-header {
+    margin-bottom: 16px;
+    gap: 10px;
+  }
+
+  .ride-history-heading {
+    gap: 9px;
+  }
+
+  .ride-history-icon {
+    font-size: 22px;
+  }
+
+  .ride-history-title {
+    font-size: 22px;
+  }
+
+  .ride-history-count {
+    min-width: 30px;
+    height: 30px;
+    padding-inline: 7px;
+    font-size: 12px;
+  }
+
+  .ride-history-close {
+    width: 38px;
+    height: 38px;
+    font-size: 25px;
+  }
+
+  .ride-history-list {
+    gap: 12px;
+    max-height: 62dvh;
+  }
+
+  .ride-history-item {
+    min-height: 100px;
+    padding: 14px 12px;
+    gap: 10px;
+    border-radius: 18px;
+  }
+
+  .ride-history-left {
+    gap: 9px;
+  }
+
+  .ride-history-route {
+    width: 22px;
+  }
+
+  .ride-history-pin {
+    font-size: 18px;
+  }
+
+  .ride-history-route-line {
+    top: 21px;
+  }
+
+  .ride-history-info {
+    gap: 8px;
+  }
+
+  .ride-history-destination {
+    font-size: 15px;
+  }
+
+  .ride-history-meta {
+    flex-wrap: wrap;
+    gap: 4px 6px;
+    font-size: 12px;
+  }
+
+  .ride-history-right {
+    min-width: 86px;
+    gap: 10px;
+  }
+
+  .ride-history-status {
+    padding: 4px 7px;
+    gap: 4px;
+    font-size: 10px;
+  }
+
+  .ride-history-fare {
+    gap: 5px;
+  }
+
+  .ride-history-fare-amount {
+    font-size: 14px;
+  }
+
+  .ride-history-fare-label {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 380px) {
+  .ride-history-overlay {
+    padding: 10px;
+  }
+
+  .ride-history-card {
+    padding: 18px 12px;
+  }
+
+  .ride-history-item {
+    padding: 12px 9px;
+    gap: 7px;
+  }
+
+  .ride-history-left {
+    gap: 7px;
+  }
+
+  .ride-history-right {
+    min-width: 78px;
+  }
+
+  .ride-history-status {
+    padding-inline: 5px;
+    font-size: 9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ride-history-item,
+  .ride-history-close {
+    transition: none;
   }
 }
 
