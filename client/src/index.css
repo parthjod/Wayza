@@ -1530,7 +1530,8 @@ body {
   cursor: pointer;
 }
 
-.profile-avatar-wrap > div:first-child {
+.profile-avatar-wrap > div:first-child,
+.profile-avatar-wrap > img:first-child {
   overflow: hidden;
   border-radius: 50%;
   box-shadow: 0 0 0 2px rgba(114, 202, 232, 0.55);

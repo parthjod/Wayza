@@ -8,6 +8,57 @@ import { Modal } from '../components/ui/Modal';
 import { userApi } from '../api/user.api';
 import { LOGIN_BG_VIDEO } from '../utils/constants';
 
+// Helper to compress image on client before upload (keeps file under 150KB, fast upload, fits in NGINX body)
+async function compressImage(file: File, maxDim = 800, quality = 0.85): Promise<File> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let width = img.width;
+      let height = img.height;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(file);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve(file);
+            return;
+          }
+          const compressed = new File([blob], file.name.replace(/\.[^/.]+$/, '') + '.jpg', {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          });
+          resolve(compressed);
+        },
+        'image/jpeg',
+        quality
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
+}
+
 export default function Profile() {
   const navigate = useNavigate();
   const { user, setUser } = useAuth();
@@ -27,13 +78,130 @@ export default function Profile() {
   // Modals
   const [showPhotoActions, setShowPhotoActions] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
 
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     loadProfile();
   }, []);
+
+  const stopCameraStream = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      stopCameraStream();
+    };
+  }, []);
+
+  const openCamera = async (facing: 'user' | 'environment' = facingMode) => {
+    setShowPhotoActions(false);
+    setShowCameraModal(true);
+    setCameraError(null);
+    setCapturedPhoto(null);
+    stopCameraStream();
+
+    if (!navigator?.mediaDevices?.getUserMedia) {
+      setCameraError('Camera is not supported on this browser. Please choose from library.');
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: facing,
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+    } catch (err: any) {
+      console.error('Camera open failed:', err);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setCameraError('Camera permission was denied. Please allow camera access in your browser settings.');
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        setCameraError('No camera found on this device.');
+      } else {
+        setCameraError('Unable to open camera: ' + (err.message || 'Unknown error'));
+      }
+    }
+  };
+
+  const closeCameraModal = () => {
+    stopCameraStream();
+    setShowCameraModal(false);
+    setCapturedPhoto(null);
+    setCameraError(null);
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    if (!video.videoWidth || !video.videoHeight) return;
+
+    const size = Math.min(video.videoWidth, video.videoHeight);
+    const canvas = document.createElement('canvas');
+    canvas.width = 600;
+    canvas.height = 600;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const startX = (video.videoWidth - size) / 2;
+    const startY = (video.videoHeight - size) / 2;
+
+    if (facingMode === 'user') {
+      ctx.translate(600, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(video, startX, startY, size, size, 0, 0, 600, 600);
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    setCapturedPhoto(dataUrl);
+  };
+
+  const retakePhoto = () => {
+    setCapturedPhoto(null);
+  };
+
+  const confirmCapturedPhoto = () => {
+    if (!capturedPhoto) return;
+    fetch(capturedPhoto)
+      .then((res) => res.blob())
+      .then((blob) => {
+        const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        closeCameraModal();
+        processAndUploadFile(file);
+      })
+      .catch((err) => {
+        console.error('Failed to process captured photo:', err);
+        showToast('Failed to process photo', 'error');
+      });
+  };
+
+  const switchCameraFacing = () => {
+    const nextFacing = facingMode === 'user' ? 'environment' : 'user';
+    setFacingMode(nextFacing);
+    openCamera(nextFacing);
+  };
 
   const loadProfile = async () => {
     try {
@@ -67,7 +235,39 @@ export default function Profile() {
     }
   };
 
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const processAndUploadFile = async (file: File) => {
+    setShowPhotoActions(false);
+
+    // 1. Instantly display image locally on profile icon
+    const localPreview = URL.createObjectURL(file);
+    setPreviewUrl(localPreview);
+
+    setUploading(true);
+    try {
+      // 2. Compress client-side so it's lightweight and never exceeds NGINX/server limits
+      const compressed = await compressImage(file);
+      const result = await userApi.uploadAvatar(compressed);
+      const rawUrl = result.profilePicUrl;
+      const newPicUrl = rawUrl
+        ? (rawUrl.startsWith('data:') ? rawUrl : `${rawUrl}${rawUrl.includes('?') ? '&' : '?'}t=${Date.now()}`)
+        : null;
+
+      if (newPicUrl) {
+        setProfilePicUrl(newPicUrl);
+        setUser({ ...user!, profilePicUrl: newPicUrl });
+      }
+      showToast('Photo updated ✓', 'success');
+    } catch (err: any) {
+      console.error('Photo upload error:', err);
+      showToast(err.response?.data?.error || 'Failed to upload photo', 'error');
+    } finally {
+      setUploading(false);
+      if (galleryInputRef.current) galleryInputRef.current.value = '';
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
+    }
+  };
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -76,33 +276,7 @@ export default function Profile() {
       return;
     }
 
-    setShowPhotoActions(false);
-
-    // Read base64 preview for instant visual feedback
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPreviewUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-
-    setUploading(true);
-    try {
-      const result = await userApi.uploadAvatar(file);
-      const rawUrl = result.profilePicUrl;
-      const newPicUrl = rawUrl
-        ? (rawUrl.startsWith('data:') ? rawUrl : `${rawUrl}${rawUrl.includes('?') ? '&' : '?'}t=${Date.now()}`)
-        : null;
-      setPreviewUrl(null);
-      setProfilePicUrl(newPicUrl);
-      setUser({ ...user!, profilePicUrl: newPicUrl });
-      showToast('Photo updated ✓', 'success');
-    } catch (err: any) {
-      setPreviewUrl(null);
-      showToast(err.response?.data?.error || 'Failed to upload photo', 'error');
-    } finally {
-      setUploading(false);
-      e.target.value = '';
-    }
+    processAndUploadFile(file);
   };
 
   const handleRemovePhoto = async () => {
@@ -377,45 +551,48 @@ export default function Profile() {
           Profile Photo
         </h3>
         <div className="flex flex-col gap-3">
+          {/* 1. Take Photo (Live Camera) */}
           <button
-            onClick={() => {
-              setShowPhotoActions(false);
-              cameraInputRef.current?.click();
-            }}
-            className="w-full py-3.5 px-5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-white font-medium text-sm flex items-center gap-3.5 transition-colors cursor-pointer"
+            type="button"
+            onClick={() => openCamera()}
+            className="w-full py-3.5 px-5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-white font-medium text-sm flex items-center gap-3.5 transition-colors cursor-pointer active:scale-98"
           >
             <span className="text-lg">📸</span>
             <span>Take Photo (Camera)</span>
           </button>
 
+          {/* 2. Choose from Library */}
           <button
+            type="button"
             onClick={() => {
               setShowPhotoActions(false);
               galleryInputRef.current?.click();
             }}
-            className="w-full py-3.5 px-5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-medium text-sm flex items-center gap-3.5 transition-colors cursor-pointer"
+            className="w-full py-3.5 px-5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-medium text-sm flex items-center gap-3.5 transition-colors cursor-pointer active:scale-98"
           >
             <span className="text-lg">🖼️</span>
             <span>Choose from Library</span>
           </button>
 
-          {currentDisplayPhoto && (
-            <button
-              onClick={() => {
-                setShowPhotoActions(false);
-                setShowViewModal(true);
-              }}
-              className="w-full py-3.5 px-5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 font-medium text-sm flex items-center gap-3.5 transition-colors cursor-pointer"
-            >
-              <span className="text-lg">👁️</span>
-              <span>View Profile Picture</span>
-            </button>
-          )}
+          {/* 3. View Profile Picture (Incorporated alongside the other 2) */}
+          <button
+            type="button"
+            onClick={() => {
+              setShowPhotoActions(false);
+              setShowViewModal(true);
+            }}
+            className="w-full py-3.5 px-5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/90 font-medium text-sm flex items-center gap-3.5 transition-colors cursor-pointer active:scale-98"
+          >
+            <span className="text-lg">👁️</span>
+            <span>View Profile Picture</span>
+          </button>
 
+          {/* 4. Remove Profile Picture (if available) */}
           {currentDisplayPhoto && (
             <button
+              type="button"
               onClick={handleRemovePhoto}
-              className="w-full py-3.5 px-5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-400 font-medium text-sm flex items-center gap-3.5 transition-colors cursor-pointer"
+              className="w-full py-3.5 px-5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-400 font-medium text-sm flex items-center gap-3.5 transition-colors cursor-pointer active:scale-98"
             >
               <span className="text-lg">🗑️</span>
               <span>Remove Profile Picture</span>
@@ -423,13 +600,134 @@ export default function Profile() {
           )}
 
           <button
+            type="button"
             onClick={() => setShowPhotoActions(false)}
-            className="w-full py-3 px-5 rounded-xl bg-transparent hover:bg-white/5 text-white/50 text-xs font-medium text-center transition-colors cursor-pointer mt-1"
+            className="w-full py-2.5 px-5 rounded-xl bg-transparent hover:bg-white/5 text-white/50 text-xs font-medium text-center transition-colors cursor-pointer mt-1"
           >
             Cancel
           </button>
         </div>
       </Modal>
+
+      {/* Live Camera Viewfinder Modal */}
+      {showCameraModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in"
+          onClick={closeCameraModal}
+        >
+          <div
+            className="relative w-full max-w-sm bg-[#16181d] border border-white/20 rounded-2xl p-5 shadow-2xl flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-full flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                <span>📸</span> Take Profile Photo
+              </h3>
+              <button
+                type="button"
+                onClick={closeCameraModal}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm transition-colors cursor-pointer"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {cameraError ? (
+              <div className="w-full py-6 px-3 flex flex-col items-center text-center">
+                <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-center text-xl mb-3">
+                  ⚠️
+                </div>
+                <p className="text-xs sm:text-sm text-white/80 mb-5 leading-relaxed">{cameraError}</p>
+                <div className="flex gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => openCamera()}
+                    className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    Retry
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeCameraModal();
+                      galleryInputRef.current?.click();
+                    }}
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition-colors cursor-pointer"
+                  >
+                    Choose from library
+                  </button>
+                </div>
+              </div>
+            ) : capturedPhoto ? (
+              <div className="w-full flex flex-col items-center">
+                <div className="relative w-60 h-60 rounded-full overflow-hidden border-4 border-blue-500/70 shadow-2xl mb-5">
+                  <img src={capturedPhoto} alt="Captured preview" className="w-full h-full object-cover" />
+                </div>
+                <div className="flex items-center gap-3 w-full justify-center">
+                  <button
+                    type="button"
+                    onClick={retakePhoto}
+                    className="flex-1 max-w-[130px] py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-semibold transition-all cursor-pointer active:scale-95"
+                  >
+                    Retake
+                  </button>
+                  <button
+                    type="button"
+                    onClick={confirmCapturedPhoto}
+                    className="flex-1 max-w-[130px] py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white text-xs font-semibold shadow-lg shadow-blue-500/25 transition-all cursor-pointer active:scale-95"
+                  >
+                    Use Photo
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="w-full flex flex-col items-center">
+                <div className="relative w-60 h-60 rounded-full overflow-hidden border-4 border-white/20 bg-black shadow-inner mb-5">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className={`w-full h-full object-cover ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
+                  />
+                  {/* Subtle face circle guide */}
+                  <div className="absolute inset-0 rounded-full border-2 border-white/30 pointer-events-none" />
+                </div>
+
+                <div className="flex items-center justify-center gap-6 w-full">
+                  <button
+                    type="button"
+                    onClick={switchCameraFacing}
+                    className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-sm transition-colors cursor-pointer"
+                    title="Switch camera"
+                  >
+                    🔄
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={capturePhoto}
+                    className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 ring-4 ring-white/30 flex items-center justify-center text-white text-xl shadow-lg shadow-blue-500/30 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                    aria-label="Snap photo"
+                  >
+                    📸
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={closeCameraModal}
+                    className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center text-xs transition-colors cursor-pointer"
+                    title="Cancel"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* View Photo Lightbox Modal */}
       {showViewModal && (
@@ -438,6 +736,7 @@ export default function Profile() {
           onClick={() => setShowViewModal(false)}
         >
           <button
+            type="button"
             onClick={() => setShowViewModal(false)}
             className="absolute top-6 right-6 w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-xl z-20 transition-all cursor-pointer shadow-lg"
             aria-label="Close"
@@ -445,21 +744,34 @@ export default function Profile() {
             ✕
           </button>
 
-          {currentDisplayPhoto ? (
-            <img
-              src={currentDisplayPhoto}
-              alt={fullName || user?.fullName || 'Profile photo'}
-              className="max-w-[85vw] max-h-[75vh] rounded-3xl object-contain shadow-2xl border border-white/20 select-none animate-scale-up"
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <div
-              className="w-56 h-56 rounded-3xl flex items-center justify-center bg-white/10 border border-white/20 shadow-2xl animate-scale-up"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Avatar name={fullName || user?.fullName || ''} size="xl" className="scale-150" />
+          <div
+            className="flex flex-col items-center gap-4 max-w-[90vw] animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {currentDisplayPhoto ? (
+              <img
+                src={currentDisplayPhoto}
+                alt={fullName || user?.fullName || 'Profile photo'}
+                className="max-w-[85vw] max-h-[70vh] rounded-3xl object-contain shadow-2xl border border-white/20 select-none"
+              />
+            ) : (
+              <div className="w-56 h-56 sm:w-64 sm:h-64 rounded-full flex items-center justify-center shadow-2xl border-2 border-white/20 overflow-hidden">
+                <Avatar
+                  name={fullName || user?.fullName || ''}
+                  size="xl"
+                  className="!w-full !h-full !text-6xl font-bold"
+                />
+              </div>
+            )}
+            <div className="text-center">
+              <p className="text-white font-medium text-base tracking-wide">
+                {fullName || user?.fullName || 'Profile Picture'}
+              </p>
+              <p className="text-white/50 text-xs mt-0.5">
+                {currentDisplayPhoto ? 'Current photo' : 'Default initials avatar'}
+              </p>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>

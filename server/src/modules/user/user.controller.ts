@@ -48,8 +48,8 @@ export class UserController {
         res.status(400).json({ error: 'No image file provided' });
         return;
       }
-      if (req.file.size > 5 * 1024 * 1024) {
-        res.status(400).json({ error: 'File too large. Max 5MB.' });
+      if (req.file.size > 15 * 1024 * 1024) {
+        res.status(400).json({ error: 'File too large. Max 15MB.' });
         return;
       }
       const result = await userService.uploadAvatar(req.user!.userId, req.file);
