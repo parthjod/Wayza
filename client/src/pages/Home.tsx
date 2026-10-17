@@ -299,23 +299,27 @@ export default function Home() {
       {/* Very subtle gradient vignette when discovering — keeps background clearly visible */}
       {viewState === 'discovering' && (
         <div className="home-discovering-overlay" />
-      )}      {/* Navbar with frosted backdrop so content never collides */}
-      <header className="fixed top-0 left-0 right-0 z-40 w-full flex items-center justify-between px-6 sm:px-10 md:px-14 py-3.5 sm:py-4 bg-[#0a0f1d]/75 backdrop-blur-md border-b border-white/[0.08] pointer-events-none transition-all">
-        {/* Brand Logo - anchored with balanced margins */}
+      )}      {/* Top Navbar matching Landing page spacing */}
+      <header
+        style={{ marginTop: '10px' }}
+        className="fixed top-0 left-0 right-0 z-40 w-full flex items-center justify-between px-8 sm:px-12 md:px-14 py-7 sm:py-8 pointer-events-none transition-all"
+      >
+        {/* Brand Logo - matching Landing page alignment */}
         <div className="pointer-events-auto select-none flex items-center">
           <span
             onClick={() => {
               if (viewState !== 'booking') handleStopBooking();
               else navigate('/home');
             }}
-            className="text-white text-[24px] sm:text-[30px] md:text-[34px] font-instrument tracking-[0.16em] drop-shadow-md leading-none select-none font-normal cursor-pointer hover:opacity-85 transition-opacity"
+            className="text-white text-[32px] sm:text-[36px] font-instrument tracking-[0.14em] drop-shadow-md leading-none select-none font-normal cursor-pointer hover:opacity-85 transition-opacity"
+            style={{ marginLeft: '10px' }}
             title="Wayza Home"
           >
             WAYZA
           </span>
         </div>
 
-        <div className="flex items-center gap-2.5 sm:gap-3 pointer-events-auto">
+        <div className="flex items-center gap-3 pointer-events-auto" style={{ marginRight: '10px' }}>
           {/* Tell us something — feedback button (hidden on mobile, present in avatar dropdown) */}
           <button
             id="feedback-nav-btn"
@@ -417,9 +421,9 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pt-20 pb-12">
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-12">
         {viewState === 'booking' && (
-          <div className="home-booking-card w-full text-center animate-fade-in-up">
+          <div className="home-booking-card w-full text-center animate-fade-in-up my-auto">
             {/* Active Ride Banner */}
             {activeRide && (
               <div
@@ -661,7 +665,7 @@ export default function Home() {
         )}
 
         {viewState === 'discovering' && (
-          <div className="home-booking-card w-full max-w-[460px] text-center animate-fade-in-up flex flex-col items-center">
+          <div className="home-booking-card w-full max-w-[460px] text-center animate-fade-in-up flex flex-col items-center my-auto">
             {/* Destination info chip */}
             <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs text-white/80 mb-4">
               <span className="text-emerald-400">📍</span>
@@ -1026,7 +1030,7 @@ export default function Home() {
       </Modal>
 
       {/* Ride History Modal */}
-      <Modal open={showHistoryModal} onClose={() => setShowHistoryModal(false)} className="!p-4 sm:!p-6 max-w-lg w-full">
+      <Modal open={showHistoryModal} onClose={() => setShowHistoryModal(false)} className="!p-5 sm:!p-7 max-w-lg w-full">
         <div className="w-full text-left">
           <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
             <div className="flex items-center gap-2.5">
@@ -1056,7 +1060,7 @@ export default function Home() {
               <p className="text-xs text-white/35 mt-1">Your completed campus rides will show up here.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-2.5 max-h-[380px] overflow-y-auto pr-1">
+            <div className="flex flex-col gap-3 max-h-[380px] overflow-y-auto pr-1">
               {rideHistory.map((ride: any) => {
                 const date = new Date(ride.createdAt).toLocaleDateString(undefined, {
                   month: 'short',
@@ -1072,17 +1076,17 @@ export default function Home() {
                 return (
                   <div
                     key={ride.id}
-                    className="p-4 sm:p-4.5 rounded-xl bg-white/[0.05] border border-white/10 hover:border-white/20 transition-all flex flex-col gap-2.5 overflow-hidden shadow-sm"
+                    className="p-4 sm:p-5 rounded-2xl bg-white/[0.05] border border-white/10 hover:border-white/20 transition-all flex flex-col gap-3 overflow-hidden shadow-sm"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <span className="text-base shrink-0">📍</span>
-                        <span className="text-sm font-semibold text-white truncate max-w-[180px] sm:max-w-xs" title={dest}>
+                        <span className="text-sm font-semibold text-white truncate max-w-[170px] sm:max-w-xs" title={dest}>
                           {dest}
                         </span>
                       </div>
                       <span
-                        className={`shrink-0 text-[11px] px-2.5 py-1 rounded-md font-medium whitespace-nowrap ${
+                        className={`shrink-0 text-[11px] px-3 py-1 rounded-full font-medium whitespace-nowrap ${
                           isCompleted
                             ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
                             : 'bg-white/10 text-white/70'
@@ -1097,7 +1101,7 @@ export default function Home() {
                         {date} • with {coRiders.map((m: any) => m.fullName).join(', ') || 'Rider'}
                       </p>
                       {ride.totalFare ? (
-                        <div className="flex items-baseline gap-1 shrink-0 ml-2 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20">
+                        <div className="flex items-baseline gap-1 shrink-0 ml-2 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                           <span className="text-xs font-bold text-emerald-400">₹{ride.totalFare}</span>
                           <span className="text-[10px] text-white/40">split</span>
                         </div>

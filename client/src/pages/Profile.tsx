@@ -71,8 +71,8 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('Image too large. Max 5MB.', 'error');
+    if (file.size > 15 * 1024 * 1024) {
+      showToast('Image too large. Max 15MB.', 'error');
       return;
     }
 
@@ -88,11 +88,13 @@ export default function Profile() {
     setUploading(true);
     try {
       const result = await userApi.uploadAvatar(file);
-      const newPicUrl = result.profilePicUrl;
+      const rawUrl = result.profilePicUrl;
+      const newPicUrl = rawUrl ? `${rawUrl}${rawUrl.includes('?') ? '&' : '?'}t=${Date.now()}` : null;
       setProfilePicUrl(newPicUrl);
       setUser({ ...user!, profilePicUrl: newPicUrl });
       showToast('Photo updated ✓', 'success');
     } catch (err: any) {
+      setPreviewUrl(null);
       showToast(err.response?.data?.error || 'Failed to upload photo', 'error');
     } finally {
       setUploading(false);
@@ -309,27 +311,36 @@ export default function Profile() {
       </Modal>
 
       {/* View Photo Lightbox Modal — shows ONLY the profile picture with dark blurred background */}
-      {showViewModal && currentDisplayPhoto && (
+      {showViewModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/90 backdrop-blur-md animate-fade-in"
           onClick={() => setShowViewModal(false)}
         >
           {/* Floating close button */}
           <button
             onClick={() => setShowViewModal(false)}
-            className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-lg z-10 transition-all cursor-pointer shadow-lg"
+            className="absolute top-6 right-6 w-11 h-11 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-xl z-20 transition-all cursor-pointer shadow-lg"
             aria-label="Close"
           >
             ✕
           </button>
 
           {/* Profile photo only */}
-          <img
-            src={currentDisplayPhoto}
-            alt="Profile photo"
-            className="max-w-[88vw] max-h-[82vh] rounded-3xl object-contain shadow-2xl border border-white/20 select-none animate-scale-up"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {currentDisplayPhoto ? (
+            <img
+              src={currentDisplayPhoto}
+              alt={fullName || user?.fullName || 'Profile photo'}
+              className="max-w-[85vw] max-h-[75vh] rounded-3xl object-contain shadow-2xl border border-white/20 select-none animate-scale-up"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <div
+              className="w-56 h-56 rounded-3xl flex items-center justify-center bg-white/10 border border-white/20 shadow-2xl animate-scale-up"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Avatar name={fullName || user?.fullName || ''} size="xl" className="scale-150" />
+            </div>
+          )}
         </div>
       )}
     </div>

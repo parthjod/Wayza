@@ -255,8 +255,8 @@ export default function Chat() {
   const handleImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !groupId) return;
-    if (file.size > 5 * 1024 * 1024) {
-      showToast('Image too large. Max 5MB.', 'error');
+    if (file.size > 15 * 1024 * 1024) {
+      showToast('Image too large. Max 15MB.', 'error');
       return;
     }
     setUploadingImage(true);
@@ -621,7 +621,7 @@ export default function Chat() {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept="image/*,image/jpeg,image/png,image/webp"
               onChange={handleImageSelected}
               className="hidden"
             />
@@ -631,7 +631,10 @@ export default function Chat() {
               <div className="chat-attach-menu animate-fade-in-up">
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => {
+                    setShowAttachMenu(false);
+                    fileInputRef.current?.click();
+                  }}
                   className="chat-attach-item group"
                 >
                   <div className="chat-attach-icon-wrap bg-blue-500/15 border border-blue-500/30 text-blue-400 group-hover:scale-105 transition-transform">
@@ -640,7 +643,7 @@ export default function Chat() {
                       <circle cx="12" cy="13" r="4" />
                     </svg>
                   </div>
-                  <span className="font-medium text-[13px] tracking-tight text-white/90">Photo / Cab Details</span>
+                  <span className="font-medium text-[13px] tracking-tight text-white/90">Photo</span>
                 </button>
                 <button
                   type="button"
@@ -753,7 +756,7 @@ export default function Chat() {
 
       {/* Dynamic Group Menu Panel */}
       {showMenuPanel && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowMenuPanel(false)}>
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-md" onClick={() => setShowMenuPanel(false)}>
           <div className="group-menu-panel" onClick={(e) => e.stopPropagation()}>
             <div className="group-menu-header">
               <span className="group-menu-title">

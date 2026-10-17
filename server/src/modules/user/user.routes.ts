@@ -8,7 +8,7 @@ import { updateUserSchema } from './user.schema';
 const router = Router();
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB
 });
 
 // Public route for loading avatar images in <img> tags

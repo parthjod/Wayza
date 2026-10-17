@@ -92,23 +92,27 @@ export class UserService {
   }
 
   async uploadAvatar(userId: string, file: Express.Multer.File) {
-    // Validate MIME type via sharp (reads actual bytes, not just Content-Type)
-    const metadata = await sharp(file.buffer).metadata();
-    const allowedFormats = ['jpeg', 'png', 'webp'];
-    if (!metadata.format || !allowedFormats.includes(metadata.format)) {
-      throw createError('Invalid image format. Use JPEG, PNG, or WebP.', 400);
+    // Validate that sharp can decode the file
+    let metadata: sharp.Metadata;
+    try {
+      metadata = await sharp(file.buffer).metadata();
+    } catch {
+      throw createError('Invalid or corrupted image file.', 400);
     }
 
-    // Resize and strip EXIF (sharp strips metadata by default, rotate normalizes orientation)
+    if (!metadata.format) {
+      throw createError('Invalid image format.', 400);
+    }
+
+    // Resize and normalize orientation, convert to JPEG for universal compatibility
     const processedImage = await sharp(file.buffer)
       .rotate()
       .resize(400, 400, { fit: 'cover', position: 'center' })
-      .toFormat(metadata.format as any)
+      .toFormat('jpeg', { quality: 85 })
       .toBuffer();
 
-    const ext = metadata.format === 'jpeg' ? 'jpg' : metadata.format;
-    const key = `avatars/${userId}/${uuidv4()}.${ext}`;
-    const contentType = `image/${metadata.format}`;
+    const key = `avatars/${userId}/${uuidv4()}.jpg`;
+    const contentType = 'image/jpeg';
 
     // Delete old avatar if exists and not a data URI
     const user = await prisma.user.findUnique({

@@ -96,23 +96,33 @@ export class ChatService {
     });
     if (!member) throw createError('Not a member of this group', 403);
 
-    const metadata = await sharp(file.buffer).metadata();
-    const allowedFormats = ['jpeg', 'png', 'webp'];
-    if (!metadata.format || !allowedFormats.includes(metadata.format)) {
-      throw createError('Invalid image format. Use JPEG, PNG, or WebP.', 400);
+    let metadata: sharp.Metadata;
+    try {
+      metadata = await sharp(file.buffer).metadata();
+    } catch {
+      throw createError('Invalid or corrupted image file.', 400);
+    }
+
+    if (!metadata.format) {
+      throw createError('Invalid image format.', 400);
     }
 
     const processedImage = await sharp(file.buffer)
       .rotate()
       .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-      .toFormat(metadata.format as any)
+      .toFormat('jpeg', { quality: 85 })
       .toBuffer();
 
-    const ext = metadata.format === 'jpeg' ? 'jpg' : metadata.format;
-    const key = `chat/${groupId}/${uuidv4()}.${ext}`;
-    const contentType = `image/${metadata.format}`;
+    const key = `chat/${groupId}/${uuidv4()}.jpg`;
+    const contentType = 'image/jpeg';
 
-    const url = await uploadToS3(key, processedImage, contentType);
+    let url: string;
+    try {
+      url = await uploadToS3(key, processedImage, contentType);
+    } catch (s3Err: any) {
+      console.warn('[ChatImage] S3 upload failed, falling back to data URI:', s3Err?.message || s3Err);
+      url = `data:${contentType};base64,${processedImage.toString('base64')}`;
+    }
 
     const message = await this.saveMessage(groupId, userId, `[IMG]${url}`);
 
