@@ -1,6 +1,9 @@
+import fs from 'fs';
+import path from 'path';
 import prisma from '../../config/db';
 import { env } from '../../config/env';
-import { uploadToS3 } from '../../config/s3';
+import { uploadToS3, s3Client } from '../../config/s3';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { createError } from '../../middleware/errorHandler';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
@@ -88,7 +91,42 @@ export class ChatService {
   }
 
   /**
-   * Upload an image attachment in chat and broadcast message
+   * Stream a chat image from local disk or S3
+   */
+  async getImageStream(groupId: string, filename: string) {
+    const safeFilename = path.basename(filename);
+    const uploadDir = path.join(process.cwd(), 'uploads', 'chat', groupId);
+    const localFilePath = path.join(uploadDir, safeFilename);
+
+    // 1. Try serving from local disk
+    if (fs.existsSync(localFilePath)) {
+      return {
+        filePath: localFilePath,
+        contentType: 'image/jpeg',
+      };
+    }
+
+    // 2. Fallback to S3
+    try {
+      const s3Key = `chat/${groupId}/${safeFilename}`;
+      const s3Res = await s3Client.send(
+        new GetObjectCommand({
+          Bucket: env.AWS_S3_BUCKET,
+          Key: s3Key,
+        })
+      );
+      return {
+        contentType: s3Res.ContentType || 'image/jpeg',
+        stream: s3Res.Body as any,
+      };
+    } catch (err: any) {
+      console.warn('[ChatImage] Failed to retrieve image:', safeFilename, err?.message);
+      return null;
+    }
+  }
+
+  /**
+   * Upload an image attachment in chat, store reliably and broadcast message
    */
   async uploadImage(groupId: string, userId: string, file: Express.Multer.File, io?: any) {
     const member = await prisma.groupMember.findUnique({
@@ -109,20 +147,37 @@ export class ChatService {
 
     const processedImage = await sharp(file.buffer)
       .rotate()
-      .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+      .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
       .toFormat('jpeg', { quality: 85 })
       .toBuffer();
 
-    const key = `chat/${groupId}/${uuidv4()}.jpg`;
-    const contentType = 'image/jpeg';
+    const fileId = `${uuidv4()}.jpg`;
 
-    let url: string;
-    try {
-      url = await uploadToS3(key, processedImage, contentType);
-    } catch (s3Err: any) {
-      console.warn('[ChatImage] S3 upload failed, falling back to data URI:', s3Err?.message || s3Err);
-      url = `data:${contentType};base64,${processedImage.toString('base64')}`;
+    // 1. Always save to local uploads directory for instant, reliable serving
+    const uploadDir = path.join(process.cwd(), 'uploads', 'chat', groupId);
+    await fs.promises.mkdir(uploadDir, { recursive: true });
+    const localFilePath = path.join(uploadDir, fileId);
+    await fs.promises.writeFile(localFilePath, processedImage);
+
+    // 2. Also back up to S3 if credentials are configured
+    const isS3Configured =
+      env.AWS_ACCESS_KEY_ID &&
+      !env.AWS_ACCESS_KEY_ID.includes('your-access') &&
+      env.AWS_SECRET_ACCESS_KEY &&
+      !env.AWS_SECRET_ACCESS_KEY.includes('your-secret') &&
+      env.AWS_S3_BUCKET &&
+      !env.AWS_S3_BUCKET.includes('your-bucket');
+
+    if (isS3Configured) {
+      try {
+        await uploadToS3(`chat/${groupId}/${fileId}`, processedImage, 'image/jpeg');
+      } catch (s3Err: any) {
+        console.warn('[ChatImage] S3 backup failed (local disk backup active):', s3Err?.message || s3Err);
+      }
     }
+
+    // 3. Permanent, short URL that fits in VARCHAR(1000) and is always viewable
+    const url = `/api/chat/images/${groupId}/${fileId}`;
 
     const message = await this.saveMessage(groupId, userId, `[IMG]${url}`);
 

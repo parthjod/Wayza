@@ -9,6 +9,9 @@ const upload = multer({
   limits: { fileSize: 15 * 1024 * 1024 }, // 15MB
 });
 
+// Public route for rendering chat images in <img /> tags (before authMiddleware)
+router.get('/images/:groupId/:filename', (req, res, next) => chatController.getImage(req, res, next));
+
 router.use(authMiddleware);
 
 router.get('/:groupId/messages', (req, res, next) => chatController.getMessages(req, res, next));

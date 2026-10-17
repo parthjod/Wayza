@@ -15,6 +15,72 @@ import { formatRelativeTime } from '../utils/formatDistance';
 import { formatPhone } from '../utils/phone';
 import type { Group, ChatMessage as ChatMsg } from '../types';
 
+// Helper to compress chat photo client-side before upload (fast upload, fits in NGINX limits)
+async function compressChatImage(file: File, maxDim = 1600, quality = 0.82): Promise<File> {
+  if (file.size < 300 * 1024) return file;
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let width = img.width;
+      let height = img.height;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(file);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve(file);
+            return;
+          }
+          const compressed = new File([blob], file.name.replace(/\.[^/.]+$/, '') + '.jpg', {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          });
+          resolve(compressed);
+        },
+        'image/jpeg',
+        quality
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(file);
+    };
+    img.src = url;
+  });
+}
+
+function getChatImageUrl(raw: string): string {
+  if (!raw) return '';
+  const trimmed = raw.trim();
+  // If it's a legacy URL pointing to the dummy your-cloudfront domain, rewrite to the working local API endpoint
+  if (trimmed.includes('your-cloudfront-id.cloudfront.net')) {
+    const match = trimmed.match(/\/chat\/([^/]+)\/([^/]+)$/);
+    if (match) {
+      return `/api/chat/images/${match[1]}/${match[2]}`;
+    }
+  }
+  return trimmed;
+}
+
 export default function Chat() {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
@@ -255,17 +321,19 @@ export default function Chat() {
   const handleImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !groupId) return;
-    if (file.size > 15 * 1024 * 1024) {
-      showToast('Image too large. Max 15MB.', 'error');
+    if (file.size > 25 * 1024 * 1024) {
+      showToast('Image too large. Max 25MB.', 'error');
       return;
     }
     setUploadingImage(true);
     setShowAttachMenu(false);
     try {
-      showToast('Uploading photo...', 'info');
-      await chatApi.uploadImage(groupId, file);
+      showToast('Compressing & uploading photo...', 'info');
+      const optimized = await compressChatImage(file);
+      await chatApi.uploadImage(groupId, optimized);
       showToast('Photo sent ✓', 'success');
     } catch (err: any) {
+      console.error('Chat photo upload error:', err);
       showToast(err.response?.data?.error || 'Failed to upload photo', 'error');
     } finally {
       setUploadingImage(false);
@@ -562,13 +630,34 @@ export default function Chat() {
                   <p className="text-[10px] font-semibold mb-0.5 opacity-60">{msg.senderName}</p>
                 )}
                 {msg.content.startsWith('[IMG]') ? (
-                  <div className="my-1">
-                    <img
-                      src={msg.content.replace('[IMG]', '')}
-                      alt="Shared attachment"
-                      className="max-w-[200px] sm:max-w-[240px] max-h-[220px] rounded-xl object-cover cursor-pointer hover:opacity-90 shadow-md transition-opacity"
-                      onClick={() => setPreviewImage(msg.content.replace('[IMG]', ''))}
-                    />
+                  <div className="my-1.5">
+                    {(() => {
+                      const imgUrl = getChatImageUrl(msg.content.replace('[IMG]', ''));
+                      return (
+                        <div className="relative group/chatimg inline-block overflow-hidden rounded-xl border border-white/10 bg-black/30">
+                          <img
+                            src={imgUrl}
+                            alt="Shared photo"
+                            loading="lazy"
+                            className="max-w-[210px] sm:max-w-[260px] max-h-[250px] rounded-xl object-cover cursor-pointer hover:opacity-95 transition-all block"
+                            onClick={() => setPreviewImage(imgUrl)}
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              target.style.display = 'none';
+                              const fallback = target.nextElementSibling as HTMLElement;
+                              if (fallback) fallback.style.display = 'flex';
+                            }}
+                          />
+                          <div
+                            className="hidden items-center justify-center p-3 text-center text-xs text-white/60 bg-white/[0.04] rounded-xl flex-col gap-1 cursor-pointer"
+                            onClick={() => setPreviewImage(imgUrl)}
+                          >
+                            <span className="text-base">🖼️</span>
+                            <span className="text-[11px] underline">Open image</span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 ) : msg.content.includes('https://maps.google.com/?q=') ? (
                   <div className="my-1">
@@ -1167,13 +1256,24 @@ export default function Chat() {
       {/* Image Preview Fullscreen Modal */}
       {previewImage && (
         <div
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer select-none animate-fade-in-up"
           onClick={() => setPreviewImage(null)}
+          role="dialog"
+          aria-modal="true"
         >
+          <button
+            type="button"
+            onClick={() => setPreviewImage(null)}
+            className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 active:scale-95 text-white flex items-center justify-center text-xl transition-all cursor-pointer border border-white/15"
+            aria-label="Close image preview"
+          >
+            ✕
+          </button>
           <img
             src={previewImage}
             alt="Preview"
-            className="max-w-full max-h-[90vh] rounded-2xl shadow-2xl object-contain"
+            className="max-w-full max-h-[90vh] rounded-2xl shadow-2xl object-contain cursor-default"
+            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}

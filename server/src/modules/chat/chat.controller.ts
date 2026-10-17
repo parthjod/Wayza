@@ -28,6 +28,29 @@ export class ChatController {
       next(err);
     }
   }
+
+  async getImage(req: Request, res: Response, next: NextFunction) {
+    try {
+      const groupId = req.params.groupId as string;
+      const filename = req.params.filename as string;
+      const image = await chatService.getImageStream(groupId, filename);
+      if (!image) {
+        res.status(404).json({ error: 'Image not found' });
+        return;
+      }
+      res.setHeader('Content-Type', image.contentType || 'image/jpeg');
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      if (image.filePath) {
+        res.sendFile(image.filePath);
+      } else if (image.stream) {
+        image.stream.pipe(res);
+      } else {
+        res.status(404).json({ error: 'Image unavailable' });
+      }
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export const chatController = new ChatController();
