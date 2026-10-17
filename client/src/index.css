@@ -391,6 +391,47 @@ body {
 }
 
 /* =====================================================
+   CHAT — RIDE COMPLETED CARD (Exact Match to Design)
+   ===================================================== */
+.ride-completed-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.ride-completed-card {
+  width: 100%;
+  max-width: 430px;
+  background: rgba(13, 20, 36, 0.90);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(37, 99, 235, 0.1);
+  border-radius: 26px;
+  padding: 36px 30px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+}
+
+@media (max-width: 480px) {
+  .ride-completed-card {
+    max-width: calc(100% - 24px);
+    padding: 28px 20px 24px;
+    border-radius: 22px;
+  }
+}
+
+/* =====================================================
    HOME — Logout Confirmation Modal
    Custom overlay so the scenic Wayza entrance background
    stays clearly visible behind the dialog.

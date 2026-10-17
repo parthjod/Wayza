@@ -905,40 +905,68 @@ export default function Chat() {
         </div>
       )}
 
-      {/* Ride Completed Modal — shown when all members end journey */}
-      <Modal open={showRideCompletedModal} onClose={() => setShowRideCompletedModal(false)} className="!max-w-md !p-6 sm:!p-8 text-center">
-        <div className="flex flex-col items-center">
-          <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-3xl mb-4 shadow-lg shadow-emerald-500/10">
-            🎉
-          </div>
-          <h3 className="text-2xl font-instrument text-white mb-2 tracking-wide">Ride Completed!</h3>
-          <p className="text-sm text-white/65 mb-6 max-w-xs leading-relaxed">
-            All co-riders have finished their journey. Choose an option below to proceed.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 w-full">
-            <button
-              onClick={() => {
-                setShowRideCompletedModal(false);
-                setShowFareSplitModal(true);
-              }}
-              className="flex-1 py-3.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>💳</span>
-              <span>Split Fare</span>
-            </button>
-            <button
-              onClick={() => {
-                setShowRideCompletedModal(false);
-                navigate('/home', { replace: true });
-              }}
-              className="flex-1 py-3.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-sm border border-white/15 transition-all flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>🏠</span>
-              <span>Return to Home</span>
-            </button>
+      {/* Ride Completed Modal — shown when all members end journey (Matches design mockup) */}
+      {showRideCompletedModal && (
+        <div
+          className="ride-completed-overlay"
+          onClick={() => setShowRideCompletedModal(false)}
+        >
+          <div
+            className="ride-completed-card animate-fade-in-up"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Center celebratory popper icon with sparkles */}
+            <div className="relative mb-4">
+              <div className="w-14 h-14 rounded-full bg-emerald-500/15 border border-emerald-400/35 flex items-center justify-center text-2xl shadow-[0_0_24px_rgba(16,185,129,0.22)] select-none">
+                🎉
+              </div>
+              {/* Subtle ambient sparkles matching design */}
+              <span className="absolute -top-1 -left-3.5 text-white/45 text-[10px] select-none pointer-events-none">✦</span>
+              <span className="absolute top-1.5 -right-3.5 text-white/40 text-[9px] select-none pointer-events-none">✦</span>
+              <span className="absolute bottom-1 -left-2 text-white/25 text-[8px] select-none pointer-events-none">•</span>
+              <span className="absolute bottom-1.5 -right-2 text-white/30 text-[8px] select-none pointer-events-none">•</span>
+            </div>
+
+            {/* Heading */}
+            <h3 className="text-[28px] sm:text-[30px] font-instrument text-white mb-2 tracking-wide font-normal select-none">
+              Ride Completed!
+            </h3>
+
+            {/* Subtitle */}
+            <p className="text-xs sm:text-[13px] text-white/65 leading-relaxed max-w-[280px] mx-auto mb-6 select-none">
+              All co-riders have finished their journey. Choose an option below to proceed.
+            </p>
+
+            {/* Horizontal action buttons: Split Fare & Return to Home */}
+            <div className="flex items-center gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRideCompletedModal(false);
+                  setShowFareSplitModal(true);
+                }}
+                className="flex-1 py-3 px-4 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium text-sm shadow-[0_4px_16px_rgba(37,99,235,0.4)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+              >
+                <span>💳</span>
+                <span>Split Fare</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowRideCompletedModal(false);
+                  navigate('/home', { replace: true });
+                }}
+                className="flex-1 py-3 px-4 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-white/15 text-white font-medium text-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+              >
+                <span>🏠</span>
+                <span>Return to Home</span>
+              </button>
+            </div>
           </div>
         </div>
-      </Modal>
+      )}
 
       {/* Fare Split Modal */}
       <Modal open={showFareSplitModal} onClose={() => setShowFareSplitModal(false)} className="chat-fare-modal">

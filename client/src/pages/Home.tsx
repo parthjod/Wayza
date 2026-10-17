@@ -76,7 +76,7 @@ export default function Home() {
           setActiveRide(data.activeGroup);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Socket events for discovery and incoming connection requests
@@ -261,7 +261,7 @@ export default function Home() {
     showToast('Booking cancelled', 'info');
 
     // Run unpublish asynchronously without blocking UI
-    discoveryApi.unpublish().catch(() => {});
+    discoveryApi.unpublish().catch(() => { });
   };
 
   const handleLogout = async () => {
@@ -352,55 +352,55 @@ export default function Home() {
               />
             </button>
 
-              {showDropdown && (
-                <div className="absolute right-0 top-full mt-2.5 wayza-avatar-dropdown animate-fade-in-up">
-                  {/* Profile */}
-                  <button
-                    onClick={() => { navigate('/profile'); setShowDropdown(false); }}
-                    className="wayza-avatar-dropdown-item wayza-avatar-dropdown-item--profile"
-                  >
-                    <svg className="w-[18px] h-[18px] text-white/90 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                    </svg>
-                    <span>Profile</span>
-                  </button>
+            {showDropdown && (
+              <div className="absolute right-0 top-full mt-2.5 wayza-avatar-dropdown animate-fade-in-up">
+                {/* Profile */}
+                <button
+                  onClick={() => { navigate('/profile'); setShowDropdown(false); }}
+                  className="wayza-avatar-dropdown-item wayza-avatar-dropdown-item--profile"
+                >
+                  <svg className="w-[18px] h-[18px] text-white/90 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                  </svg>
+                  <span>Profile</span>
+                </button>
 
-                  {/* Current Active Ride (if connected) */}
-                  {activeRide && (
-                    <button
-                      onClick={() => { navigate(`/chat/${activeRide.id}`); setShowDropdown(false); }}
-                      className="wayza-avatar-dropdown-item text-blue-400 hover:bg-blue-500/10"
-                    >
-                      <span className="text-base flex-shrink-0">🚗</span>
-                      <span className="font-medium text-blue-300">Current Ride</span>
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 ml-auto animate-pulse flex-shrink-0" />
-                    </button>
-                  )}
-
-                  {/* Last Rides / Ride History */}
+                {/* Current Active Ride (if connected) */}
+                {activeRide && (
                   <button
-                    onClick={() => { openHistory(); setShowDropdown(false); }}
-                    className="wayza-avatar-dropdown-item text-white/90"
+                    onClick={() => { navigate(`/chat/${activeRide.id}`); setShowDropdown(false); }}
+                    className="wayza-avatar-dropdown-item text-blue-400 hover:bg-blue-500/10"
                   >
-                    <svg className="w-[18px] h-[18px] text-white/80 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>Last Rides</span>
+                    <span className="text-base flex-shrink-0">🚗</span>
+                    <span className="font-medium text-blue-300">Current Ride</span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 ml-auto animate-pulse flex-shrink-0" />
                   </button>
+                )}
 
-                  {/* Logout */}
-                  <button
-                    onClick={() => { setShowLogoutConfirm(true); setShowDropdown(false); }}
-                    className="wayza-avatar-dropdown-item wayza-avatar-dropdown-item--logout"
-                  >
-                    <svg className="w-[18px] h-[18px] text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-                    </svg>
-                    <span>Logout</span>
-                  </button>
-                </div>
-              )}
-            </div>
+                {/* Last Rides / Ride History */}
+                <button
+                  onClick={() => { openHistory(); setShowDropdown(false); }}
+                  className="wayza-avatar-dropdown-item text-white/90"
+                >
+                  <svg className="w-[18px] h-[18px] text-white/80 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Last Rides</span>
+                </button>
+
+                {/* Logout */}
+                <button
+                  onClick={() => { setShowLogoutConfirm(true); setShowDropdown(false); }}
+                  className="wayza-avatar-dropdown-item wayza-avatar-dropdown-item--logout"
+                >
+                  <svg className="w-[18px] h-[18px] text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                  </svg>
+                  <span>Logout</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
@@ -737,8 +737,8 @@ export default function Home() {
                 })}
               </div>
 
-              {/* Extra riders indicator if more than visible limit or multiple riders */}
-              {extraCount > 0 ? (
+              {/* Extra riders indicator if more than visible limit */}
+              {extraCount > 0 && (
                 <button
                   type="button"
                   onClick={() => setShowAllRidersModal(true)}
@@ -746,15 +746,7 @@ export default function Home() {
                 >
                   +{extraCount} more nearby riders
                 </button>
-              ) : nearbyUsers.length > 2 ? (
-                <button
-                  type="button"
-                  onClick={() => setShowAllRidersModal(true)}
-                  className="mt-3 px-3.5 py-1 rounded-full bg-white/[0.08] hover:bg-white/15 text-white/75 hover:text-white text-[11px] font-medium backdrop-blur-sm border border-white/12 transition-all cursor-pointer"
-                >
-                  View all riders ({nearbyUsers.length})
-                </button>
-              ) : null}
+              )}
 
               {/* Cancel Booking Button */}
               <button
@@ -1063,11 +1055,10 @@ export default function Home() {
                         </span>
                       </div>
                       <span
-                        className={`shrink-0 text-[11px] px-3 py-1 rounded-full font-medium whitespace-nowrap ${
-                          isCompleted
+                        className={`shrink-0 text-[11px] px-3 py-1 rounded-full font-medium whitespace-nowrap ${isCompleted
                             ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
                             : 'bg-white/10 text-white/70'
-                        }`}
+                          }`}
                       >
                         {isCompleted ? 'Completed' : ride.status}
                       </span>
