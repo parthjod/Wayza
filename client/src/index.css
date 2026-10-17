@@ -344,49 +344,626 @@ body {
 }
 
 /* =====================================================
-   HOME — RADAR DISCOVERY CARD (Exact Match to Design)
+   HOME — RADAR DISCOVERY CARD
    ===================================================== */
+
 .home-radar-card {
-  width: 100%;
-  max-width: 440px;
-  background: rgba(10, 22, 46, 0.75);
-  backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
-  border: 1.5px solid rgba(59, 130, 246, 0.65);
-  box-shadow: 0 0 35px rgba(37, 99, 235, 0.28), inset 0 0 20px rgba(59, 130, 246, 0.08);
-  border-radius: 28px;
-  padding: 32px 28px 24px;
+  width: min(560px, calc(100vw - 32px));
+  box-sizing: border-box;
+  margin-inline: auto;
+  padding: 28px 32px 22px;
+
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+
   position: relative;
   z-index: 20;
+  isolation: isolate;
+
+  background: rgba(8, 24, 51, 0.82);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+
+  border: 1px solid rgba(59, 130, 246, 0.78);
+  border-radius: 28px;
+
+  box-shadow:
+    0 0 32px rgba(37, 99, 235, 0.2),
+    0 20px 60px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(147, 197, 253, 0.08);
 }
 
-@media (max-width: 480px) {
-  .home-radar-card {
-    max-width: calc(100% - 24px);
-    padding: 26px 20px 22px;
-    border-radius: 24px;
-  }
+/* Destination pill */
+.radar-destination-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  max-width: 100%;
+  min-height: 36px;
+  box-sizing: border-box;
+  padding: 6px 14px;
+  margin-bottom: 10px;
+
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+
+  background: rgba(148, 163, 184, 0.11);
+  color: rgba(241, 245, 249, 0.92);
+
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
 }
 
-.radar-sweep-beam {
+.radar-pin {
+  flex-shrink: 0;
+  font-size: 13px;
+}
+
+.radar-pill-separator {
+  color: rgba(203, 213, 225, 0.55);
+}
+
+/* Heading */
+.radar-heading {
+  margin: 0;
+  color: #f8fafc;
+  font-size: clamp(30px, 3vw, 38px);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  user-select: none;
+}
+
+/* Subtitle */
+.radar-subtitle {
+  width: 100%;
+  max-width: 390px;
+  margin: 10px 0 10px;
+
+  color: rgba(226, 232, 240, 0.75);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.55;
+
+  user-select: none;
+}
+
+/* =====================================================
+   RADAR STAGE
+   ===================================================== */
+
+.radar-stage {
+  position: relative;
+  isolation: isolate;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  width: 250px;
+  height: 250px;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+/* Concentric rings */
+.radar-ring {
   position: absolute;
-  inset: 0;
-  border-radius: 9999px;
-  background: conic-gradient(from 0deg, transparent 0deg, transparent 270deg, rgba(56, 189, 248, 0.25) 360deg);
-  animation: radar-sweep 4s linear infinite;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  border: 1px solid rgba(59, 130, 246, 0.29);
+  transform: translate(-50%, -50%);
   pointer-events: none;
 }
 
+.radar-ring-outer {
+  width: 240px;
+  height: 240px;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.radar-ring-middle {
+  width: 170px;
+  height: 170px;
+  border-color: rgba(59, 130, 246, 0.34);
+}
+
+.radar-ring-inner {
+  width: 102px;
+  height: 102px;
+  border-color: rgba(59, 130, 246, 0.42);
+}
+
+/* Rotating sweep */
+.radar-sweep-beam {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 300deg,
+    rgba(14, 165, 233, 0.015) 320deg,
+    rgba(56, 189, 248, 0.13) 345deg,
+    rgba(56, 189, 248, 0.28) 360deg
+  );
+
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  animation: radar-sweep 4s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
 @keyframes radar-sweep {
-  0% {
-    transform: rotate(0deg);
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
   }
-  100% {
-    transform: rotate(360deg);
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Radar dots */
+.radar-blip {
+  position: absolute;
+  z-index: 3;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #06d6f5;
+  box-shadow:
+    0 0 8px rgba(6, 214, 245, 0.9),
+    0 0 18px rgba(6, 214, 245, 0.28);
+  pointer-events: none;
+}
+
+.radar-blip-one {
+  top: 31%;
+  left: 23%;
+}
+
+.radar-blip-two {
+  right: 22%;
+  bottom: 32%;
+}
+
+.radar-blip-three {
+  left: 39%;
+  bottom: 18%;
+}
+
+/* Center user */
+.radar-current-user {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 5;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.radar-you-label {
+  margin-top: 3px;
+  color: rgba(241, 245, 249, 0.9);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* Nearby riders */
+.radar-rider {
+  position: absolute;
+  z-index: 10;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+
+  transition: filter 160ms ease, scale 160ms ease;
+}
+
+.radar-rider:hover {
+  scale: 1.08;
+  filter: brightness(1.12);
+}
+
+.radar-rider:active {
+  scale: 0.96;
+}
+
+.radar-rider-name {
+  max-width: 80px;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.radar-rider-distance {
+  color: rgba(191, 219, 254, 0.9);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.radar-rider-rating {
+  position: absolute;
+  right: -8px;
+  bottom: -4px;
+
+  display: flex;
+  align-items: center;
+  gap: 2px;
+
+  padding: 2px 5px;
+  border: 1px solid rgba(15, 23, 42, 0.6);
+  border-radius: 999px;
+
+  background: #fbbf24;
+  color: #0f172a;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* More riders */
+.radar-more-riders {
+  margin-top: 4px;
+  padding: 8px 14px;
+
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 999px;
+
+  background: rgba(148, 163, 184, 0.12);
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 500;
+
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+
+.radar-more-riders:hover {
+  background: rgba(148, 163, 184, 0.22);
+}
+
+/* Cancel booking */
+.radar-cancel-booking {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  width: 100%;
+  min-height: 50px;
+  box-sizing: border-box;
+  margin-top: 8px;
+  padding: 12px 20px;
+
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 16px;
+
+  background: rgba(148, 163, 184, 0.16);
+  color: #f8fafc;
+
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 120ms ease;
+}
+
+.radar-cancel-booking:hover {
+  background: rgba(148, 163, 184, 0.24);
+  border-color: rgba(191, 219, 254, 0.48);
+}
+
+.radar-cancel-booking:active {
+  transform: scale(0.985);
+}
+
+.radar-cancel-icon {
+  color: #fb5265;
+  font-size: 23px;
+  font-weight: 400;
+  line-height: 0.8;
+}
+
+/* =====================================================
+   RIDER DETAIL POPUP CARD
+   ===================================================== */
+
+.nearby-user-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.nearby-user-card {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  padding: 28px 24px 22px;
+
+  border-radius: 24px;
+  background: rgba(10, 14, 26, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 28px 75px -12px rgba(0, 0, 0, 0.75);
+}
+
+.nearby-user-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.nearby-user-avatar {
+  flex-shrink: 0;
+}
+
+.nearby-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.nearby-user-name {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nearby-user-distance {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.nearby-user-destination {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 14px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.nearby-user-pin-icon {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.nearby-user-dest-label {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.nearby-user-dest-value {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nearby-user-connect-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  height: 46px;
+
+  border: none;
+  border-radius: 9999px;
+
+  background: linear-gradient(105deg, #2ebdf0, #2879ff 58%, #174cff);
+  color: #fff;
+
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+
+  cursor: pointer;
+  transition: background 160ms ease, box-shadow 160ms ease,
+    transform 120ms ease;
+
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.24);
+}
+
+.nearby-user-connect-btn:hover {
+  background: linear-gradient(105deg, #51cdf6, #428cff 58%, #3568ff);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.34);
+  transform: translateY(-1px);
+}
+
+.nearby-user-connect-btn:active {
+  transform: scale(0.98);
+}
+
+/* =====================================================
+   RESPONSIVE LAYOUT
+   ===================================================== */
+
+@media (max-width: 640px) {
+  .home-radar-card {
+    width: calc(100vw - 24px);
+    max-width: 440px;
+    padding: 24px 20px 20px;
+    border-radius: 24px;
+  }
+
+  .radar-destination-pill {
+    gap: 6px;
+    min-height: 34px;
+    padding: 6px 11px;
+    font-size: 12px;
+  }
+
+  .radar-heading {
+    font-size: 30px;
+  }
+
+  .radar-subtitle {
+    max-width: 320px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+
+  .radar-stage {
+    width: 230px;
+    height: 230px;
+  }
+
+  .radar-ring-outer {
+    width: 220px;
+    height: 220px;
+  }
+
+  .radar-ring-middle {
+    width: 158px;
+    height: 158px;
+  }
+
+  .radar-ring-inner {
+    width: 96px;
+    height: 96px;
+  }
+
+  .radar-sweep-beam {
+    width: 220px;
+    height: 220px;
+  }
+
+  .radar-cancel-booking {
+    min-height: 46px;
+    margin-top: 8px;
+    padding: 10px 16px;
+    border-radius: 14px;
+    font-size: 14px;
+  }
+
+  .nearby-user-card {
+    max-width: 100%;
+    padding: 20px 18px 18px;
+    border-radius: 20px;
+  }
+
+  .nearby-user-name {
+    font-size: 16px;
+  }
+
+  .nearby-user-connect-btn {
+    height: 44px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 380px) {
+  .home-radar-card {
+    padding: 20px 14px 16px;
+  }
+
+  .radar-heading {
+    font-size: 27px;
+  }
+
+  .radar-stage {
+    width: 210px;
+    height: 210px;
+  }
+
+  .radar-ring-outer {
+    width: 202px;
+    height: 202px;
+  }
+
+  .radar-ring-middle {
+    width: 146px;
+    height: 146px;
+  }
+
+  .radar-ring-inner {
+    width: 90px;
+    height: 90px;
+  }
+
+  .radar-sweep-beam {
+    width: 202px;
+    height: 202px;
+  }
+
+  .nearby-user-card {
+    padding: 16px;
+  }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .radar-sweep-beam {
+    animation: none;
+  }
+
+  .radar-rider,
+  .radar-cancel-booking,
+  .nearby-user-connect-btn {
+    transition: none;
   }
 }
 
@@ -3083,158 +3660,7 @@ body {
   }
 }
 
-/* =====================================================
-   HOME — Nearby user detail card (viewState = 'user-detail')
-   Replaces the old glass-card panel with a properly
-   sized, proportioned card matching the target screenshot.
-   ===================================================== */
 
-/* Full-viewport overlay with blurred background */
-.nearby-user-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-}
-
-/* The glass card */
-.nearby-user-card {
-  position: relative;
-  width: 100%;
-  max-width: 400px;
-  padding: 28px 24px 22px;
-  border-radius: 24px;
-  background: rgba(10, 14, 26, 0.85);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 0 28px 75px -12px rgba(0, 0, 0, 0.75);
-}
-
-/* Identity row — avatar on left, name + distance stacked on right */
-.nearby-user-identity {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 10px;
-}
-
-/* Override Avatar component's default flex behaviour if needed */
-.nearby-user-avatar {
-  flex-shrink: 0;
-}
-
-/* Name / distance stack */
-.nearby-user-info {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-.nearby-user-name {
-  font-size: 18px;
-  font-weight: 600;
-  color: #ffffff;
-  line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.nearby-user-distance {
-  font-size: 13px;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.55);
-  line-height: 1.2;
-}
-
-/* Destination row — pin icon + label + destination name */
-.nearby-user-destination {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-bottom: 14px;
-  flex-wrap: nowrap;
-  overflow: hidden;
-}
-
-.nearby-user-pin-icon {
-  flex-shrink: 0;
-  width: 14px;
-  height: 14px;
-  color: rgba(255, 255, 255, 0.45);
-}
-
-.nearby-user-dest-label {
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.45);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.nearby-user-dest-value {
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.90);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Connect button — wide white pill */
-.nearby-user-connect-btn {
-  width: 100%;
-  height: 46px;
-  border-radius: 9999px;
-  border: none;
-  background: #ffffff;
-  color: #111111;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  letter-spacing: 0.01em;
-}
-
-.nearby-user-connect-btn:hover {
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
-  transform: translateY(-1px);
-}
-
-.nearby-user-connect-btn:active {
-  transform: scale(0.98);
-}
-
-/* Responsive */
-@media (max-width: 480px) {
-  .nearby-user-card {
-    padding: 16px 16px 14px;
-    border-radius: 14px;
-    max-width: 100%;
-  }
-
-  .nearby-user-name {
-    font-size: 16px;
-  }
-
-  .nearby-user-connect-btn {
-    height: 42px;
-    font-size: 14px;
-  }
-}
 
 /* =====================================================
    SHARED PHONE NUMBER BANNER
