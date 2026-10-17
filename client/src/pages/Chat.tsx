@@ -905,7 +905,7 @@ export default function Chat() {
         </div>
       )}
 
-      {/* Ride Completed Modal — shown when all members end journey (Matches design mockup) */}
+      {/* Ride Completed Modal — shown when all members end journey */}
       {showRideCompletedModal && (
         <div
           className="ride-completed-overlay"
@@ -915,52 +915,59 @@ export default function Chat() {
             className="ride-completed-card animate-fade-in-up"
             role="dialog"
             aria-modal="true"
+            aria-labelledby="ride-completed-title"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Center celebratory popper icon with sparkles */}
-            <div className="relative mb-4">
-              <div className="w-14 h-14 rounded-full bg-emerald-500/15 border border-emerald-400/35 flex items-center justify-center text-2xl shadow-[0_0_24px_rgba(16,185,129,0.22)] select-none">
+            {/* Celebration Icon */}
+            <div className="ride-completed-icon-wrap">
+              <div className="ride-completed-icon">
                 🎉
               </div>
-              {/* Subtle ambient sparkles matching design */}
-              <span className="absolute -top-1 -left-3.5 text-white/45 text-[10px] select-none pointer-events-none">✦</span>
-              <span className="absolute top-1.5 -right-3.5 text-white/40 text-[9px] select-none pointer-events-none">✦</span>
-              <span className="absolute bottom-1 -left-2 text-white/25 text-[8px] select-none pointer-events-none">•</span>
-              <span className="absolute bottom-1.5 -right-2 text-white/30 text-[8px] select-none pointer-events-none">•</span>
+
+              {/* Decorative sparkles */}
+              <span className="ride-completed-sparkle sparkle-one">✦</span>
+              <span className="ride-completed-sparkle sparkle-two">✦</span>
+              <span className="ride-completed-sparkle sparkle-three">✦</span>
+              <span className="ride-completed-sparkle sparkle-four">•</span>
+              <span className="ride-completed-sparkle sparkle-five">•</span>
             </div>
 
             {/* Heading */}
-            <h3 className="text-[28px] sm:text-[30px] font-instrument text-white mb-2 tracking-wide font-normal select-none">
+            <h3
+              id="ride-completed-title"
+              className="ride-completed-title font-instrument"
+            >
               Ride Completed!
             </h3>
 
-            {/* Subtitle */}
-            <p className="text-xs sm:text-[13px] text-white/65 leading-relaxed max-w-[280px] mx-auto mb-6 select-none">
+            {/* Description */}
+            <p className="ride-completed-description">
               All co-riders have finished their journey. Choose an option below to proceed.
             </p>
 
-            {/* Horizontal action buttons: Split Fare & Return to Home */}
-            <div className="flex items-center gap-3 w-full">
+            {/* Actions */}
+            <div className="ride-completed-actions">
               <button
                 type="button"
                 onClick={() => {
                   setShowRideCompletedModal(false);
                   setShowFareSplitModal(true);
                 }}
-                className="flex-1 py-3 px-4 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-medium text-sm shadow-[0_4px_16px_rgba(37,99,235,0.4)] transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                className="ride-completed-split-btn"
               >
-                <span>💳</span>
+                <span className="ride-completed-button-icon">💳</span>
                 <span>Split Fare</span>
               </button>
+
               <button
                 type="button"
                 onClick={() => {
                   setShowRideCompletedModal(false);
                   navigate('/home', { replace: true });
                 }}
-                className="flex-1 py-3 px-4 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-white/15 text-white font-medium text-sm transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                className="ride-completed-home-btn"
               >
-                <span>🏠</span>
+                <span className="ride-completed-button-icon">🏠</span>
                 <span>Return to Home</span>
               </button>
             </div>
