@@ -59,6 +59,15 @@ export class UserController {
     }
   }
 
+  async deleteAvatar(req: Request, res: Response, next: NextFunction) {
+    try {
+      const result = await userService.deleteAvatar(req.user!.userId);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async deleteAccount(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await userService.deleteAccount(req.user!.userId);

@@ -256,6 +256,7 @@ export default function Home() {
     }
     setViewState('booking');
     setNearbyUsers([]);
+    setSelectedUser(null);
     setShowDropdown(false);
     showToast('Booking cancelled', 'info');
 
@@ -325,17 +326,18 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-3 pointer-events-auto" style={{ marginRight: '10px' }}>
-          {/* Tell us something — feedback button (hidden on mobile, present in avatar dropdown) */}
+          {/* Tell us something — feedback button */}
           <button
             id="feedback-nav-btn"
             onClick={() => setShowFeedback(true)}
-            className="feedback-nav-btn hidden md:inline-flex"
+            className="feedback-nav-btn inline-flex items-center gap-1.5"
             aria-label="Share feedback"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
             </svg>
-            Tell us something
+            <span className="hidden sm:inline">Tell us something</span>
+            <span className="sm:hidden text-xs">Feedback</span>
           </button>
 
           <div className="relative" ref={dropdownRef}>
@@ -352,16 +354,6 @@ export default function Home() {
 
               {showDropdown && (
                 <div className="absolute right-0 top-full mt-2.5 wayza-avatar-dropdown animate-fade-in-up">
-                  {/* Tell us something (mobile view) */}
-                  <button
-                    onClick={() => { setShowFeedback(true); setShowDropdown(false); }}
-                    className="wayza-avatar-dropdown-item text-white/90 md:hidden"
-                  >
-                    <svg className="w-[18px] h-[18px] text-white/80 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                    </svg>
-                    <span>Tell us something</span>
-                  </button>
                   {/* Profile */}
                   <button
                     onClick={() => { navigate('/profile'); setShowDropdown(false); }}
@@ -395,19 +387,6 @@ export default function Home() {
                     </svg>
                     <span>Last Rides</span>
                   </button>
-
-                  {/* Stop booking */}
-                  {viewState === 'discovering' && (
-                    <button
-                      onClick={handleStopBooking}
-                      className="wayza-avatar-dropdown-item wayza-avatar-dropdown-item--stop"
-                    >
-                      <svg className="w-[18px] h-[18px] text-amber-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5" />
-                      </svg>
-                      <span>Stop booking</span>
-                    </button>
-                  )}
 
                   {/* Logout */}
                   <button
@@ -670,45 +649,26 @@ export default function Home() {
         )}
 
         {viewState === 'discovering' && (
-          <div className="home-booking-card w-full max-w-[460px] text-center animate-fade-in-up flex flex-col items-center">
-            {/* Destination info chip */}
-            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs text-white/80 mb-4">
-              <span className="text-emerald-400">📍</span>
-              <span className="font-medium truncate max-w-[190px]">{dropLabel || 'Destination'}</span>
-              <span className="text-white/40">•</span>
-              <span className="text-white/60">{radius} km</span>
-            </div>
-
+          <div className="home-discovering-content animate-fade-in-up">
             {nearbyUsers.length === 0 ? (
               /* Loading state — no nearby riders found yet */
-              <div className="flex flex-col items-center w-full py-2">
-                <h3 className="font-instrument text-2xl sm:text-3xl text-white mb-2 tracking-wide">
-                  Looking for Riders...
-                </h3>
-                <p className="text-xs sm:text-sm text-white/60 mb-6 max-w-xs leading-relaxed">
-                  Scanning for students heading to {dropLabel || 'the same destination'} within {radius} km
-                </p>
-
-                {/* Concentric pulsing radar */}
-                <div className="relative flex items-center justify-center w-44 h-44 my-2 pointer-events-none">
-                  <div className="absolute inset-0 rounded-full border border-blue-500/25 animate-ping opacity-35 pointer-events-none" />
-                  <div className="absolute w-32 h-32 rounded-full border border-blue-400/35 animate-pulse pointer-events-none" />
-                  <div className="absolute w-20 h-20 rounded-full bg-blue-500/15 border border-blue-400/40 flex items-center justify-center pointer-events-none" />
-                  <div className="relative z-10 flex flex-col items-center pointer-events-none select-none">
-                    <Avatar name={user?.fullName || 'You'} imageUrl={user?.profilePicUrl} size="md" />
-                    <span className="mt-1 text-[11px] font-semibold text-white/80 bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-sm">
-                      You
-                    </span>
-                  </div>
+              <div className="home-loading-group">
+                <p className="home-loading-text">Looking for nearby riders...</p>
+                <div className="home-loading-spinner-wrap">
+                  <Spinner size="lg" className="home-loading-spinner" />
                 </div>
+                <p className="home-loading-you">You</p>
 
                 {/* Cancel booking button */}
                 <button
                   type="button"
                   onClick={(e) => handleStopBooking(e)}
-                  className="w-full mt-7 py-3 px-6 rounded-full bg-white/10 hover:bg-white/15 border border-white/20 text-white font-medium text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-[0.98] select-none relative z-20"
+                  className="home-cancel-booking-btn"
                 >
-                  <span className="text-red-400 font-bold text-sm">✕</span>
+                  <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
                   <span>Cancel Booking</span>
                 </button>
               </div>
@@ -721,24 +681,12 @@ export default function Home() {
                 const extraCount = nearbyUsers.length - visibleRadarUsers.length;
 
                 return (
-                  <div className="flex flex-col items-center w-full py-1">
-                    <h3 className="font-instrument text-2xl text-white mb-1 tracking-wide">
-                      Co-riders Found!
-                    </h3>
-                    <p className="text-xs text-white/60 mb-4">
-                      Tap a rider to view profile and connect
-                    </p>
-
-                    <div className="relative flex items-center justify-center my-2" style={{ minHeight: '270px', width: '270px' }}>
-                      {/* Radar rings */}
-                      <div className="absolute w-[260px] h-[260px] rounded-full border border-white/10 pointer-events-none" />
-                      <div className="absolute w-[180px] h-[180px] rounded-full border border-white/10 pointer-events-none" />
-                      <div className="absolute w-[90px] h-[90px] rounded-full border border-white/15 pointer-events-none" />
-
+                  <div className="flex flex-col items-center">
+                    <div className="relative flex items-center justify-center" style={{ minHeight: '320px', width: '320px' }}>
                       {/* Center indicator */}
-                      <div className="absolute flex flex-col items-center z-10 pointer-events-none">
-                        <Avatar name={user?.fullName || 'You'} imageUrl={user?.profilePicUrl} size="sm" />
-                        <span className="mt-1 text-[10px] text-white/60 font-medium">You</span>
+                      <div className="absolute flex flex-col items-center z-10">
+                        <div className="w-4 h-4 bg-white rounded-full animate-pulse-ring" />
+                        <p className="mt-2 text-white/60 text-xs font-medium">You</p>
                       </div>
 
                       {visibleRadarUsers.map((nUser, i) => {
@@ -755,17 +703,17 @@ export default function Home() {
                             }}
                           >
                             <div className="relative">
-                              <Avatar name={name} imageUrl={nUser.profilePicUrl} size="md" className="ring-2 ring-blue-500/50 group-hover:ring-blue-400" />
+                              <Avatar name={name} imageUrl={nUser.profilePicUrl} size="lg" />
                               {nUser.rating && (
                                 <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 bg-amber-400 text-slate-950 text-[10px] font-black rounded-full shadow-md flex items-center gap-0.5 border border-black/20">
                                   ★ {nUser.rating.toFixed(1)}
                                 </span>
                               )}
                             </div>
-                            <span className="text-white text-xs font-semibold max-w-[70px] truncate drop-shadow-sm">
+                            <span className="text-white text-xs font-semibold max-w-[80px] truncate text-video-overlay">
                               {firstName}
                             </span>
-                            <span className="text-white/70 text-[10px] font-medium bg-black/60 px-1.5 py-0.5 rounded-full backdrop-blur-sm border border-white/10">
+                            <span className="text-white/60 text-[10px] font-medium bg-black/40 px-1.5 py-0.5 rounded-full backdrop-blur-sm">
                               {formatDistance(nUser.distanceMeters || 0)}
                             </span>
                           </button>
@@ -773,27 +721,25 @@ export default function Home() {
                       })}
                     </div>
 
-                    {/* View all active riders button */}
-                    {nearbyUsers.length > 2 && (
+                    {extraCount > 0 && (
                       <button
                         type="button"
                         onClick={() => setShowAllRidersModal(true)}
-                        className="mt-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 border border-white/20 backdrop-blur-xl text-white text-xs font-semibold transition-all flex items-center gap-2 shadow-lg cursor-pointer"
+                        className="mt-4 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-medium backdrop-blur-sm border border-white/15 transition-all cursor-pointer shadow-md"
                       >
-                        <span>👥 View all riders ({nearbyUsers.length})</span>
-                        {extraCount > 0 && (
-                          <span className="text-blue-400 font-bold">+{extraCount} more →</span>
-                        )}
+                        +{extraCount} more nearby riders
                       </button>
                     )}
 
-                    {/* Cancel booking button */}
                     <button
                       type="button"
                       onClick={(e) => handleStopBooking(e)}
-                      className="w-full mt-5 py-3 px-6 rounded-full bg-white/10 hover:bg-white/15 border border-white/20 text-white font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] select-none relative z-20"
+                      className="home-cancel-booking-btn mt-6"
                     >
-                      <span className="text-red-400 font-bold text-xs">✕</span>
+                      <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
                       <span>Cancel Booking</span>
                     </button>
                   </div>

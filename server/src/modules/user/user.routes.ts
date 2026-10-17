@@ -31,6 +31,11 @@ router.post(
   (req, res, next) => userController.uploadAvatar(req, res, next)
 );
 
+router.delete(
+  '/me/avatar',
+  (req, res, next) => userController.deleteAvatar(req, res, next)
+);
+
 router.delete('/me', (req, res, next) => userController.deleteAccount(req, res, next));
 router.post('/delete-account', (req, res, next) => userController.deleteAccount(req, res, next));
 router.delete('/delete-account', (req, res, next) => userController.deleteAccount(req, res, next));

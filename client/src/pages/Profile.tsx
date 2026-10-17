@@ -105,6 +105,26 @@ export default function Profile() {
     }
   };
 
+  const [deletingAvatar, setDeletingAvatar] = useState(false);
+
+  const handleRemovePhoto = async () => {
+    setShowPhotoActions(false);
+    setDeletingAvatar(true);
+    try {
+      await userApi.deleteAvatar();
+      setPreviewUrl(null);
+      setProfilePicUrl(null);
+      if (user) {
+        setUser({ ...user, profilePicUrl: null });
+      }
+      showToast('Profile picture removed ✓', 'success');
+    } catch (err: any) {
+      showToast(err.response?.data?.error || 'Failed to remove profile picture', 'error');
+    } finally {
+      setDeletingAvatar(false);
+    }
+  };
+
   const currentDisplayPhoto = previewUrl || profilePicUrl || user?.profilePicUrl;
 
   if (loading) {
@@ -180,24 +200,37 @@ export default function Profile() {
           </div>
 
           {/* Quick action buttons under avatar */}
-          <div className="flex items-center gap-3 mt-4">
+          <div className="flex flex-wrap items-center justify-center gap-2.5 mt-4">
             <button
               type="button"
               onClick={() => setShowPhotoActions(true)}
-              className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white/90 text-xs font-semibold tracking-wide border border-white/15 cursor-pointer transition-all flex items-center gap-2 shadow-sm"
+              className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white/90 text-xs font-semibold tracking-wide border border-white/15 cursor-pointer transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
             >
               <span>📷</span>
-              <span>Change photo</span>
+              <span>{currentDisplayPhoto ? 'Change photo' : 'Add photo'}</span>
             </button>
 
             {currentDisplayPhoto && (
               <button
                 type="button"
                 onClick={() => setShowViewModal(true)}
-                className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 text-xs font-medium tracking-wide border border-white/10 cursor-pointer transition-all flex items-center gap-2"
+                className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 text-xs font-medium tracking-wide border border-white/10 cursor-pointer transition-all flex items-center gap-1.5 active:scale-95"
               >
                 <span>👁️</span>
                 <span>View</span>
+              </button>
+            )}
+
+            {currentDisplayPhoto && (
+              <button
+                type="button"
+                onClick={handleRemovePhoto}
+                disabled={deletingAvatar}
+                className="px-3.5 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-medium tracking-wide border border-red-500/20 cursor-pointer transition-all flex items-center gap-1.5 active:scale-95"
+                title="Remove profile picture"
+              >
+                <span>🗑️</span>
+                <span>{deletingAvatar ? 'Removing...' : 'Remove'}</span>
               </button>
             )}
           </div>
@@ -301,6 +334,16 @@ export default function Profile() {
             >
               <span className="text-lg">👁️</span>
               <span>View Profile Picture</span>
+            </button>
+          )}
+
+          {currentDisplayPhoto && (
+            <button
+              onClick={handleRemovePhoto}
+              className="w-full py-3.5 px-5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/25 text-red-400 font-medium text-sm flex items-center gap-3.5 transition-colors cursor-pointer"
+            >
+              <span className="text-lg">🗑️</span>
+              <span>Remove Profile Picture</span>
             </button>
           )}
 

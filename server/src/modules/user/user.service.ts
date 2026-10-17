@@ -168,6 +168,25 @@ export class UserService {
     return { profilePicUrl: finalUrl };
   }
 
+  async deleteAvatar(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { profilePicKey: true },
+    });
+    if (user?.profilePicKey && !user.profilePicKey.startsWith('data:')) {
+      try {
+        await deleteFromS3(user.profilePicKey);
+      } catch {
+        // Non-critical
+      }
+    }
+    await prisma.user.update({
+      where: { id: userId },
+      data: { profilePicKey: null },
+    });
+    return { ok: true, profilePicUrl: null };
+  }
+
   async deleteAccount(userId: string) {
     // Delete avatar from S3
     const user = await prisma.user.findUnique({

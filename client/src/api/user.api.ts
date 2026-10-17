@@ -16,5 +16,7 @@ export const userApi = {
       .then((r) => r.data);
   },
 
+  deleteAvatar: () => api.delete<{ ok: boolean; profilePicUrl: null }>('/user/me/avatar').then((r) => r.data),
+
   deleteAccount: () => api.delete('/user/me').then((r) => r.data),
 };
