@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Avatar } from './Avatar';
-import { ratingApi, CoRider } from '../../api/rating.api';
+import { ratingApi, type CoRider } from '../../api/rating.api';
 
 // ─── Tag definitions ─────────────────────────────────────────────────────────
 const POSITIVE_TAGS = [
