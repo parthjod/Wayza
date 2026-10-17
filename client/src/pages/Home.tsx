@@ -859,26 +859,30 @@ export default function Home() {
         </div>
       )}
 
+
       {/* Location Permission Modal */}
       <Modal
         open={locationPermissionModal}
         onClose={() => setLocationPermissionModal(false)}
-        className="!max-w-sm !p-6 sm:!p-8 text-center"
+        className="!max-w-md !p-7 sm:!p-8 text-center !rounded-[28px] !bg-gradient-to-b !from-[#0b0e16]/98 !to-[#080b12]/98 !border !border-slate-500/40 !shadow-[0_0_40px_rgba(0,0,0,0.35)] !backdrop-blur-2xl"
       >
         <div className="flex flex-col items-center">
-          <div className="w-14 h-14 rounded-full bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-3xl mb-4">
+          <div className="w-20 h-20 rounded-full bg-blue-500/10 border border-blue-500/40 flex items-center justify-center text-4xl mb-4 shadow-[0_0_25px_rgba(37,99,235,0.12)]">
             📍
           </div>
-          <h3 className="font-instrument text-2xl text-white mb-2 tracking-wide">
+
+          <h3 className="font-instrument text-2xl sm:text-3xl text-white mb-3 tracking-wide">
             Location Access Needed
           </h3>
-          <p className="text-sm text-white/65 mb-6 leading-relaxed">
+
+          <p className="text-base text-white/65 mb-6 leading-relaxed">
             Wayza needs your location to find students near you. Your location is
             only stored temporarily and is never saved permanently.
           </p>
+
           <button
             onClick={handleLocationGranted}
-            className="w-full py-3.5 px-6 rounded-2xl bg-white hover:bg-white/90 text-black font-bold text-sm shadow-lg transition-all cursor-pointer"
+            className="w-full py-4 px-6 rounded-full bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-500 hover:to-sky-400 active:scale-[0.98] text-white font-bold text-base shadow-[0_0_24px_rgba(37,99,235,0.3)] transition-all duration-200 cursor-pointer"
           >
             Allow Location
           </button>
@@ -1267,8 +1271,8 @@ export default function Home() {
                       <div className="ride-history-right">
                         <span
                           className={`ride-history-status ${isCompleted
-                              ? 'ride-history-status-completed'
-                              : 'ride-history-status-other'
+                            ? 'ride-history-status-completed'
+                            : 'ride-history-status-other'
                             }`}
                         >
                           {isCompleted && (
