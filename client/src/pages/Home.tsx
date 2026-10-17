@@ -917,64 +917,117 @@ export default function Home() {
         </div>
       )}
 
-      {/* Incoming Connection Invitation Popup — Dynamic Island Glass Style */}
+      {/* Incoming Ride Request — Top-Right Glass Notification */}
       {incomingInvite && (
-        <div className="wayza-dynamic-invite animate-fade-in-down">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex items-center gap-1.5">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        <div
+          className="wayza-dynamic-invite wayza-invite-enter"
+          role="region"
+          aria-label="Incoming ride request"
+        >
+          {/* Header: Live indicator and dismiss */}
+          <div className="wayza-invite-header">
+            <div className="wayza-invite-status">
+              <span className="wayza-invite-live-dot">
+                <span className="wayza-invite-live-pulse" />
+                <span className="wayza-invite-live-core" />
               </span>
-              <span className="text-[10px] font-bold tracking-wider text-emerald-400 uppercase">
-                Ride Request
-              </span>
+
+              <span>Ride Request</span>
             </div>
+
             <button
+              type="button"
               onClick={() => setIncomingInvite(null)}
-              className="text-white/40 hover:text-white p-1 text-xs cursor-pointer rounded-full hover:bg-white/10 transition-colors"
-              aria-label="Dismiss"
+              className="wayza-invite-dismiss"
+              aria-label="Dismiss ride request"
             >
-              ✕
+              ×
             </button>
           </div>
 
-          <div className="flex items-center gap-3 mb-3">
-            <div className="relative flex-shrink-0">
-              <Avatar name={incomingInvite.inviterName} imageUrl={incomingInvite.inviterPicUrl} size="md" />
-              <div className="absolute -inset-0.5 rounded-full border border-blue-400/50 animate-pulse pointer-events-none" />
+          {/* Rider information */}
+          <div className="wayza-invite-rider">
+            <div className="wayza-invite-avatar">
+              <Avatar
+                name={incomingInvite.inviterName}
+                imageUrl={incomingInvite.inviterPicUrl}
+                size="md"
+                className="!w-16 !h-16 text-lg font-semibold"
+              />
+
+              <span className="wayza-invite-avatar-ring" />
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-bold text-white truncate leading-snug">
+
+            <div className="wayza-invite-details">
+              <p className="wayza-invite-name">
                 {incomingInvite.inviterName}
               </p>
-              <p className="text-xs text-white/60 leading-tight">
+
+              <p className="wayza-invite-message">
                 wants to share a ride with you
               </p>
+
               {incomingInvite.dropLocationLabel && (
-                <p className="text-[11px] text-blue-300 mt-0.5 truncate flex items-center gap-1 font-medium">
-                  <span>📍</span>
-                  <span>To: {incomingInvite.dropLocationLabel}</span>
-                </p>
+                <div className="wayza-invite-destination">
+                  <svg
+                    className="wayza-invite-pin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
+                    <circle cx="12" cy="10" r="2.5" />
+                  </svg>
+
+                  <span className="wayza-invite-to-label">To:</span>
+
+                  <span
+                    className="wayza-invite-destination-name"
+                    title={incomingInvite.dropLocationLabel}
+                  >
+                    {incomingInvite.dropLocationLabel}
+                  </span>
+                </div>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 pt-1">
+          {/* Actions */}
+          <div className="wayza-invite-actions">
             <button
+              type="button"
               onClick={() => {
                 const grpId = incomingInvite.groupId;
                 setIncomingInvite(null);
                 navigate(`/chat/${grpId}`);
               }}
-              className="flex-1 py-2.5 px-4 rounded-full bg-white text-slate-900 font-semibold text-xs transition-all shadow-md hover:bg-slate-100 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer"
+              className="wayza-invite-accept"
             >
-              <span>Accept & Chat</span>
-              <span className="text-sm leading-none">→</span>
+              <span>Accept &amp; Chat</span>
+
+              <svg
+                className="wayza-invite-arrow"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M5 12h14" />
+                <path d="m13 5 7 7-7 7" />
+              </svg>
             </button>
+
             <button
+              type="button"
               onClick={() => setIncomingInvite(null)}
-              className="py-2.5 px-4 rounded-full bg-white/5 hover:bg-white/10 active:scale-95 text-white/75 hover:text-white border border-white/15 text-xs font-medium transition-all cursor-pointer"
+              className="wayza-invite-decline"
             >
               Decline
             </button>
