@@ -175,11 +175,11 @@ export default function Profile() {
           </div>
 
           {/* Quick action buttons under avatar */}
-          <div className="flex items-center gap-2 mt-3.5">
+          <div className="flex items-center gap-3 mt-4">
             <button
               type="button"
               onClick={() => setShowPhotoActions(true)}
-              className="px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/15 text-white/90 text-xs font-semibold tracking-wide border border-white/15 cursor-pointer transition-all flex items-center gap-1.5 shadow-xs"
+              className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white/90 text-xs font-semibold tracking-wide border border-white/15 cursor-pointer transition-all flex items-center gap-2 shadow-sm"
             >
               <span>📷</span>
               <span>Change photo</span>
@@ -189,7 +189,7 @@ export default function Profile() {
               <button
                 type="button"
                 onClick={() => setShowViewModal(true)}
-                className="px-3.5 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/75 text-xs font-medium tracking-wide border border-white/10 cursor-pointer transition-all flex items-center gap-1.5"
+                className="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 text-xs font-medium tracking-wide border border-white/10 cursor-pointer transition-all flex items-center gap-2"
               >
                 <span>👁️</span>
                 <span>View</span>
@@ -259,17 +259,17 @@ export default function Profile() {
       </div>
 
       {/* Photo Options Modal / Bottom Sheet */}
-      <Modal open={showPhotoActions} onClose={() => setShowPhotoActions(false)} className="!max-w-xs !p-5">
-        <h3 className="text-lg font-instrument text-white mb-3 text-center tracking-wide">
+      <Modal open={showPhotoActions} onClose={() => setShowPhotoActions(false)} className="!max-w-xs !p-6">
+        <h3 className="text-lg font-instrument text-white mb-4 text-center tracking-wide">
           Profile Photo
         </h3>
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-3">
           <button
             onClick={() => {
               setShowPhotoActions(false);
               cameraInputRef.current?.click();
             }}
-            className="w-full py-3 px-4 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-white font-medium text-sm flex items-center gap-3 transition-colors cursor-pointer"
+            className="w-full py-3.5 px-5 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-white font-medium text-sm flex items-center gap-3.5 transition-colors cursor-pointer"
           >
             <span className="text-lg">📸</span>
             <span>Take Photo (Camera)</span>
@@ -280,7 +280,7 @@ export default function Profile() {
               setShowPhotoActions(false);
               galleryInputRef.current?.click();
             }}
-            className="w-full py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-medium text-sm flex items-center gap-3 transition-colors cursor-pointer"
+            className="w-full py-3.5 px-5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white font-medium text-sm flex items-center gap-3.5 transition-colors cursor-pointer"
           >
             <span className="text-lg">🖼️</span>
             <span>Choose from Library</span>
@@ -292,7 +292,7 @@ export default function Profile() {
                 setShowPhotoActions(false);
                 setShowViewModal(true);
               }}
-              className="w-full py-3 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 font-medium text-sm flex items-center gap-3 transition-colors cursor-pointer"
+              className="w-full py-3.5 px-5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 font-medium text-sm flex items-center gap-3.5 transition-colors cursor-pointer"
             >
               <span className="text-lg">👁️</span>
               <span>View Profile Picture</span>
@@ -301,45 +301,37 @@ export default function Profile() {
 
           <button
             onClick={() => setShowPhotoActions(false)}
-            className="w-full py-2.5 px-4 rounded-xl bg-transparent hover:bg-white/5 text-white/50 text-xs font-medium text-center transition-colors cursor-pointer mt-1"
+            className="w-full py-3 px-5 rounded-xl bg-transparent hover:bg-white/5 text-white/50 text-xs font-medium text-center transition-colors cursor-pointer mt-1"
           >
             Cancel
           </button>
         </div>
       </Modal>
 
-      {/* View Photo Lightbox Modal */}
-      <Modal open={showViewModal} onClose={() => setShowViewModal(false)} className="!max-w-sm !p-4">
-        <div className="flex flex-col items-center">
-          <div className="w-full flex items-center justify-between pb-3 mb-3 border-b border-white/10">
-            <span className="text-sm font-semibold text-white/90">
-              {fullName || user?.fullName || 'Profile Picture'}
-            </span>
-            <button
-              onClick={() => setShowViewModal(false)}
-              className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white flex items-center justify-center transition-colors text-xs cursor-pointer"
-            >
-              ✕
-            </button>
-          </div>
+      {/* View Photo Lightbox Modal — shows ONLY the profile picture with dark blurred background */}
+      {showViewModal && currentDisplayPhoto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in"
+          onClick={() => setShowViewModal(false)}
+        >
+          {/* Floating close button */}
+          <button
+            onClick={() => setShowViewModal(false)}
+            className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/15 hover:bg-white/25 text-white flex items-center justify-center text-lg z-10 transition-all cursor-pointer shadow-lg"
+            aria-label="Close"
+          >
+            ✕
+          </button>
 
-          <div className="w-full max-h-[380px] aspect-square rounded-2xl overflow-hidden bg-black/40 border border-white/15 flex items-center justify-center shadow-2xl">
-            {currentDisplayPhoto ? (
-              <img
-                src={currentDisplayPhoto}
-                alt="Profile photo"
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <Avatar
-                name={fullName || user?.fullName || ''}
-                size="xl"
-                className="scale-150"
-              />
-            )}
-          </div>
+          {/* Profile photo only */}
+          <img
+            src={currentDisplayPhoto}
+            alt="Profile photo"
+            className="max-w-[88vw] max-h-[82vh] rounded-3xl object-contain shadow-2xl border border-white/20 select-none animate-scale-up"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
-      </Modal>
+      )}
     </div>
   );
 }

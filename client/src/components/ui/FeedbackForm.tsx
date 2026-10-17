@@ -26,7 +26,6 @@ export function FeedbackForm({ open, onClose }: FeedbackFormProps) {
       PLACEHOLDER_PROMPTS[Math.floor(Math.random() * PLACEHOLDER_PROMPTS.length)]
   );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
 
   // Reset on open/close
   useEffect(() => {
@@ -43,11 +42,6 @@ export function FeedbackForm({ open, onClose }: FeedbackFormProps) {
       setTimeout(() => textareaRef.current?.focus(), 80);
     }
   }, [step]);
-
-  // Close on overlay click
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === overlayRef.current) onClose();
-  };
 
   // Close on Escape
   useEffect(() => {
@@ -77,13 +71,13 @@ export function FeedbackForm({ open, onClose }: FeedbackFormProps) {
   if (!open) return null;
 
   return (
-    <div
-      ref={overlayRef}
-      className="feedback-overlay"
-      onClick={handleOverlayClick}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
-        className="feedback-modal animate-fade-in-up"
+        className="absolute inset-0 bg-black/65 backdrop-blur-md"
+        onClick={onClose}
+      />
+      <div
+        className="relative feedback-modal animate-fade-in-up"
         role="dialog"
         aria-modal="true"
         aria-label="Share your thoughts"

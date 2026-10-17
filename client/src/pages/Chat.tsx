@@ -32,6 +32,7 @@ export default function Chat() {
   const [showSharePhoneModal, setShowSharePhoneModal] = useState(false);
   const [showStartJourneyModal, setShowStartJourneyModal] = useState(false);
   const [showEndJourneyModal, setShowEndJourneyModal] = useState(false);
+  const [showRideCompletedModal, setShowRideCompletedModal] = useState(false);
   const [showFareSplitModal, setShowFareSplitModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showMenuPanel, setShowMenuPanel] = useState(false);
@@ -109,7 +110,7 @@ export default function Chat() {
     socket.on('journey:all-ended', () => {
       if (isLeavingRef.current) return;
       loadGroup();
-      setShowFareSplitModal(true);
+      setShowRideCompletedModal(true);
     });
     socket.on('fare:split-submitted', (data: any) => {
       if (isLeavingRef.current) return;
@@ -150,6 +151,10 @@ export default function Chat() {
         return;
       }
       setGroup(data);
+
+      if (data.status === 'JOURNEY_ENDED' && !data.fareSplit) {
+        setShowRideCompletedModal(true);
+      }
 
       // Initialize split members with all member IDs
       if (data.members) {
@@ -298,8 +303,7 @@ export default function Chat() {
     try {
       const result = await journeyApi.end(groupId);
       if (result.allEnded) {
-        showToast('Ride completed! Please split the fare.', 'info');
-        setShowFareSplitModal(true);
+        setShowRideCompletedModal(true);
       } else {
         showToast('You ended your journey. Waiting for co-riders...', 'info');
       }
@@ -897,6 +901,41 @@ export default function Chat() {
           </div>
         </div>
       )}
+
+      {/* Ride Completed Modal — shown when all members end journey */}
+      <Modal open={showRideCompletedModal} onClose={() => setShowRideCompletedModal(false)} className="!max-w-md !p-6 sm:!p-8 text-center">
+        <div className="flex flex-col items-center">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-3xl mb-4 shadow-lg shadow-emerald-500/10">
+            🎉
+          </div>
+          <h3 className="text-2xl font-instrument text-white mb-2 tracking-wide">Ride Completed!</h3>
+          <p className="text-sm text-white/65 mb-6 max-w-xs leading-relaxed">
+            All co-riders have finished their journey. Choose an option below to proceed.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <button
+              onClick={() => {
+                setShowRideCompletedModal(false);
+                setShowFareSplitModal(true);
+              }}
+              className="flex-1 py-3.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>💳</span>
+              <span>Split Fare</span>
+            </button>
+            <button
+              onClick={() => {
+                setShowRideCompletedModal(false);
+                navigate('/home', { replace: true });
+              }}
+              className="flex-1 py-3.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-sm border border-white/15 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>🏠</span>
+              <span>Return to Home</span>
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Fare Split Modal */}
       <Modal open={showFareSplitModal} onClose={() => setShowFareSplitModal(false)} className="chat-fare-modal">

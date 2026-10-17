@@ -299,8 +299,8 @@ export default function Home() {
       {/* Very subtle gradient vignette when discovering — keeps background clearly visible */}
       {viewState === 'discovering' && (
         <div className="home-discovering-overlay" />
-      )}      {/* Navbar */}
-      <header className="fixed top-0 left-0 right-0 z-40 w-full flex items-center justify-between px-6 sm:px-10 md:px-14 pt-5 pb-3 sm:py-6 pointer-events-none">
+      )}      {/* Navbar with frosted backdrop so content never collides */}
+      <header className="fixed top-0 left-0 right-0 z-40 w-full flex items-center justify-between px-6 sm:px-10 md:px-14 py-3.5 sm:py-4 bg-[#0a0f1d]/75 backdrop-blur-md border-b border-white/[0.08] pointer-events-none transition-all">
         {/* Brand Logo - anchored with balanced margins */}
         <div className="pointer-events-auto select-none flex items-center">
           <span
@@ -308,7 +308,7 @@ export default function Home() {
               if (viewState !== 'booking') handleStopBooking();
               else navigate('/home');
             }}
-            className="text-white text-[25px] sm:text-[32px] md:text-[36px] font-instrument tracking-[0.15em] drop-shadow-md leading-none select-none font-normal cursor-pointer hover:opacity-85 transition-opacity"
+            className="text-white text-[24px] sm:text-[30px] md:text-[34px] font-instrument tracking-[0.16em] drop-shadow-md leading-none select-none font-normal cursor-pointer hover:opacity-85 transition-opacity"
             title="Wayza Home"
           >
             WAYZA
@@ -417,17 +417,17 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-start sm:justify-center px-4 sm:px-6 pt-24 sm:pt-28 pb-10 sm:py-16">
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 pt-20 pb-12">
         {viewState === 'booking' && (
           <div className="home-booking-card w-full text-center animate-fade-in-up">
             {/* Active Ride Banner */}
             {activeRide && (
               <div
                 onClick={() => navigate(`/chat/${activeRide.id}`)}
-                className="w-full mb-4 sm:mb-5 p-3.5 rounded-2xl bg-blue-500/15 border border-blue-400/35 backdrop-blur-md cursor-pointer hover:bg-blue-500/25 transition-all flex items-center justify-between text-left group shadow-lg"
+                className="w-full mb-4 sm:mb-5 p-3.5 sm:p-4 rounded-2xl bg-blue-500/15 border border-blue-400/35 backdrop-blur-md cursor-pointer hover:bg-blue-500/25 transition-all flex items-center justify-between text-left group shadow-lg"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-blue-500/20 flex items-center justify-center text-lg flex-shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-lg flex-shrink-0">
                     🚗
                   </div>
                   <div className="min-w-0">
@@ -440,7 +440,7 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-                <span className="text-xs font-bold text-blue-300 group-hover:text-white transition-colors bg-white/10 px-3 py-1.5 rounded-full flex-shrink-0">
+                <span className="text-xs font-bold text-blue-300 group-hover:text-white transition-colors bg-white/10 px-3 py-1.5 rounded-xl flex-shrink-0">
                   Resume Chat →
                 </span>
               </div>
@@ -451,21 +451,19 @@ export default function Home() {
             </h2>
 
             {/* Drop location options */}
-            <div className="flex flex-col gap-2 sm:gap-3 mb-4 sm:mb-6 w-full">
+            <div className="flex flex-col gap-2.5 sm:gap-3 mb-5 sm:mb-6 w-full">
               {CAMPUS_POIS.map((poi: { label: string; lat: number; lng: number }) => (
                 <button
                   key={poi.label}
                   onClick={() => selectDropLocation(poi.label, poi.lat, poi.lng)}
-                  className={`w-full px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-full text-left text-[14px] sm:text-[16px] transition-all flex items-center gap-3 cursor-pointer ${dropLabel === poi.label
-                    ? 'bg-white text-gray-950 font-medium border border-white shadow-sm'
-                    : 'bg-white/7 text-white/90 border border-white/16 hover:bg-white/12 hover:border-white/25'
+                  className={`w-full px-5 py-3 sm:py-3.5 rounded-2xl text-left text-[14px] sm:text-[15px] transition-all flex items-center gap-3.5 cursor-pointer ${dropLabel === poi.label
+                    ? 'bg-white text-gray-950 font-semibold border border-white shadow-md'
+                    : 'bg-white/7 text-white/90 border border-white/16 hover:bg-white/12 hover:border-white/25 font-normal'
                     }`}
-                  style={{
-                    minHeight: "44px",
-                  }}
+                  style={{ minHeight: "48px" }}
                 >
                   <svg
-                    className="w-4 h-4 flex-shrink-0 text-white/70 ml-1.5"
+                    className={`w-4 h-4 flex-shrink-0 ${dropLabel === poi.label ? 'text-gray-950' : 'text-white/70'}`}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -483,7 +481,7 @@ export default function Home() {
                     />
                   </svg>
 
-                  <span>{poi.label}</span>
+                  <span className="truncate">{poi.label}</span>
                 </button>
               ))}
 
@@ -497,19 +495,17 @@ export default function Home() {
                         setCustomLocation(isCustomSelected ? dropLabel : '');
                         setShowCustomInput(true);
                       }}
-                      className={`w-full px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-full text-left text-[14px] sm:text-[16px] transition-all flex items-center justify-between cursor-pointer ${
+                      className={`w-full px-5 py-3 sm:py-3.5 rounded-2xl text-left text-[14px] sm:text-[15px] transition-all flex items-center justify-between cursor-pointer ${
                         isCustomSelected
-                          ? 'bg-white text-gray-950 font-medium border border-white shadow-sm'
-                          : 'bg-white/7 text-white/60 border border-white/16 hover:bg-white/12 hover:border-white/25'
+                          ? 'bg-white text-gray-950 font-semibold border border-white shadow-md'
+                          : 'bg-white/7 text-white/65 border border-white/16 hover:bg-white/12 hover:border-white/25'
                       }`}
-                      style={{
-                        minHeight: "44px",
-                      }}
+                      style={{ minHeight: "48px" }}
                     >
-                      <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex items-center gap-3.5 min-w-0">
                         {isCustomSelected ? (
                           <svg
-                            className="w-4 h-4 flex-shrink-0 text-gray-900 ml-2"
+                            className="w-4 h-4 flex-shrink-0 text-gray-900"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
@@ -527,18 +523,14 @@ export default function Home() {
                             />
                           </svg>
                         ) : (
-                          <span
-                            className="text-lg leading-none text-white/60 ml-2"
-                          >
-                            +
-                          </span>
+                          <span className="text-lg leading-none text-white/60 font-light">+</span>
                         )}
                         <span className="truncate">
                           {isCustomSelected ? dropLabel : 'Enter custom location'}
                         </span>
                       </div>
                       {isCustomSelected && (
-                        <span className="text-xs text-gray-500 hover:text-gray-900 mr-2 flex-shrink-0">
+                        <span className="text-xs text-gray-500 hover:text-gray-900 ml-2 flex-shrink-0 font-medium">
                           Edit
                         </span>
                       )}
@@ -567,16 +559,16 @@ export default function Home() {
                       value={customLocation}
                       onChange={(e) => setCustomLocation(e.target.value)}
                       placeholder="Type your destination (e.g. Kothrud, Swargate)..."
-                      className="w-full bg-white/7 border border-white/20 rounded-full text-white placeholder:text-white/40 focus:border-white/50 focus:outline-none focus:ring-1 focus:ring-white/30"
+                      className="w-full bg-white/7 border border-white/20 rounded-2xl text-white placeholder:text-white/40 focus:border-white/50 focus:outline-none focus:ring-1 focus:ring-white/30"
                       autoFocus
                       style={{
                         width: "100%",
                         height: "48px",
                         paddingLeft: "44px",
                         paddingRight: "44px",
-                        fontSize: "16px",
+                        fontSize: "15px",
                         boxSizing: "border-box",
-                        borderRadius: "9999px",
+                        borderRadius: "16px",
                       }}
                     />
                     <button
@@ -593,7 +585,7 @@ export default function Home() {
                   </div>
 
                   {autocompleteResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl bg-[#121622]/95 backdrop-blur-xl border border-white/15 shadow-2xl max-h-56 overflow-y-auto z-30 p-1.5 flex flex-col gap-1">
+                    <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl bg-[#121622]/95 backdrop-blur-xl border border-white/15 shadow-2xl max-h-56 overflow-y-auto z-30 p-2 flex flex-col gap-1">
                       {autocompleteResults.map((result, i) => (
                         <button
                           key={i}
@@ -636,20 +628,20 @@ export default function Home() {
                 Search within:
               </label>
 
-              <div className="flex flex-wrap gap-2 sm:gap-2.5 justify-center">
+              <div className="flex flex-wrap gap-2.5 justify-center">
                 {RADIUS_OPTIONS.map((opt: { label: string; value: number }) => (
                   <button
                     key={opt.value}
                     onClick={() => setRadius(opt.value)}
-                    className={`rounded-full text-[13px] sm:text-[14px] transition-all cursor-pointer border ${radius === opt.value
+                    className={`rounded-xl text-[13px] sm:text-[14px] transition-all cursor-pointer border ${radius === opt.value
                       ? 'bg-white text-gray-950 font-bold border-white shadow-sm'
                       : 'bg-white/6 text-white/75 border-white/18 hover:bg-white/12 hover:border-white/30 font-medium'
                       }`}
                     style={{
-                      minWidth: "60px",
+                      minWidth: "62px",
                       height: "40px",
-                      paddingLeft: "12px",
-                      paddingRight: "12px",
+                      paddingLeft: "14px",
+                      paddingRight: "14px",
                     }}
                   >
                     {opt.label}
@@ -661,7 +653,7 @@ export default function Home() {
             {/* Book Now button */}
             <button
               onClick={handleBookNow}
-              className="home-book-btn w-full mt-3 sm:mt-4 text-white text-[15px] sm:text-[16px] font-bold tracking-widest cursor-pointer flex items-center justify-center select-none active:scale-[0.99] transition-all"
+              className="home-book-btn w-full mt-4 text-white text-[15px] sm:text-[16px] font-bold tracking-widest cursor-pointer flex items-center justify-center select-none active:scale-[0.99] transition-all"
             >
               {loading ? <Spinner size="sm" className="border-white/20 border-t-white" /> : 'BOOK NOW'}
             </button>
@@ -669,23 +661,45 @@ export default function Home() {
         )}
 
         {viewState === 'discovering' && (
-          <div className="home-discovering-content animate-fade-in-up">
+          <div className="home-booking-card w-full max-w-[460px] text-center animate-fade-in-up flex flex-col items-center">
+            {/* Destination info chip */}
+            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs text-white/80 mb-4">
+              <span className="text-emerald-400">📍</span>
+              <span className="font-medium truncate max-w-[190px]">{dropLabel || 'Destination'}</span>
+              <span className="text-white/40">•</span>
+              <span className="text-white/60">{radius} km</span>
+            </div>
+
             {nearbyUsers.length === 0 ? (
               /* Loading state — no nearby riders found yet */
-              <div className="home-loading-group">
-                <p className="home-loading-text">Looking for nearby riders...</p>
-                <div className="home-loading-spinner-wrap">
-                  <Spinner size="lg" className="home-loading-spinner" />
+              <div className="flex flex-col items-center w-full py-2">
+                <h3 className="font-instrument text-2xl sm:text-3xl text-white mb-2 tracking-wide">
+                  Looking for Riders...
+                </h3>
+                <p className="text-xs sm:text-sm text-white/60 mb-6 max-w-xs leading-relaxed">
+                  Scanning for students heading to {dropLabel || 'the same destination'} within {radius} km
+                </p>
+
+                {/* Concentric pulsing radar */}
+                <div className="relative flex items-center justify-center w-44 h-44 my-2">
+                  <div className="absolute inset-0 rounded-full border border-blue-500/25 animate-ping opacity-35" />
+                  <div className="absolute w-32 h-32 rounded-full border border-blue-400/35 animate-pulse" />
+                  <div className="absolute w-20 h-20 rounded-full bg-blue-500/15 border border-blue-400/40 flex items-center justify-center" />
+                  <div className="relative z-10 flex flex-col items-center">
+                    <Avatar name={user?.fullName || 'You'} imageUrl={user?.profilePicUrl} size="md" />
+                    <span className="mt-1 text-[11px] font-semibold text-white/80 bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-sm">
+                      You
+                    </span>
+                  </div>
                 </div>
-                <p className="home-loading-you">You</p>
 
                 {/* Cancel booking button */}
                 <button
                   type="button"
                   onClick={handleStopBooking}
-                  className="home-cancel-booking-btn"
+                  className="w-full mt-7 py-3.5 px-6 rounded-2xl bg-white/10 hover:bg-red-500/20 hover:border-red-500/40 border border-white/15 text-white/90 hover:text-red-300 font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-[0.98]"
                 >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
@@ -701,12 +715,24 @@ export default function Home() {
                 const extraCount = nearbyUsers.length - visibleRadarUsers.length;
 
                 return (
-                  <div className="flex flex-col items-center">
-                    <div className="relative flex items-center justify-center" style={{ minHeight: '320px', width: '320px' }}>
+                  <div className="flex flex-col items-center w-full py-1">
+                    <h3 className="font-instrument text-2xl text-white mb-1 tracking-wide">
+                      Co-riders Found!
+                    </h3>
+                    <p className="text-xs text-white/60 mb-4">
+                      Tap a rider to view profile and connect
+                    </p>
+
+                    <div className="relative flex items-center justify-center my-2" style={{ minHeight: '270px', width: '270px' }}>
+                      {/* Radar rings */}
+                      <div className="absolute w-[260px] h-[260px] rounded-full border border-white/10 pointer-events-none" />
+                      <div className="absolute w-[180px] h-[180px] rounded-full border border-white/10 pointer-events-none" />
+                      <div className="absolute w-[90px] h-[90px] rounded-full border border-white/15 pointer-events-none" />
+
                       {/* Center indicator */}
-                      <div className="absolute flex flex-col items-center z-10">
-                        <div className="w-4 h-4 bg-white rounded-full animate-pulse-ring" />
-                        <p className="mt-2 text-white/60 text-xs font-medium">You</p>
+                      <div className="absolute flex flex-col items-center z-10 pointer-events-none">
+                        <Avatar name={user?.fullName || 'You'} imageUrl={user?.profilePicUrl} size="sm" />
+                        <span className="mt-1 text-[10px] text-white/60 font-medium">You</span>
                       </div>
 
                       {visibleRadarUsers.map((nUser, i) => {
@@ -717,23 +743,23 @@ export default function Home() {
                           <button
                             key={nUser.userId || i}
                             onClick={() => { setSelectedUser(nUser); setViewState('user-detail'); }}
-                            className="absolute flex flex-col items-center gap-1 transition-all hover:scale-110 active:scale-95 cursor-pointer z-20"
+                            className="absolute flex flex-col items-center gap-1 transition-all hover:scale-110 active:scale-95 cursor-pointer z-20 group"
                             style={{
                               transform: `translate(${pos.x}px, ${pos.y}px)`,
                             }}
                           >
                             <div className="relative">
-                              <Avatar name={name} imageUrl={nUser.profilePicUrl} size="lg" />
+                              <Avatar name={name} imageUrl={nUser.profilePicUrl} size="md" className="ring-2 ring-blue-500/50 group-hover:ring-blue-400" />
                               {nUser.rating && (
                                 <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 bg-amber-400 text-slate-950 text-[10px] font-black rounded-full shadow-md flex items-center gap-0.5 border border-black/20">
                                   ★ {nUser.rating.toFixed(1)}
                                 </span>
                               )}
                             </div>
-                            <span className="text-white text-xs font-semibold max-w-[80px] truncate text-video-overlay">
+                            <span className="text-white text-xs font-semibold max-w-[70px] truncate drop-shadow-sm">
                               {firstName}
                             </span>
-                            <span className="text-white/60 text-[10px] font-medium bg-black/40 px-1.5 py-0.5 rounded-full backdrop-blur-sm">
+                            <span className="text-white/70 text-[10px] font-medium bg-black/60 px-1.5 py-0.5 rounded-full backdrop-blur-sm border border-white/10">
                               {formatDistance(nUser.distanceMeters || 0)}
                             </span>
                           </button>
@@ -746,7 +772,7 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={() => setShowAllRidersModal(true)}
-                        className="mt-3 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 border border-white/20 backdrop-blur-xl text-white text-xs font-semibold transition-all flex items-center gap-2 shadow-lg cursor-pointer"
+                        className="mt-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 border border-white/20 backdrop-blur-xl text-white text-xs font-semibold transition-all flex items-center gap-2 shadow-lg cursor-pointer"
                       >
                         <span>👥 View all riders ({nearbyUsers.length})</span>
                         {extraCount > 0 && (
@@ -759,9 +785,9 @@ export default function Home() {
                     <button
                       type="button"
                       onClick={handleStopBooking}
-                      className="home-cancel-booking-btn mt-5"
+                      className="w-full mt-5 py-3 px-6 rounded-2xl bg-white/10 hover:bg-red-500/20 hover:border-red-500/40 border border-white/15 text-white/90 hover:text-red-300 font-semibold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
                     >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <svg className="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18" />
                         <line x1="6" y1="6" x2="18" y2="18" />
                       </svg>
@@ -816,126 +842,47 @@ export default function Home() {
       <Modal
         open={locationPermissionModal}
         onClose={() => setLocationPermissionModal(false)}
+        className="!max-w-sm !p-6 sm:!p-8 text-center"
       >
-        <div
-          className="mx-auto text-center"
-          style={{
-            width: "480px",
-            maxWidth: "calc(100vw - 40px)",
-            minHeight: "360px",
-            padding: "34px 32px 30px",
-            boxSizing: "border-box",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            textAlign: "center",
-            marginRight: "70px"
-          }}
-        >
-          {/* Location Icon */}
-          <div
-            style={{
-              fontSize: "48px",
-              lineHeight: "1",
-              marginBottom: "22px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: "40px"
-            }}
-          >
+        <div className="flex flex-col items-center">
+          <div className="w-14 h-14 rounded-full bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-3xl mb-4">
             📍
           </div>
-
-          {/* Heading */}
-          <h3
-            className="font-instrument text-white"
-            style={{
-              width: "100%",
-              fontSize: "24px",
-              lineHeight: "1.25",
-              margin: "0 0 16px 0",
-              textAlign: "center",
-              marginRight: "50px"
-            }}
-          >
+          <h3 className="font-instrument text-2xl text-white mb-2 tracking-wide">
             Location Access Needed
           </h3>
-
-          {/* Description */}
-          <p
-            className="text-white/60"
-            style={{
-              width: "100%",
-              maxWidth: "390px",
-              fontSize: "15px",
-              lineHeight: "1.65",
-              margin: "0 auto 28px auto",
-              textAlign: "center",
-              marginRight: "50px"
-            }}
-          >
+          <p className="text-sm text-white/65 mb-6 leading-relaxed">
             Wayza needs your location to find students near you. Your location is
             only stored temporarily and is never saved permanently.
           </p>
-
-          {/* Allow Location Button */}
           <button
             onClick={handleLocationGranted}
-            className="bg-white text-black rounded-full font-medium hover:bg-white/90 transition-all cursor-pointer"
-            style={{
-              width: "100%",
-              maxWidth: "380px",
-              height: "52px",
-              padding: "0 24px",
-              fontSize: "17px",
-              borderRadius: "9999px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              textAlign: "center",
-              boxSizing: "border-box",
-              margin: "0 auto",
-              marginRight: "50px"
-            }}
+            className="w-full py-3.5 px-6 rounded-2xl bg-white hover:bg-white/90 text-black font-bold text-sm shadow-lg transition-all cursor-pointer"
           >
             Allow Location
           </button>
         </div>
       </Modal>
 
-      {/* Logout Confirmation Modal — custom overlay so the scenic background remains clearly visible */}
-      {showLogoutConfirm && (
-        <div
-          className="logout-confirm-overlay"
-          onClick={() => setShowLogoutConfirm(false)}
-        >
-          <div
-            className="logout-confirm-card animate-fade-in-up"
-            role="dialog"
-            aria-modal="true"
-            onClick={(e) => e.stopPropagation()}
+      {/* Logout Confirmation Modal — uses standard Modal with backdrop-blur-md */}
+      <Modal open={showLogoutConfirm} onClose={() => setShowLogoutConfirm(false)} className="!max-w-sm !p-6 sm:!p-7 text-center">
+        <h3 className="text-xl sm:text-2xl font-instrument text-white mb-2 tracking-wide">Are you sure?</h3>
+        <p className="text-sm text-white/60 mb-6 leading-relaxed">You'll need to log in again to use Wayza.</p>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowLogoutConfirm(false)}
+            className="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-medium text-sm transition-all cursor-pointer"
           >
-            <h3 className="logout-confirm-heading">Are you sure?</h3>
-            <p className="logout-confirm-message">You'll need to log in again to use Wayza.</p>
-            <div className="logout-confirm-actions">
-              <button
-                onClick={() => setShowLogoutConfirm(false)}
-                className="logout-confirm-no-btn"
-              >
-                No
-              </button>
-              <button
-                onClick={handleLogout}
-                className="logout-confirm-yes-btn"
-              >
-                Yes, Logout
-              </button>
-            </div>
-          </div>
+            Cancel
+          </button>
+          <button
+            onClick={handleLogout}
+            className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-sm shadow-lg shadow-red-600/30 transition-all cursor-pointer"
+          >
+            Yes, Logout
+          </button>
         </div>
-      )}
+      </Modal>
 
       {/* Incoming Connection Invitation Popup — Dynamic Island Glass Style */}
       {incomingInvite && (
@@ -1125,17 +1072,17 @@ export default function Home() {
                 return (
                   <div
                     key={ride.id}
-                    className="p-3.5 sm:p-4 rounded-2xl bg-white/[0.05] border border-white/10 hover:border-white/20 transition-all flex flex-col gap-2.5"
+                    className="p-4 sm:p-4.5 rounded-xl bg-white/[0.05] border border-white/10 hover:border-white/20 transition-all flex flex-col gap-2.5 overflow-hidden shadow-sm"
                   >
-                    <div className="flex items-center justify-between gap-2.5">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <span className="text-sm shrink-0">📍</span>
-                        <span className="text-sm font-semibold text-white truncate" title={dest}>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <span className="text-base shrink-0">📍</span>
+                        <span className="text-sm font-semibold text-white truncate max-w-[180px] sm:max-w-xs" title={dest}>
                           {dest}
                         </span>
                       </div>
                       <span
-                        className={`shrink-0 text-[11px] px-2.5 py-0.5 rounded-full font-medium whitespace-nowrap ${
+                        className={`shrink-0 text-[11px] px-2.5 py-1 rounded-md font-medium whitespace-nowrap ${
                           isCompleted
                             ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
                             : 'bg-white/10 text-white/70'
@@ -1145,13 +1092,13 @@ export default function Home() {
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/[0.08]">
+                    <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-white/[0.08]">
                       <p className="text-xs text-white/55 truncate flex-1 min-w-0" title={`with ${coRiders.map((m: any) => m.fullName).join(', ') || 'Rider'}`}>
                         {date} • with {coRiders.map((m: any) => m.fullName).join(', ') || 'Rider'}
                       </p>
                       {ride.totalFare ? (
-                        <div className="flex items-baseline gap-1 shrink-0 ml-2">
-                          <span className="text-sm font-bold text-emerald-400">₹{ride.totalFare}</span>
+                        <div className="flex items-baseline gap-1 shrink-0 ml-2 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20">
+                          <span className="text-xs font-bold text-emerald-400">₹{ride.totalFare}</span>
                           <span className="text-[10px] text-white/40">split</span>
                         </div>
                       ) : null}
