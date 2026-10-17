@@ -1035,61 +1035,84 @@ export default function Home() {
         </div>
       )}
 
+
       {/* All Active Riders Modal / Drawer */}
       <Modal open={showAllRidersModal} onClose={() => setShowAllRidersModal(false)}>
-        <div className="p-4 sm:p-5 max-w-lg mx-auto text-left">
-          <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
-            <div>
+        <div className="p-3 sm:p-5 max-w-lg mx-auto text-left rounded-[28px] bg-[#071326]/95 border border-blue-500/50 shadow-[0_0_35px_rgba(0,100,255,0.15)] backdrop-blur-2xl">
+
+          <div className="flex items-center justify-between mb-3 pb-3">
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-lg">👥</span>
-                <h3 className="text-xl font-instrument text-white">Active Riders</h3>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-semibold">
+                <span className="text-2xl text-blue-500">👥</span>
+
+                <h3 className="text-2xl font-instrument text-white tracking-tight">
+                  Active Riders
+                </h3>
+
+                <span className="text-xs px-3 py-1 rounded-full bg-blue-600/20 border border-blue-500/40 text-blue-300 font-bold shadow-[0_0_12px_rgba(37,99,235,0.15)] whitespace-nowrap">
                   {nearbyUsers.length} online
                 </span>
               </div>
-              <p className="text-xs text-white/50 mt-0.5">
-                Sorted by highest reviews, rating & closest distance
+
+              <p className="text-xs sm:text-sm text-slate-400 mt-2">
+                Sorted by highest reviews, rating &amp; closest distance
               </p>
             </div>
+
             <button
               onClick={() => setShowAllRidersModal(false)}
-              className="text-white/40 hover:text-white text-sm p-1 rounded-lg cursor-pointer"
+              className="ml-2 flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-slate-800/80 border border-white/5 text-slate-300 hover:text-white hover:bg-slate-700 transition-all cursor-pointer text-xl"
             >
               ✕
             </button>
           </div>
 
-          <div className="flex flex-col gap-2 max-h-[380px] overflow-y-auto pr-1">
+          <div className="flex flex-col gap-2.5 max-h-[380px] overflow-y-auto pr-1">
+
             {nearbyUsers.map((rider) => {
               const name = rider.fullName || 'Rider';
+
               return (
                 <div
                   key={rider.userId}
-                  className="p-3 rounded-xl bg-white/5 hover:bg-white/[0.08] border border-white/10 flex items-center justify-between gap-3 transition-colors"
+                  className="p-3 sm:p-3.5 rounded-[24px] bg-gradient-to-r from-[#111e32]/95 to-[#101a2c]/95 hover:from-[#172943] hover:to-[#14223a] border border-blue-400/20 hover:border-blue-400/50 flex items-center justify-between gap-2 sm:gap-3 transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+
                     <div className="relative flex-shrink-0">
-                      <Avatar name={name} imageUrl={rider.profilePicUrl} size="md" />
-                      <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#121622]" />
+                      <Avatar
+                        name={name}
+                        imageUrl={rider.profilePicUrl}
+                        size="md"
+                      />
+
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#101a2c] shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
                     </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-white truncate">
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                        <span className="text-sm sm:text-base font-bold text-white truncate">
                           {name}
                         </span>
+
                         {rider.rating && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 font-bold border border-amber-400/30 flex items-center gap-0.5">
+                          <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 rounded-full bg-amber-400/15 text-amber-300 font-bold border border-amber-400/40 flex items-center gap-1 whitespace-nowrap">
                             ★ {rider.rating.toFixed(1)}
                             {rider.reviewsCount ? ` (${rider.reviewsCount})` : ''}
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-white/50 mt-0.5">
+
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-slate-400 mt-1.5 min-w-0">
                         <span className="text-blue-300 truncate">
                           📍 {rider.dropLocationLabel || 'Campus'}
                         </span>
-                        <span>•</span>
-                        <span>{formatDistance(rider.distanceMeters || 0)}</span>
+
+                        <span className="text-slate-500 flex-shrink-0">•</span>
+
+                        <span className="text-slate-300 flex-shrink-0">
+                          {formatDistance(rider.distanceMeters || 0)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1099,17 +1122,19 @@ export default function Home() {
                       setShowAllRidersModal(false);
                       handleConnect(rider.userId);
                     }}
-                    className="flex-shrink-0 py-1.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs font-semibold shadow-md transition-all cursor-pointer flex items-center gap-1"
+                    className="flex-shrink-0 py-2.5 px-3 sm:px-4 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 active:scale-95 text-white text-xs sm:text-sm font-bold shadow-[0_0_18px_rgba(37,99,235,0.35)] hover:shadow-[0_0_24px_rgba(37,99,235,0.5)] transition-all duration-200 cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap"
                   >
                     <span>Connect</span>
-                    <span>→</span>
+                    <span className="text-base">→</span>
                   </button>
                 </div>
               );
             })}
+
           </div>
         </div>
       </Modal>
+
 
       {/* Ride History Modal — matches exact design mockup */}
       {/* Ride History Modal */}
@@ -1187,7 +1212,7 @@ export default function Home() {
 
                   const dest =
                     !ride.dropLocation ||
-                    ride.dropLocation === 'To be determined'
+                      ride.dropLocation === 'To be determined'
                       ? 'MIT-WPU Campus'
                       : ride.dropLocation;
 
@@ -1241,11 +1266,10 @@ export default function Home() {
                       {/* Right: Status and fare */}
                       <div className="ride-history-right">
                         <span
-                          className={`ride-history-status ${
-                            isCompleted
+                          className={`ride-history-status ${isCompleted
                               ? 'ride-history-status-completed'
                               : 'ride-history-status-other'
-                          }`}
+                            }`}
                         >
                           {isCompleted && (
                             <span aria-hidden="true">✓</span>
