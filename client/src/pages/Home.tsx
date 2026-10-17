@@ -952,7 +952,7 @@ export default function Home() {
                 name={incomingInvite.inviterName}
                 imageUrl={incomingInvite.inviterPicUrl}
                 size="md"
-                className="!w-16 !h-16 text-lg font-semibold"
+                className="!w-12 !h-12 text-sm font-semibold"
               />
 
               <span className="wayza-invite-avatar-ring" />
