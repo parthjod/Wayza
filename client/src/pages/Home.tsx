@@ -245,17 +245,22 @@ export default function Home() {
     }
   };
 
-  const handleStopBooking = async () => {
-    if (pollingRef.current) clearInterval(pollingRef.current);
-    try {
-      await discoveryApi.unpublish();
-    } catch {
-      // silent
+  const handleStopBooking = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
     }
-    setNearbyUsers([]);
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
     setViewState('booking');
+    setNearbyUsers([]);
     setShowDropdown(false);
-    showToast('Booking search stopped', 'info');
+    showToast('Booking cancelled', 'info');
+
+    // Run unpublish asynchronously without blocking UI
+    discoveryApi.unpublish().catch(() => {});
   };
 
   const handleLogout = async () => {
@@ -420,10 +425,10 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-12">
+      {/* Main Content — centered vertically and horizontally */}
+      <main className="relative z-10 min-h-screen w-full flex items-center justify-center px-4 sm:px-6 py-6">
         {viewState === 'booking' && (
-          <div className="home-booking-card w-full text-center animate-fade-in-up my-auto">
+          <div className="home-booking-card w-full text-center animate-fade-in-up">
             {/* Active Ride Banner */}
             {activeRide && (
               <div
@@ -665,7 +670,7 @@ export default function Home() {
         )}
 
         {viewState === 'discovering' && (
-          <div className="home-booking-card w-full max-w-[460px] text-center animate-fade-in-up flex flex-col items-center my-auto">
+          <div className="home-booking-card w-full max-w-[460px] text-center animate-fade-in-up flex flex-col items-center">
             {/* Destination info chip */}
             <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs text-white/80 mb-4">
               <span className="text-emerald-400">📍</span>
@@ -685,11 +690,11 @@ export default function Home() {
                 </p>
 
                 {/* Concentric pulsing radar */}
-                <div className="relative flex items-center justify-center w-44 h-44 my-2">
-                  <div className="absolute inset-0 rounded-full border border-blue-500/25 animate-ping opacity-35" />
-                  <div className="absolute w-32 h-32 rounded-full border border-blue-400/35 animate-pulse" />
-                  <div className="absolute w-20 h-20 rounded-full bg-blue-500/15 border border-blue-400/40 flex items-center justify-center" />
-                  <div className="relative z-10 flex flex-col items-center">
+                <div className="relative flex items-center justify-center w-44 h-44 my-2 pointer-events-none">
+                  <div className="absolute inset-0 rounded-full border border-blue-500/25 animate-ping opacity-35 pointer-events-none" />
+                  <div className="absolute w-32 h-32 rounded-full border border-blue-400/35 animate-pulse pointer-events-none" />
+                  <div className="absolute w-20 h-20 rounded-full bg-blue-500/15 border border-blue-400/40 flex items-center justify-center pointer-events-none" />
+                  <div className="relative z-10 flex flex-col items-center pointer-events-none select-none">
                     <Avatar name={user?.fullName || 'You'} imageUrl={user?.profilePicUrl} size="md" />
                     <span className="mt-1 text-[11px] font-semibold text-white/80 bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-sm">
                       You
@@ -700,13 +705,10 @@ export default function Home() {
                 {/* Cancel booking button */}
                 <button
                   type="button"
-                  onClick={handleStopBooking}
-                  className="w-full mt-7 py-3.5 px-6 rounded-2xl bg-white/10 hover:bg-red-500/20 hover:border-red-500/40 border border-white/15 text-white/90 hover:text-red-300 font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-[0.98]"
+                  onClick={(e) => handleStopBooking(e)}
+                  className="w-full mt-7 py-3 px-6 rounded-full bg-white/10 hover:bg-white/15 border border-white/20 text-white font-medium text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-[0.98] select-none relative z-20"
                 >
-                  <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
+                  <span className="text-red-400 font-bold text-sm">✕</span>
                   <span>Cancel Booking</span>
                 </button>
               </div>
@@ -788,13 +790,10 @@ export default function Home() {
                     {/* Cancel booking button */}
                     <button
                       type="button"
-                      onClick={handleStopBooking}
-                      className="w-full mt-5 py-3 px-6 rounded-2xl bg-white/10 hover:bg-red-500/20 hover:border-red-500/40 border border-white/15 text-white/90 hover:text-red-300 font-semibold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
+                      onClick={(e) => handleStopBooking(e)}
+                      className="w-full mt-5 py-3 px-6 rounded-full bg-white/10 hover:bg-white/15 border border-white/20 text-white font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98] select-none relative z-20"
                     >
-                      <svg className="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
+                      <span className="text-red-400 font-bold text-xs">✕</span>
                       <span>Cancel Booking</span>
                     </button>
                   </div>
@@ -803,7 +802,7 @@ export default function Home() {
             )}
           </div>
         )}
-      </div>
+      </main>
 
       {/* User Detail Card */}
       {viewState === 'user-detail' && selectedUser && (
