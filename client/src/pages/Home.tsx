@@ -659,9 +659,8 @@ export default function Home() {
           const visibleRadarUsers = nearbyUsers.slice(0, maxRadar);
           const extraCount = nearbyUsers.length - visibleRadarUsers.length;
           const radiusDisplay =
-            radius >= 1000
-              ? (radius === 1000 ? '1000 km' : `${radius / 1000} km`)
-              : `${radius} m`;
+            RADIUS_OPTIONS.find((opt) => opt.value === radius)?.label ||
+            (radius >= 1000 ? `${radius / 1000}km` : `${radius}m`);
 
           return (
             <div className="home-radar-card animate-fade-in-up">
