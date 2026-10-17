@@ -194,88 +194,97 @@ export default function Profile() {
 
       {/* Main Content */}
       <main className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-24">
-        {/* Hero Title */}
-        <div className="text-center mb-6 sm:mb-8 select-none">
-          <h1 className="text-[34px] sm:text-[42px] font-instrument text-white leading-tight">
-            Your Wayza <span className="italic font-normal">profile</span>
+        {/* Hero Title Section */}
+        <div className="profile-hero select-none">
+          <h1 className="profile-title">
+            Your Wayza <span>profile</span>
           </h1>
-          <p className="text-xs sm:text-sm text-white/60 mt-1">
-            Keep your details up to date.
-          </p>
+          <p className="profile-subtitle">Keep your details up to date.</p>
         </div>
 
         {/* Profile Card */}
         <div className="wayza-profile-card animate-fade-in-up">
-          {/* Avatar Section */}
-          <div className="flex flex-col items-center mb-6">
+
+          {/* Avatar */}
+          <div className="profile-avatar-section">
             <div
-              className="relative inline-block cursor-pointer group"
+              className="profile-avatar-wrap"
               onClick={() => setShowPhotoActions(true)}
               title="Click to change photo"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setShowPhotoActions(true);
+                }
+              }}
             >
-              <div className="rounded-full ring-2 ring-white/10 group-hover:ring-blue-400/40 transition-all">
-                <Avatar
-                  name={fullName || user?.fullName || ''}
-                  imageUrl={currentDisplayPhoto}
-                  size="xl"
-                  className="!w-20 !h-20 text-2xl font-bold shadow-lg"
-                />
-              </div>
+              <Avatar
+                name={fullName || user?.fullName || ""}
+                imageUrl={currentDisplayPhoto}
+                size="xl"
+                className="!w-[104px] !h-[104px] text-3xl font-semibold shadow-lg"
+              />
 
-              {/* Camera badge overlay */}
-              <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-blue-600 border-2 border-[#121622] flex items-center justify-center text-white text-xs shadow-md group-hover:scale-105 transition-all">
-                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+              <div className="profile-camera-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth={2} className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M4 7h3l2-3h6l2 3h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z" />
+                  <circle cx="12" cy="12" r="3.5" />
                 </svg>
               </div>
 
               {uploading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-xs rounded-full">
+                <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-full">
                   <Spinner size="sm" />
                 </div>
               )}
             </div>
 
-            {/* Action buttons under avatar: Change photo & Remove photo */}
-            <div className="flex items-center justify-center gap-3 mt-4">
+            <div className="profile-photo-actions">
               <button
                 type="button"
                 onClick={() => setShowPhotoActions(true)}
-                className="px-4 py-2 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] border border-white/15 text-white text-xs font-medium cursor-pointer transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                className="profile-photo-btn"
               >
-                <svg className="w-3.5 h-3.5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth={1.8} className="w-4 h-4">
+                  <path strokeLinecap="round" strokeLinejoin="round"
+                    d="M4 7h3l2-3h6l2 3h3a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z" />
+                  <circle cx="12" cy="12" r="3.5" />
                 </svg>
-                <span>Change photo</span>
+                Change photo
               </button>
 
               <button
                 type="button"
                 onClick={handleRemovePhoto}
                 disabled={deletingAvatar || !currentDisplayPhoto}
-                className={`px-4 py-2 rounded-xl border text-xs font-medium cursor-pointer transition-all flex items-center gap-1.5 shadow-sm active:scale-95 ${
-                  currentDisplayPhoto
-                    ? 'bg-red-500/10 hover:bg-red-500/20 border-red-500/25 text-red-400'
-                    : 'bg-red-500/5 border-red-500/15 text-red-400/40 cursor-not-allowed'
-                }`}
-                title={currentDisplayPhoto ? 'Remove photo' : 'No custom photo to remove'}
+                className="profile-remove-btn"
               >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                </svg>
-                <span>{deletingAvatar ? 'Removing...' : 'Remove photo'}</span>
+                {deletingAvatar ? "Removing..." : (
+                  <>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      strokeWidth={1.8} className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round"
+                        d="M4 7h16M10 11v6m4-6v6M5 7l1 13h12l1-13M9 7V4h6v3" />
+                    </svg>
+                    Remove photo
+                  </>
+                )}
               </button>
             </div>
           </div>
 
-          {/* Full Name Field */}
-          <div className="mb-4 text-left">
-            <label className="text-xs text-white/70 font-medium mb-1.5 block">
-              Full name
-            </label>
+          <div className="profile-divider" />
+
+          {/* Full name */}
+          <div className="profile-field">
+            <label htmlFor="profile-full-name">Full name</label>
             <input
+              id="profile-full-name"
               type="text"
               value={fullName}
               onChange={(e) => {
@@ -283,69 +292,80 @@ export default function Profile() {
                 setHasChanges(true);
               }}
               placeholder="Your full name"
-              className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/15 text-white text-sm focus:border-white/40 focus:outline-none transition-colors"
               maxLength={100}
+              className="profile-input"
             />
           </div>
 
-          {/* College Email Field (Readonly) */}
-          <div className="mb-4 text-left">
-            <label className="text-xs text-white/70 font-medium mb-1.5 block">
-              College email
-            </label>
-            <div className="relative flex items-center w-full">
+          {/* Locked email */}
+          <div className="profile-field">
+            <label htmlFor="profile-email">College email</label>
+            <div className="profile-input-wrap">
               <input
+                id="profile-email"
                 type="email"
                 value={email}
                 readOnly
-                className="w-full px-4 py-3 pr-10 rounded-xl bg-white/[0.03] border border-white/10 text-white/60 text-sm select-none cursor-not-allowed"
+                aria-describedby="profile-email-help"
+                className="profile-input profile-input-locked"
               />
-              <svg className="absolute right-3.5 w-4 h-4 text-white/35 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              <svg className="profile-lock-icon" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" strokeWidth={1.8}>
+                <rect x="4" y="10" width="16" height="11" rx="2" />
+                <path strokeLinecap="round"
+                  d="M8 10V7a4 4 0 018 0v3" />
               </svg>
             </div>
-            <span className="text-[11px] text-white/45 mt-1.5 block">
+            <p id="profile-email-help" className="profile-help">
               Your verified college email can't be edited here.
-            </span>
+            </p>
           </div>
 
-          {/* Phone Number Field (Readonly) */}
-          <div className="mb-6 text-left">
-            <label className="text-xs text-white/70 font-medium mb-1.5 block">
-              Phone number
-            </label>
-            <div className="relative flex items-center w-full">
+          {/* Locked phone */}
+          <div className="profile-field profile-field-last">
+            <label htmlFor="profile-phone">Phone number</label>
+            <div className="profile-input-wrap">
               <input
+                id="profile-phone"
                 type="text"
                 value={formatMaskedPhone(phone)}
                 readOnly
-                className="w-full px-4 py-3 pr-10 rounded-xl bg-white/[0.03] border border-white/10 text-white/60 text-sm select-none cursor-not-allowed"
+                aria-describedby="profile-phone-help"
+                className="profile-input profile-input-locked"
               />
-              <svg className="absolute right-3.5 w-4 h-4 text-white/35 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              <svg className="profile-lock-icon" viewBox="0 0 24 24"
+                fill="none" stroke="currentColor" strokeWidth={1.8}>
+                <rect x="4" y="10" width="16" height="11" rx="2" />
+                <path strokeLinecap="round"
+                  d="M8 10V7a4 4 0 018 0v3" />
               </svg>
             </div>
-            <span className="text-[11px] text-white/45 mt-1.5 block">
+            <p id="profile-phone-help" className="profile-help">
               Your verified number is linked to your account.
-            </span>
+            </p>
           </div>
 
-          {/* Footer Actions */}
-          <div className="border-t border-white/10 pt-5 flex items-center justify-end gap-3">
+          {/* Footer */}
+          <div className="profile-footer">
             <button
               type="button"
-              onClick={() => navigate('/home')}
-              className="px-6 py-2.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 text-white/80 text-sm font-medium transition-all active:scale-95 cursor-pointer"
+              onClick={() => navigate("/home")}
+              className="profile-cancel-btn"
             >
               Cancel
             </button>
+
             <button
               type="button"
               onClick={handleSave}
               disabled={!hasChanges || saving}
-              className="px-6 py-2.5 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-semibold text-sm shadow-[0_4px_16px_rgba(37,99,235,0.4)] transition-all active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center min-w-[120px]"
+              className="profile-save-btn"
             >
-              {saving ? <Spinner size="sm" className="border-white/20 border-t-white" /> : 'Save changes'}
+              {saving ? (
+                <Spinner size="sm" className="border-white/30 border-t-white" />
+              ) : (
+                "Save changes"
+              )}
             </button>
           </div>
         </div>
