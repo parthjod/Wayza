@@ -432,6 +432,44 @@ body {
 }
 
 /* =====================================================
+   HOME — RIDE HISTORY CARD (Exact Match to Design)
+   ===================================================== */
+.ride-history-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.ride-history-card {
+  width: 100%;
+  max-width: 490px;
+  background: rgba(10, 22, 46, 0.88);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1.5px solid rgba(59, 130, 246, 0.65);
+  box-shadow: 0 0 35px rgba(37, 99, 235, 0.28), inset 0 0 20px rgba(59, 130, 246, 0.08);
+  border-radius: 26px;
+  padding: 26px 24px;
+  position: relative;
+  z-index: 20;
+}
+
+@media (max-width: 480px) {
+  .ride-history-card {
+    max-width: calc(100% - 24px);
+    padding: 20px 16px;
+    border-radius: 22px;
+  }
+}
+
+/* =====================================================
    HOME — Logout Confirmation Modal
    Custom overlay so the scenic Wayza entrance background
    stays clearly visible behind the dialog.

@@ -998,90 +998,109 @@ export default function Home() {
         </div>
       </Modal>
 
-      {/* Ride History Modal */}
-      <Modal open={showHistoryModal} onClose={() => setShowHistoryModal(false)} className="!p-5 sm:!p-7 max-w-lg w-full">
-        <div className="w-full text-left">
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
-            <div className="flex items-center gap-2.5">
-              <span className="text-xl">📜</span>
-              <h3 className="text-xl sm:text-2xl font-instrument text-white tracking-wide">Ride History</h3>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/10 text-white/60 font-mono">
-                {rideHistory.length}
-              </span>
+      {/* Ride History Modal — matches exact design mockup */}
+      {showHistoryModal && (
+        <div
+          className="ride-history-overlay"
+          onClick={() => setShowHistoryModal(false)}
+        >
+          <div
+            className="ride-history-card animate-fade-in-up"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">📜</span>
+                <h3 className="text-xl sm:text-2xl font-instrument text-white tracking-wide">Ride History</h3>
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-white/10 text-white/60 font-mono ml-1">
+                  {rideHistory.length}
+                </span>
+              </div>
+              <button
+                onClick={() => setShowHistoryModal(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white flex items-center justify-center transition-colors text-xs cursor-pointer"
+                aria-label="Close"
+              >
+                ✕
+              </button>
             </div>
-            <button
-              onClick={() => setShowHistoryModal(false)}
-              className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white flex items-center justify-center transition-colors text-xs cursor-pointer"
-              aria-label="Close"
-            >
-              ✕
-            </button>
-          </div>
 
-          {loadingHistory ? (
-            <div className="py-12 flex justify-center">
-              <Spinner size="md" />
-            </div>
-          ) : rideHistory.length === 0 ? (
-            <div className="py-10 text-center text-white/50 text-sm">
-              <p className="text-3xl mb-2">🚗</p>
-              <p className="font-medium text-white/70">No past rides yet</p>
-              <p className="text-xs text-white/35 mt-1">Your completed campus rides will show up here.</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3 max-h-[380px] overflow-y-auto pr-1">
-              {rideHistory.map((ride: any) => {
-                const date = new Date(ride.createdAt).toLocaleDateString(undefined, {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                });
-                const coRiders = ride.members?.filter((m: any) => m.userId !== user?.id) || [];
-                const dest = (!ride.dropLocation || ride.dropLocation === 'To be determined')
-                  ? 'MIT-WPU Campus'
-                  : ride.dropLocation;
-                const isCompleted = ride.status === 'SPLIT_DONE' || ride.status === 'JOURNEY_ENDED';
+            {loadingHistory ? (
+              <div className="py-12 flex justify-center">
+                <Spinner size="md" />
+              </div>
+            ) : rideHistory.length === 0 ? (
+              <div className="py-10 text-center text-white/50 text-sm">
+                <p className="text-3xl mb-2">🚗</p>
+                <p className="font-medium text-white/70">No past rides yet</p>
+                <p className="text-xs text-white/35 mt-1">Your completed campus rides will show up here.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3 max-h-[380px] overflow-y-auto pr-1">
+                {rideHistory.map((ride: any) => {
+                  const date = new Date(ride.createdAt).toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  });
+                  const coRiders = ride.members?.filter((m: any) => m.userId !== user?.id) || [];
+                  const dest = (!ride.dropLocation || ride.dropLocation === 'To be determined')
+                    ? 'MIT-WPU Campus'
+                    : ride.dropLocation;
+                  const isCompleted = ride.status === 'SPLIT_DONE' || ride.status === 'JOURNEY_ENDED';
 
-                return (
-                  <div
-                    key={ride.id}
-                    className="p-4 sm:p-5 rounded-2xl bg-white/[0.05] border border-white/10 hover:border-white/20 transition-all flex flex-col gap-3 overflow-hidden shadow-sm"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <span className="text-base shrink-0">📍</span>
-                        <span className="text-sm font-semibold text-white truncate max-w-[170px] sm:max-w-xs" title={dest}>
-                          {dest}
-                        </span>
-                      </div>
-                      <span
-                        className={`shrink-0 text-[11px] px-3 py-1 rounded-full font-medium whitespace-nowrap ${isCompleted
-                            ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
-                            : 'bg-white/10 text-white/70'
-                          }`}
-                      >
-                        {isCompleted ? 'Completed' : ride.status}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-3 pt-2.5 border-t border-white/[0.08]">
-                      <p className="text-xs text-white/55 truncate flex-1 min-w-0" title={`with ${coRiders.map((m: any) => m.fullName).join(', ') || 'Rider'}`}>
-                        {date} • with {coRiders.map((m: any) => m.fullName).join(', ') || 'Rider'}
-                      </p>
-                      {ride.totalFare ? (
-                        <div className="flex items-baseline gap-1 shrink-0 ml-2 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                          <span className="text-xs font-bold text-emerald-400">₹{ride.totalFare}</span>
-                          <span className="text-[10px] text-white/40">split</span>
+                  return (
+                    <div
+                      key={ride.id}
+                      className="p-3.5 sm:p-4 rounded-2xl bg-white/[0.04] border border-white/10 hover:border-white/20 transition-all flex items-center justify-between gap-3 shadow-sm"
+                    >
+                      {/* Left: Pin with route track + Destination on top & Date below */}
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <div className="flex flex-col items-center shrink-0 pt-0.5">
+                          <span className="text-base leading-none">📍</span>
+                          <div className="w-[1.5px] h-3.5 bg-white/20 mt-1 rounded-full" />
                         </div>
-                      ) : null}
+                        <div className="min-w-0 flex-1">
+                          <h4 className="text-sm sm:text-[15px] font-semibold text-white truncate" title={dest}>
+                            {dest}
+                          </h4>
+                          <p className="text-xs text-white/50 truncate mt-1">
+                            {date} • with {coRiders.map((m: any) => m.fullName).join(', ') || 'Rider'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right: Status badge on top & Fare split below */}
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <span
+                          className={`text-[11px] px-3 py-1 rounded-full font-medium whitespace-nowrap flex items-center gap-1 ${
+                            isCompleted
+                              ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
+                              : 'bg-white/10 text-white/70'
+                          }`}
+                        >
+                          {isCompleted && <span>✓</span>}
+                          <span>{isCompleted ? 'Completed' : ride.status}</span>
+                        </span>
+
+                        {ride.totalFare ? (
+                          <div className="flex items-baseline gap-1 px-2.5 py-0.5 rounded-full bg-black/40 border border-white/10">
+                            <span className="text-xs font-bold text-cyan-400">₹{ride.totalFare}</span>
+                            <span className="text-[10px] text-white/40 font-medium">split</span>
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
-      </Modal>
+      )}
 
       {/* Feedback Form */}
       <FeedbackForm open={showFeedback} onClose={() => setShowFeedback(false)} />
