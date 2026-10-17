@@ -737,8 +737,8 @@ export default function Home() {
                 })}
               </div>
 
-              {/* Extra riders indicator if more than visible limit */}
-              {extraCount > 0 && (
+              {/* Extra riders indicator if more than visible limit or multiple riders */}
+              {extraCount > 0 ? (
                 <button
                   type="button"
                   onClick={() => setShowAllRidersModal(true)}
@@ -746,7 +746,15 @@ export default function Home() {
                 >
                   +{extraCount} more nearby riders
                 </button>
-              )}
+              ) : nearbyUsers.length > 2 ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAllRidersModal(true)}
+                  className="mt-3 px-3.5 py-1 rounded-full bg-white/[0.08] hover:bg-white/15 text-white/75 hover:text-white text-[11px] font-medium backdrop-blur-sm border border-white/12 transition-all cursor-pointer"
+                >
+                  View all riders ({nearbyUsers.length})
+                </button>
+              ) : null}
 
               {/* Cancel Booking Button */}
               <button
