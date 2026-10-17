@@ -300,15 +300,15 @@ export default function Home() {
       {viewState === 'discovering' && (
         <div className="home-discovering-overlay" />
       )}      {/* Navbar */}
-      <header className="fixed top-0 left-0 right-0 z-40 w-full flex items-center justify-between px-5 sm:px-10 md:px-14 py-4 sm:py-6 pointer-events-none">
-        {/* Brand Logo - strictly anchored at top-left for mobile & desktop */}
+      <header className="fixed top-0 left-0 right-0 z-40 w-full flex items-center justify-between px-6 sm:px-10 md:px-14 pt-5 pb-3 sm:py-6 pointer-events-none">
+        {/* Brand Logo - anchored with balanced margins */}
         <div className="pointer-events-auto select-none flex items-center">
           <span
             onClick={() => {
               if (viewState !== 'booking') handleStopBooking();
               else navigate('/home');
             }}
-            className="text-white text-[28px] sm:text-[34px] md:text-[36px] font-instrument tracking-[0.14em] drop-shadow-md leading-none select-none font-normal cursor-pointer hover:opacity-85 transition-opacity"
+            className="text-white text-[25px] sm:text-[32px] md:text-[36px] font-instrument tracking-[0.15em] drop-shadow-md leading-none select-none font-normal cursor-pointer hover:opacity-85 transition-opacity"
             title="Wayza Home"
           >
             WAYZA
@@ -332,7 +332,7 @@ export default function Home() {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center gap-2 cursor-pointer"
+              className="flex items-center gap-2 cursor-pointer rounded-full ring-2 ring-white/10 hover:ring-white/30 p-0.5 transition-all"
             >
               <Avatar
                 name={user?.fullName || ''}
@@ -417,14 +417,14 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <div className="relative z-10 min-h-screen flex flex-col items-center justify-start sm:justify-center px-4 sm:px-6 pt-20 pb-10 sm:py-16">
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-start sm:justify-center px-4 sm:px-6 pt-24 sm:pt-28 pb-10 sm:py-16">
         {viewState === 'booking' && (
           <div className="home-booking-card w-full text-center animate-fade-in-up">
             {/* Active Ride Banner */}
             {activeRide && (
               <div
                 onClick={() => navigate(`/chat/${activeRide.id}`)}
-                className="w-full mb-5 p-3.5 rounded-2xl bg-blue-500/15 border border-blue-400/35 backdrop-blur-md cursor-pointer hover:bg-blue-500/25 transition-all flex items-center justify-between text-left group shadow-lg"
+                className="w-full mb-4 sm:mb-5 p-3.5 rounded-2xl bg-blue-500/15 border border-blue-400/35 backdrop-blur-md cursor-pointer hover:bg-blue-500/25 transition-all flex items-center justify-between text-left group shadow-lg"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-blue-500/20 flex items-center justify-center text-lg flex-shrink-0">
@@ -446,26 +446,26 @@ export default function Home() {
               </div>
             )}
 
-            <h2 className="text-[clamp(26px,4vw,36px)] font-instrument italic text-white mb-5 sm:mb-6 leading-tight select-none">
+            <h2 className="text-[clamp(22px,3.8vw,34px)] font-instrument italic text-white mb-4 sm:mb-6 leading-tight select-none">
               Where are you heading?
             </h2>
 
             {/* Drop location options */}
-            <div className="flex flex-col gap-2.5 sm:gap-3 mb-5 sm:mb-6 w-full">
+            <div className="flex flex-col gap-2 sm:gap-3 mb-4 sm:mb-6 w-full">
               {CAMPUS_POIS.map((poi: { label: string; lat: number; lng: number }) => (
                 <button
                   key={poi.label}
                   onClick={() => selectDropLocation(poi.label, poi.lat, poi.lng)}
-                  className={`w-full px-4 sm:px-5 py-3 sm:py-3.5 rounded-full text-left text-[15px] sm:text-[16px] transition-all flex items-center gap-3 cursor-pointer ${dropLabel === poi.label
+                  className={`w-full px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-full text-left text-[14px] sm:text-[16px] transition-all flex items-center gap-3 cursor-pointer ${dropLabel === poi.label
                     ? 'bg-white text-gray-950 font-medium border border-white shadow-sm'
                     : 'bg-white/7 text-white/90 border border-white/16 hover:bg-white/12 hover:border-white/25'
                     }`}
                   style={{
-                    minHeight: "48px",
+                    minHeight: "44px",
                   }}
                 >
                   <svg
-                    className="w-4 h-4 flex-shrink-0 text-white/70 ml-2"
+                    className="w-4 h-4 flex-shrink-0 text-white/70 ml-1.5"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -497,13 +497,13 @@ export default function Home() {
                         setCustomLocation(isCustomSelected ? dropLabel : '');
                         setShowCustomInput(true);
                       }}
-                      className={`w-full px-4 sm:px-5 py-3 sm:py-3.5 rounded-full text-left text-[15px] sm:text-[16px] transition-all flex items-center justify-between cursor-pointer ${
+                      className={`w-full px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-full text-left text-[14px] sm:text-[16px] transition-all flex items-center justify-between cursor-pointer ${
                         isCustomSelected
                           ? 'bg-white text-gray-950 font-medium border border-white shadow-sm'
                           : 'bg-white/7 text-white/60 border border-white/16 hover:bg-white/12 hover:border-white/25'
                       }`}
                       style={{
-                        minHeight: "48px",
+                        minHeight: "44px",
                       }}
                     >
                       <div className="flex items-center gap-3 min-w-0">
@@ -1125,17 +1125,17 @@ export default function Home() {
                 return (
                   <div
                     key={ride.id}
-                    className="p-3.5 sm:p-4 rounded-xl bg-white/[0.04] border border-white/10 hover:border-white/20 transition-all flex flex-col gap-2"
+                    className="p-3.5 sm:p-4 rounded-2xl bg-white/[0.05] border border-white/10 hover:border-white/20 transition-all flex flex-col gap-2.5"
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                        <span className="text-xs shrink-0">📍</span>
-                        <span className="text-sm font-semibold text-white truncate max-w-[190px] sm:max-w-[260px]" title={dest}>
+                    <div className="flex items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className="text-sm shrink-0">📍</span>
+                        <span className="text-sm font-semibold text-white truncate" title={dest}>
                           {dest}
                         </span>
                       </div>
                       <span
-                        className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                        className={`shrink-0 text-[11px] px-2.5 py-0.5 rounded-full font-medium whitespace-nowrap ${
                           isCompleted
                             ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400'
                             : 'bg-white/10 text-white/70'
@@ -1145,12 +1145,12 @@ export default function Home() {
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-white/5">
-                      <p className="text-xs text-white/50 truncate flex-1 min-w-0" title={`with ${coRiders.map((m: any) => m.fullName).join(', ') || 'Rider'}`}>
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/[0.08]">
+                      <p className="text-xs text-white/55 truncate flex-1 min-w-0" title={`with ${coRiders.map((m: any) => m.fullName).join(', ') || 'Rider'}`}>
                         {date} • with {coRiders.map((m: any) => m.fullName).join(', ') || 'Rider'}
                       </p>
                       {ride.totalFare ? (
-                        <div className="flex items-baseline gap-1 shrink-0">
+                        <div className="flex items-baseline gap-1 shrink-0 ml-2">
                           <span className="text-sm font-bold text-emerald-400">₹{ride.totalFare}</span>
                           <span className="text-[10px] text-white/40">split</span>
                         </div>

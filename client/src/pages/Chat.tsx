@@ -749,7 +749,7 @@ export default function Chat() {
 
       {/* Dynamic Group Menu Panel */}
       {showMenuPanel && (
-        <div className="fixed inset-0 z-50" onClick={() => setShowMenuPanel(false)}>
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setShowMenuPanel(false)}>
           <div className="group-menu-panel" onClick={(e) => e.stopPropagation()}>
             <div className="group-menu-header">
               <span className="group-menu-title">

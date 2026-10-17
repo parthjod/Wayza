@@ -187,10 +187,10 @@ body {
 @media (max-width: 600px) {
   .home-booking-card {
     width: 100%;
-    max-width: 460px;
+    max-width: 440px;
     border-radius: 24px;
-    padding: 24px 16px 24px;
-    margin: 0 auto;
+    padding: 20px 16px 20px;
+    margin: 4px auto 16px;
   }
 }
 
@@ -361,9 +361,9 @@ body {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(0, 0, 0, 0.42);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 /* Glassmorphism dialog card — wider and more padded than the default Modal */
@@ -1307,196 +1307,194 @@ body {
    PROFILE PAGE — scoped only to /profile route
    ===================================================== */
 
-/* Full-screen near-black shell — overrides any inherited background */
+/* Full-screen rich dark shell with ambient illumination */
 .profile-page-shell {
   min-height: 100vh;
   width: 100%;
-  background: #0a0a0a;
+  background: radial-gradient(circle at 50% 12%, rgba(29, 78, 216, 0.22) 0%, rgba(10, 14, 26, 0.98) 65%, #05070f 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* card sits in upper-center, not perfectly vertical-center */
-  padding-top: clamp(56px, 9vw, 88px);
+  padding-top: clamp(60px, 8vw, 84px);
   padding-bottom: 40px;
   padding-left: 16px;
   padding-right: 16px;
   position: relative;
+  box-sizing: border-box;
 }
 
 /* ← Back button */
 .profile-back-btn {
-  position: fixed;
-  top: clamp(18px, 3vw, 28px);
-  left: clamp(18px, 3vw, 28px);
-  z-index: 40;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.75);
   font-size: 14px;
-  font-weight: 400;
-  background: none;
-  border: none;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
   cursor: pointer;
-  transition: color 0.18s ease;
-  padding: 4px 0;
-  letter-spacing: 0.01em;
+  transition: all 0.2s ease;
+  padding: 6px 14px;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .profile-back-btn:hover {
-  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateX(-2px);
 }
 
-/* Card */
+/* Glassmorphism Profile Card */
 .profile-card {
   width: 100%;
-  max-width: 440px;
-  background: rgba(26, 26, 26, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 18px;
-  overflow: visible;
-  padding: 0 0 16px 0;
+  max-width: 460px;
+  background: rgba(18, 24, 38, 0.75);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 28px;
+  box-shadow:
+    0 28px 75px -12px rgba(0, 0, 0, 0.75),
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.20),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+  padding: 28px 24px 28px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  box-sizing: border-box;
 }
 
-/* Avatar section — sits at top of card, centered */
+/* Avatar section — centered at top */
 .profile-avatar-section {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 28px;
-  padding-bottom: 14px;
-  padding-left: 20px;
-  padding-right: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  margin-bottom: 4px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 12px;
 }
 
-/* Override Avatar component size for this page */
+/* Avatar styling */
 .profile-avatar {
-  width: 80px !important;
-  height: 80px !important;
-  font-size: 1.75rem !important;
-}
-
-/* "Change photo" link */
-.profile-change-photo-btn {
-  margin-top: 8px;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.45);
-  background: none;
-  border: none;
-  cursor: pointer;
-  transition: color 0.18s ease;
-  padding: 0;
-}
-
-.profile-change-photo-btn:hover {
-  color: rgba(255, 255, 255, 0.75);
+  width: 88px !important;
+  height: 88px !important;
+  font-size: 2rem !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 /* Individual field wrapper */
 .profile-field {
-  padding: 10px 20px 0;
+  padding: 10px 0 0;
 }
 
 .profile-field--last {
-  padding-bottom: 12px;
+  padding-bottom: 14px;
 }
 
 /* Label */
 .profile-label {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 10px;
+  justify-content: space-between;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
-  margin-bottom: 3px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 6px;
   line-height: 1;
 }
 
 .profile-lock {
-  font-size: 10px;
-  opacity: 0.6;
+  font-size: 11px;
+  opacity: 0.7;
 }
 
 .profile-verified {
-  font-size: 9px;
-  color: #4ade80;
-  text-transform: lowercase;
+  font-size: 10px;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  padding: 2px 8px;
+  border-radius: 9999px;
+  text-transform: none;
   letter-spacing: 0;
-  font-weight: 500;
+  font-weight: 600;
 }
 
-/* Input base */
+/* Modern Input Base */
 .profile-input {
   width: 100%;
-  height: 36px;
-  padding: 0 12px;
-  border-radius: 6px;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.85);
+  height: 46px;
+  padding: 0 16px;
+  border-radius: 12px;
+  font-size: 15px;
+  color: #ffffff;
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   outline: none;
-  transition: border-color 0.18s ease;
+  transition: all 0.2s ease;
   font-family: inherit;
-  -webkit-font-smoothing: antialiased;
+  box-sizing: border-box;
 }
 
 .profile-input--editable:focus {
-  border-color: rgba(255, 255, 255, 0.28);
-  background: rgba(255, 255, 255, 0.07);
+  border-color: #3b82f6;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
 }
 
 .profile-input--locked {
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.5);
   cursor: not-allowed;
   background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.06);
 }
 
 /* Save Changes button */
 .profile-save-btn {
-  margin: 14px 20px 0;
-  height: 38px;
-  border-radius: 7px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.10);
-  color: rgba(255, 255, 255, 0.80);
-  font-size: 14px;
-  font-weight: 500;
+  margin-top: 14px;
+  height: 48px;
+  border-radius: 9999px;
+  border: none;
+  background: linear-gradient(90deg, #1ea5fc 0%, #1059f5 100%);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
   cursor: pointer;
-  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
-  font-family: inherit;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 8px 24px rgba(21, 85, 255, 0.4);
 }
 
 .profile-save-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.16);
-  color: rgba(255, 255, 255, 0.95);
-  border-color: rgba(255, 255, 255, 0.22);
+  filter: brightness(1.1);
+  box-shadow: 0 12px 32px rgba(21, 85, 255, 0.55);
+  transform: translateY(-1px);
 }
 
 .profile-save-btn:disabled {
-  opacity: 0.32;
+  opacity: 0.35;
   cursor: not-allowed;
+  filter: grayscale(0.5);
+  box-shadow: none;
 }
 
 @media (max-width: 480px) {
   .profile-card {
-    max-width: 100%;
-    border-radius: 14px;
+    border-radius: 22px;
+    padding: 22px 18px 22px;
   }
 
   .profile-avatar {
-    width: 68px !important;
-    height: 68px !important;
-    font-size: 1.5rem !important;
+    width: 80px !important;
+    height: 80px !important;
+    font-size: 1.8rem !important;
   }
 }
 
@@ -1991,11 +1989,12 @@ body {
   }
 
   .group-menu-panel {
-    right: 8px;
-    left: 8px;
+    right: 12px;
+    left: 12px;
     width: auto;
     max-width: none;
-    top: 62px;
+    top: 64px;
+    transform-origin: top center;
   }
 }
 
@@ -3087,24 +3086,32 @@ body {
   color: #ffffff;
 }
 
-/* =====================================================
-   GROUP MEMBERS MENU PANEL
-   Dynamic member list with live statuses & actions
-   ===================================================== */
+@keyframes menuPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(-6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .group-menu-panel {
   position: absolute;
   right: 16px;
   top: 70px;
-  width: 280px;
+  width: 290px;
   padding: 16px;
-  border-radius: 18px;
-  background: rgba(18, 22, 34, 0.92);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.70), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
   z-index: 60;
-  animation: fadeInDown 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top right;
+  animation: menuPop 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .group-menu-header {
@@ -3397,8 +3404,8 @@ body {
   align-items: center;
   justify-content: center;
   background: rgba(5, 6, 12, 0.70);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   padding: 20px;
 }
 

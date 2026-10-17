@@ -1,6 +1,7 @@
 import prisma from '../../config/db';
 import { env } from '../../config/env';
-import { uploadToS3, deleteFromS3 } from '../../config/s3';
+import { uploadToS3, deleteFromS3, s3Client } from '../../config/s3';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { revokeAllUserTokens } from '../../utils/jwt';
 import { createError } from '../../middleware/errorHandler';
 import sharp from 'sharp';
@@ -22,14 +23,63 @@ export class UserService {
 
     if (!user) throw createError('User not found', 404);
 
+    const isCloudFrontValid = env.AWS_CLOUDFRONT_DOMAIN && !env.AWS_CLOUDFRONT_DOMAIN.includes('your-cloudfront');
+    let profilePicUrl: string | null = null;
+    if (user.profilePicKey) {
+      if (user.profilePicKey.startsWith('http') || user.profilePicKey.startsWith('data:')) {
+        profilePicUrl = user.profilePicKey;
+      } else if (isCloudFrontValid) {
+        profilePicUrl = `https://${env.AWS_CLOUDFRONT_DOMAIN}/${user.profilePicKey}`;
+      } else {
+        profilePicUrl = `/api/user/avatar/${user.id}`;
+      }
+    }
+
     return {
       ...user,
-      profilePicUrl: user.profilePicKey
-        ? user.profilePicKey.startsWith('http') || user.profilePicKey.startsWith('data:')
-          ? user.profilePicKey
-          : `https://${env.AWS_CLOUDFRONT_DOMAIN}/${user.profilePicKey}`
-        : null,
+      profilePicUrl,
     };
+  }
+
+  async getAvatarStream(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { profilePicKey: true },
+    });
+    if (!user || !user.profilePicKey) return null;
+
+    if (user.profilePicKey.startsWith('data:')) {
+      const match = user.profilePicKey.match(/^data:([^;]+);base64,(.+)$/);
+      if (match) {
+        return {
+          contentType: match[1],
+          buffer: Buffer.from(match[2], 'base64'),
+        };
+      }
+      return null;
+    }
+
+    if (user.profilePicKey.startsWith('http://') || user.profilePicKey.startsWith('https://')) {
+      return {
+        contentType: 'image/jpeg',
+        redirectUrl: user.profilePicKey,
+      };
+    }
+
+    // Try fetching from S3
+    try {
+      const s3Res = await s3Client.send(new GetObjectCommand({
+        Bucket: env.AWS_S3_BUCKET,
+        Key: user.profilePicKey,
+      }));
+      return {
+        contentType: s3Res.ContentType || 'image/jpeg',
+        stream: s3Res.Body as any,
+      };
+    } catch (err: any) {
+      console.warn('[Avatar] Failed to fetch avatar from S3 for user', userId, err?.message);
+      return null;
+    }
   }
 
   async updateMe(userId: string, fullName: string) {
@@ -90,6 +140,11 @@ export class UserService {
       where: { id: userId },
       data: { profilePicKey: dbKey },
     });
+
+    const isCloudFrontValid = env.AWS_CLOUDFRONT_DOMAIN && !env.AWS_CLOUDFRONT_DOMAIN.includes('your-cloudfront');
+    if (!isCloudFrontValid && !dbKey.startsWith('data:')) {
+      finalUrl = `/api/user/avatar/${userId}`;
+    }
 
     return { profilePicUrl: finalUrl };
   }

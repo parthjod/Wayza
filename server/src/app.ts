@@ -85,7 +85,7 @@ app.use(helmet({
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", 'https://fonts.googleapis.com'],
       fontSrc: ['https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:', `https://${env.AWS_CLOUDFRONT_DOMAIN}`],
+      imgSrc: ["'self'", 'data:', 'blob:', `https://${env.AWS_CLOUDFRONT_DOMAIN}`, 'https://*.amazonaws.com'],
       connectSrc: ["'self'"],
       mediaSrc: [`https://${env.AWS_CLOUDFRONT_DOMAIN}`],
       frameAncestors: ["'none'"],
@@ -111,7 +111,7 @@ app.use((_req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Permissions-Policy', 'geolocation=(self), camera=(), microphone=()');
+  res.setHeader('Permissions-Policy', 'geolocation=(self), camera=(self), microphone=()');
   next();
 });
 

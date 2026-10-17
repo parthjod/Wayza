@@ -11,6 +11,28 @@ export class UserController {
     }
   }
 
+  async getAvatar(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = String(req.params.userId);
+      const avatar = await userService.getAvatarStream(userId);
+      if (!avatar) {
+        res.status(404).json({ error: 'Avatar not found' });
+        return;
+      }
+      res.setHeader('Content-Type', avatar.contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      if (avatar.buffer) {
+        res.send(avatar.buffer);
+      } else if (avatar.stream) {
+        avatar.stream.pipe(res);
+      } else if (avatar.redirectUrl) {
+        res.redirect(avatar.redirectUrl);
+      }
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async updateMe(req: Request, res: Response, next: NextFunction) {
     try {
       const result = await userService.updateMe(req.user!.userId, req.body.fullName);

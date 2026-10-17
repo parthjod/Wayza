@@ -11,7 +11,10 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });
 
-// All user routes require authentication
+// Public route for loading avatar images in <img> tags
+router.get('/avatar/:userId', (req, res, next) => userController.getAvatar(req, res, next));
+
+// All user routes below require authentication
 router.use(authMiddleware);
 
 router.get('/me', (req, res, next) => userController.getMe(req, res, next));
