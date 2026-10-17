@@ -193,7 +193,7 @@ export default function Profile() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-24">
+      <main className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-12 sm:py-16">
         {/* Hero Title Section */}
         <div className="profile-hero select-none">
           <h1 className="profile-title">
@@ -224,7 +224,7 @@ export default function Profile() {
                 name={fullName || user?.fullName || ""}
                 imageUrl={currentDisplayPhoto}
                 size="xl"
-                className="!w-[104px] !h-[104px] text-3xl font-semibold shadow-lg"
+                className="!w-[88px] !h-[88px] text-2xl font-semibold shadow-lg"
               />
 
               <div className="profile-camera-badge">

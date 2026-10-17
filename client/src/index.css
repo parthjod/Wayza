@@ -1474,16 +1474,16 @@ body {
 /* Profile page typography */
 .profile-hero {
   text-align: center;
-  margin: 0 0 18px;
+  margin: 0 0 16px;
 }
 
 .profile-title {
   color: #f7f5f1;
   font-family: "Instrument Serif", Georgia, serif;
-  font-size: clamp(34px, 3vw, 46px);
+  font-size: clamp(28px, 2.6vw, 36px);
   font-weight: 400;
-  line-height: 1.12;
-  letter-spacing: -0.035em;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
 }
 
 .profile-title span {
@@ -1492,19 +1492,19 @@ body {
 }
 
 .profile-subtitle {
-  margin-top: 8px;
+  margin-top: 5px;
   color: rgba(245, 246, 250, 0.68);
-  font-size: 15px;
+  font-size: 13.5px;
 }
 
 /* Main glass card */
 .wayza-profile-card {
-  width: min(100%, 700px);
+  width: min(100%, 480px);
   margin-inline: auto;
   box-sizing: border-box;
-  padding: 32px 36px 26px;
+  padding: 26px 28px 20px;
   border: 1px solid rgba(211, 222, 238, 0.28);
-  border-radius: 24px;
+  border-radius: 22px;
 
   background: rgba(25, 27, 31, 0.78);
   -webkit-backdrop-filter: blur(24px);
@@ -1520,7 +1520,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }
 
 .profile-avatar-wrap {
@@ -1541,8 +1541,8 @@ body {
   right: -2px;
   bottom: 0;
   display: grid;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   place-items: center;
   border: 2px solid #292d34;
   border-radius: 50%;
@@ -1555,8 +1555,8 @@ body {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 10px;
-  margin-top: 16px;
+  gap: 8px;
+  margin-top: 14px;
 }
 
 .profile-photo-btn,
@@ -1564,14 +1564,14 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  min-height: 42px;
-  padding: 0 18px;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
   border: 1px solid rgba(225, 232, 244, 0.24);
-  border-radius: 12px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.045);
   color: #f3f5f9;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 500;
   cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease;
@@ -1600,25 +1600,25 @@ body {
 /* Separators */
 .profile-divider {
   height: 1px;
-  margin: 0 0 22px;
+  margin: 0 0 18px;
   background: rgba(224, 231, 242, 0.17);
 }
 
 /* Fields */
 .profile-field {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   text-align: left;
 }
 
 .profile-field-last {
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 }
 
 .profile-field label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   color: rgba(250, 250, 252, 0.92);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 500;
 }
 
@@ -1630,16 +1630,16 @@ body {
 .profile-input {
   display: block;
   width: 100%;
-  min-height: 54px;
+  min-height: 46px;
   box-sizing: border-box;
-  padding: 0 16px;
+  padding: 0 14px;
   border: 1px solid rgba(222, 230, 243, 0.24);
-  border-radius: 12px;
+  border-radius: 11px;
   outline: none;
   background: rgba(255, 255, 255, 0.055);
   color: #f7f7fa;
   font: inherit;
-  font-size: 14px;
+  font-size: 13.5px;
   transition: border-color 160ms ease, background 160ms ease;
 }
 
@@ -1650,7 +1650,7 @@ body {
 }
 
 .profile-input-locked {
-  padding-right: 46px;
+  padding-right: 42px;
   color: rgba(232, 237, 247, 0.66);
   background: rgba(255, 255, 255, 0.035);
   border-color: rgba(222, 230, 243, 0.15);
@@ -1660,19 +1660,19 @@ body {
 .profile-lock-icon {
   position: absolute;
   top: 50%;
-  right: 15px;
-  width: 19px;
-  height: 19px;
+  right: 14px;
+  width: 17px;
+  height: 17px;
   color: rgba(218, 228, 242, 0.65);
   pointer-events: none;
   transform: translateY(-50%);
 }
 
 .profile-help {
-  margin-top: 7px;
+  margin-top: 5px;
   color: rgba(230, 235, 245, 0.56);
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: 11.5px;
+  line-height: 1.45;
 }
 
 /* Footer actions */
@@ -1680,20 +1680,20 @@ body {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
-  padding-top: 18px;
+  gap: 10px;
+  padding-top: 15px;
   border-top: 1px solid rgba(224, 231, 242, 0.17);
 }
 
 .profile-cancel-btn,
 .profile-save-btn {
   display: inline-flex;
-  min-height: 46px;
+  min-height: 40px;
   align-items: center;
   justify-content: center;
-  padding: 0 24px;
-  border-radius: 14px;
-  font-size: 14px;
+  padding: 0 20px;
+  border-radius: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: background 160ms ease, transform 160ms ease,
@@ -1711,7 +1711,7 @@ body {
 }
 
 .profile-save-btn {
-  min-width: 162px;
+  min-width: 136px;
   border: 1px solid rgba(103, 194, 255, 0.35);
   color: #fff;
   background: linear-gradient(105deg, #2ebdf0 0%, #2879ff 58%, #174cff 100%);
@@ -1738,28 +1738,29 @@ body {
 /* Responsive layout */
 @media (max-width: 640px) {
   .profile-hero {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     padding-inline: 12px;
   }
 
   .wayza-profile-card {
     width: calc(100% - 24px);
-    padding: 26px 20px 22px;
-    border-radius: 20px;
+    padding: 22px 18px 18px;
+    border-radius: 18px;
   }
 
   .profile-input {
-    min-height: 50px;
+    min-height: 44px;
   }
 
   .profile-footer {
-    gap: 10px;
+    gap: 8px;
   }
 
   .profile-cancel-btn,
   .profile-save-btn {
-    min-height: 44px;
-    padding-inline: 17px;
+    min-height: 38px;
+    padding-inline: 15px;
+    font-size: 12.5px;
   }
 
   .profile-save-btn {
@@ -1769,13 +1770,13 @@ body {
 
 @media (max-width: 380px) {
   .profile-photo-actions {
-    gap: 8px;
+    gap: 6px;
   }
 
   .profile-photo-btn,
   .profile-remove-btn {
-    padding-inline: 11px;
-    font-size: 12px;
+    padding-inline: 10px;
+    font-size: 11.5px;
   }
 
   .profile-footer > button {
