@@ -344,6 +344,53 @@ body {
 }
 
 /* =====================================================
+   HOME — RADAR DISCOVERY CARD (Exact Match to Design)
+   ===================================================== */
+.home-radar-card {
+  width: 100%;
+  max-width: 440px;
+  background: rgba(10, 22, 46, 0.75);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1.5px solid rgba(59, 130, 246, 0.65);
+  box-shadow: 0 0 35px rgba(37, 99, 235, 0.28), inset 0 0 20px rgba(59, 130, 246, 0.08);
+  border-radius: 28px;
+  padding: 32px 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  z-index: 20;
+}
+
+@media (max-width: 480px) {
+  .home-radar-card {
+    max-width: calc(100% - 24px);
+    padding: 26px 20px 22px;
+    border-radius: 24px;
+  }
+}
+
+.radar-sweep-beam {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: conic-gradient(from 0deg, transparent 0deg, transparent 270deg, rgba(56, 189, 248, 0.25) 360deg);
+  animation: radar-sweep 4s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes radar-sweep {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* =====================================================
    HOME — Logout Confirmation Modal
    Custom overlay so the scenic Wayza entrance background
    stays clearly visible behind the dialog.

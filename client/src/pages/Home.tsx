@@ -278,7 +278,7 @@ export default function Home() {
   // Calculate radial positions for nearby users
   const getUserPosition = (index: number, total: number) => {
     const angle = (360 / Math.max(total, 1)) * index - 90; // Start from top
-    const r = window.innerWidth < 640 ? 90 : 140;
+    const r = 88;
     const rad = (angle * Math.PI) / 180;
     return {
       x: Math.cos(rad) * r,
@@ -652,106 +652,114 @@ export default function Home() {
           </div>
         )}
 
-        {viewState === 'discovering' && (
-          <div className="home-discovering-content animate-fade-in-up">
-            {nearbyUsers.length === 0 ? (
-              /* Loading state — no nearby riders found yet */
-              <div className="home-loading-group">
-                <p className="home-loading-text">Looking for nearby riders...</p>
-                <div className="home-loading-spinner-wrap">
-                  <Spinner size="lg" className="home-loading-spinner" />
-                </div>
-                <p className="home-loading-you">You</p>
+        {viewState === 'discovering' && (() => {
+          const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+          const maxRadar = isMobile ? 4 : 6;
+          const visibleRadarUsers = nearbyUsers.slice(0, maxRadar);
+          const extraCount = nearbyUsers.length - visibleRadarUsers.length;
+          const radiusDisplay = radius >= 1000 ? (radius === 1000 ? '1000 km' : `${radius / 1000} km`) : `${radius} m`;
 
-                {/* Cancel booking button */}
+          return (
+            <div className="home-radar-card animate-fade-in-up">
+              {/* Top destination pill */}
+              <div className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/[0.08] border border-white/15 text-xs text-white/85 mb-3 font-medium">
+                <span>📍</span>
+                <span className="truncate max-w-[210px] sm:max-w-xs">{dropLabel || 'Destination'}</span>
+                <span className="text-white/40">•</span>
+                <span>{radiusDisplay}</span>
+              </div>
+
+              {/* Heading */}
+              <h3 className="font-instrument text-[28px] sm:text-[32px] text-white tracking-wide mb-1.5 font-normal select-none">
+                {nearbyUsers.length === 0 ? 'Looking for Riders...' : 'Co-ride Found!'}
+              </h3>
+
+              {/* Subtitle */}
+              <p className="text-xs sm:text-[13px] text-white/65 leading-relaxed max-w-[320px] mb-5 select-none">
+                {nearbyUsers.length === 0
+                  ? `Scanning for students heading to ${dropLabel || 'destination'} within ${radiusDisplay}`
+                  : 'Tap a rider to view profile and connect'}
+              </p>
+
+              {/* Radar Area */}
+              <div className="relative flex items-center justify-center w-[270px] h-[270px] my-1 select-none">
+                {/* Concentric rings */}
+                <div className="absolute w-[250px] h-[250px] rounded-full border border-blue-400/20 pointer-events-none" />
+                <div className="absolute w-[176px] h-[176px] rounded-full border border-blue-400/25 pointer-events-none" />
+                <div className="absolute w-[104px] h-[104px] rounded-full border border-blue-400/30 pointer-events-none" />
+
+                {/* Radar sweep beam active while scanning */}
+                {nearbyUsers.length === 0 && (
+                  <div className="radar-sweep-beam w-[250px] h-[250px]" />
+                )}
+
+                {/* Ambient glowing cyan blip dots */}
+                <div className="absolute w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#38bdf8] pointer-events-none" style={{ top: '35%', left: '16%' }} />
+                <div className="absolute w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#38bdf8] pointer-events-none" style={{ bottom: '33%', right: '18%' }} />
+                <div className="absolute w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#38bdf8] pointer-events-none" style={{ bottom: '22%', left: '38%' }} />
+
+                {/* Center: You */}
+                <div className="absolute flex flex-col items-center z-10 pointer-events-none">
+                  <Avatar name={user?.fullName || 'You'} imageUrl={user?.profilePicUrl} size="md" className="border border-white/20 shadow-md" />
+                  <span className="text-white/80 text-xs font-normal mt-1">You</span>
+                </div>
+
+                {/* Nearby riders on the radar */}
+                {visibleRadarUsers.map((nUser, i) => {
+                  const pos = getUserPosition(i, visibleRadarUsers.length);
+                  const name = nUser?.fullName || 'Rider';
+                  const firstName = name.split(' ')[0] || 'Rider';
+                  return (
+                    <button
+                      key={nUser.userId || i}
+                      onClick={() => { setSelectedUser(nUser); setViewState('user-detail'); }}
+                      className="absolute flex flex-col items-center gap-0.5 transition-all hover:scale-110 active:scale-95 cursor-pointer z-20 group"
+                      style={{
+                        transform: `translate(${pos.x}px, ${pos.y}px)`,
+                      }}
+                    >
+                      <div className="relative">
+                        <Avatar name={name} imageUrl={nUser.profilePicUrl} size="md" className="border border-white/20 shadow-md" />
+                        {nUser.rating && (
+                          <span className="absolute -bottom-1 -right-2 px-1.5 py-0.2 bg-amber-400 text-slate-950 text-[10px] font-black rounded-full shadow-md flex items-center gap-0.5 border border-black/20">
+                            ★ {nUser.rating.toFixed(1)}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-white text-xs font-bold mt-1 max-w-[80px] truncate">
+                        {firstName}
+                      </span>
+                      <span className="text-blue-200/90 text-[11px] font-medium">
+                        {formatDistance(nUser.distanceMeters || 0)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Extra riders indicator if more than visible limit */}
+              {extraCount > 0 && (
                 <button
                   type="button"
-                  onClick={(e) => handleStopBooking(e)}
-                  className="home-cancel-booking-btn"
+                  onClick={() => setShowAllRidersModal(true)}
+                  className="mt-3 px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-medium backdrop-blur-sm border border-white/15 transition-all cursor-pointer shadow-md"
                 >
-                  <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                  <span>Cancel Booking</span>
+                  +{extraCount} more nearby riders
                 </button>
-              </div>
-            ) : (
-              /* Radial layout when riders found */
-              (() => {
-                const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
-                const maxRadar = isMobile ? 4 : 6;
-                const visibleRadarUsers = nearbyUsers.slice(0, maxRadar);
-                const extraCount = nearbyUsers.length - visibleRadarUsers.length;
+              )}
 
-                return (
-                  <div className="flex flex-col items-center">
-                    <div className="relative flex items-center justify-center" style={{ minHeight: '320px', width: '320px' }}>
-                      {/* Center indicator */}
-                      <div className="absolute flex flex-col items-center z-10">
-                        <div className="w-4 h-4 bg-white rounded-full animate-pulse-ring" />
-                        <p className="mt-2 text-white/60 text-xs font-medium">You</p>
-                      </div>
-
-                      {visibleRadarUsers.map((nUser, i) => {
-                        const pos = getUserPosition(i, visibleRadarUsers.length);
-                        const name = nUser?.fullName || 'Rider';
-                        const firstName = name.split(' ')[0] || 'Rider';
-                        return (
-                          <button
-                            key={nUser.userId || i}
-                            onClick={() => { setSelectedUser(nUser); setViewState('user-detail'); }}
-                            className="absolute flex flex-col items-center gap-1 transition-all hover:scale-110 active:scale-95 cursor-pointer z-20 group"
-                            style={{
-                              transform: `translate(${pos.x}px, ${pos.y}px)`,
-                            }}
-                          >
-                            <div className="relative">
-                              <Avatar name={name} imageUrl={nUser.profilePicUrl} size="lg" />
-                              {nUser.rating && (
-                                <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 bg-amber-400 text-slate-950 text-[10px] font-black rounded-full shadow-md flex items-center gap-0.5 border border-black/20">
-                                  ★ {nUser.rating.toFixed(1)}
-                                </span>
-                              )}
-                            </div>
-                            <span className="text-white text-xs font-semibold max-w-[80px] truncate text-video-overlay">
-                              {firstName}
-                            </span>
-                            <span className="text-white/60 text-[10px] font-medium bg-black/40 px-1.5 py-0.5 rounded-full backdrop-blur-sm">
-                              {formatDistance(nUser.distanceMeters || 0)}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {extraCount > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowAllRidersModal(true)}
-                        className="mt-4 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-medium backdrop-blur-sm border border-white/15 transition-all cursor-pointer shadow-md"
-                      >
-                        +{extraCount} more nearby riders
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={(e) => handleStopBooking(e)}
-                      className="home-cancel-booking-btn mt-6"
-                    >
-                      <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                      <span>Cancel Booking</span>
-                    </button>
-                  </div>
-                );
-              })()
-            )}
-          </div>
-        )}
+              {/* Cancel Booking Button */}
+              <button
+                type="button"
+                onClick={(e) => handleStopBooking(e)}
+                className="w-full mt-6 py-3.5 px-6 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-white/20 text-white font-medium text-sm flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98] shadow-md"
+              >
+                <span className="text-red-400 font-bold text-sm">✕</span>
+                <span>Cancel Booking</span>
+              </button>
+            </div>
+          );
+        })()}
       </div>
 
       {/* User Detail Card */}
