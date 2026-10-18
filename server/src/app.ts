@@ -100,8 +100,8 @@ app.use(helmet({
 }));
 
 // Body parsing
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: false, limit: '20mb' }));
 app.use(cookieParser());
 
 // Global rate limit

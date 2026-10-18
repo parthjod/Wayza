@@ -6,13 +6,20 @@ export const userApi = {
 
   updateMe: (fullName: string) => api.patch('/user/me', { fullName }).then((r) => r.data),
 
-  uploadAvatar: (file: File) => {
-    const formData = new FormData();
-    formData.append('image', file);
+  uploadAvatar: async (image: string | File) => {
+    let payload = '';
+    if (typeof image === 'string') {
+      payload = image;
+    } else {
+      payload = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(image);
+      });
+    }
     return api
-      .post<{ profilePicUrl: string }>('/user/me/avatar', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      .post<{ profilePicUrl: string }>('/user/me/avatar', { image: payload })
       .then((r) => r.data);
   },
 

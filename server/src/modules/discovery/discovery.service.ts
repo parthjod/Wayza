@@ -2,6 +2,7 @@ import { redis } from '../../config/redis';
 import { env } from '../../config/env';
 import prisma from '../../config/db';
 import { haversineDistance } from '../../utils/haversine';
+import { resolveProfilePicUrl } from '../../utils/initials';
 import { createError } from '../../middleware/errorHandler';
 
 interface ActiveUserData {
@@ -234,9 +235,7 @@ export class DiscoveryService {
         nearbyUsers.push({
           userId: other.userId,
           fullName: other.fullName || 'Rider',
-          profilePicUrl: other.profilePicKey
-            ? `https://${env.AWS_CLOUDFRONT_DOMAIN}/${other.profilePicKey}`
-            : null,
+          profilePicUrl: resolveProfilePicUrl(other.profilePicKey, other.userId),
           distanceMeters: Math.round(distance),
           dropLocationLabel: other.dropLocationLabel || 'Campus',
           rating,

@@ -26,6 +26,7 @@ import {
   revokeRefreshToken,
   revokeAllUserTokens,
 } from '../../utils/jwt';
+import { resolveProfilePicUrl } from '../../utils/initials';
 import { createError } from '../../middleware/errorHandler';
 
 // In-memory fallback map for pending signups
@@ -395,9 +396,7 @@ export class AuthService {
     const rtHash = hashToken(refreshToken);
     await storeRefreshToken(user.id, rtHash);
 
-    const profilePicUrl = user.profilePicKey
-      ? `https://${env.AWS_CLOUDFRONT_DOMAIN}/${user.profilePicKey}`
-      : null;
+    const profilePicUrl = resolveProfilePicUrl(user.profilePicKey, user.id);
 
     return {
       accessToken,
@@ -593,9 +592,7 @@ export class AuthService {
     const rtHash = hashToken(refreshToken);
     await storeRefreshToken(user.id, rtHash);
 
-    const profilePicUrl = user.profilePicKey
-      ? `https://${env.AWS_CLOUDFRONT_DOMAIN}/${user.profilePicKey}`
-      : null;
+    const profilePicUrl = resolveProfilePicUrl(user.profilePicKey, user.id);
 
     return {
       accessToken,

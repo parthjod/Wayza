@@ -8,6 +8,7 @@ import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
+import { resolveProfilePicUrl } from '../../utils/initials';
 
 export class UserService {
   async getMe(userId: string) {
@@ -25,17 +26,7 @@ export class UserService {
 
     if (!user) throw createError('User not found', 404);
 
-    const isCloudFrontValid = env.AWS_CLOUDFRONT_DOMAIN && !env.AWS_CLOUDFRONT_DOMAIN.includes('your-cloudfront');
-    let profilePicUrl: string | null = null;
-    if (user.profilePicKey) {
-      if (user.profilePicKey.startsWith('http') || user.profilePicKey.startsWith('data:')) {
-        profilePicUrl = user.profilePicKey;
-      } else if (isCloudFrontValid) {
-        profilePicUrl = `https://${env.AWS_CLOUDFRONT_DOMAIN}/${user.profilePicKey}`;
-      } else {
-        profilePicUrl = `/api/user/avatar/${user.id}`;
-      }
-    }
+    const profilePicUrl = resolveProfilePicUrl(user.profilePicKey, user.id);
 
     return {
       ...user,
@@ -102,11 +93,12 @@ export class UserService {
     return user;
   }
 
-  async uploadAvatar(userId: string, file: Express.Multer.File) {
+  async uploadAvatar(userId: string, input: Express.Multer.File | Buffer) {
+    const rawBuffer = Buffer.isBuffer(input) ? input : input.buffer;
     // Validate that sharp can decode the file
     let metadata: sharp.Metadata;
     try {
-      metadata = await sharp(file.buffer).metadata();
+      metadata = await sharp(rawBuffer).metadata();
     } catch {
       throw createError('Invalid or corrupted image file.', 400);
     }
@@ -116,7 +108,7 @@ export class UserService {
     }
 
     // Resize and normalize orientation, convert to JPEG for universal compatibility
-    const processedImage = await sharp(file.buffer)
+    const processedImage = await sharp(rawBuffer)
       .rotate()
       .resize(400, 400, { fit: 'cover', position: 'center' })
       .toFormat('jpeg', { quality: 85 })
@@ -182,12 +174,8 @@ export class UserService {
       data: { profilePicKey: dbKey },
     });
 
-    const isCloudFrontValid = env.AWS_CLOUDFRONT_DOMAIN && !env.AWS_CLOUDFRONT_DOMAIN.includes('your-cloudfront');
-    if (!isCloudFrontValid && !dbKey.startsWith('data:')) {
-      finalUrl = `/api/user/avatar/${userId}`;
-    }
-
-    return { profilePicUrl: finalUrl };
+    const profilePicUrl = resolveProfilePicUrl(dbKey, userId) || finalUrl;
+    return { profilePicUrl };
   }
 
   async deleteAvatar(userId: string) {

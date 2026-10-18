@@ -1,6 +1,7 @@
 import prisma from '../../config/db';
 import { redis } from '../../config/redis';
 import { env } from '../../config/env';
+import { resolveProfilePicUrl } from '../../utils/initials';
 import { createError } from '../../middleware/errorHandler';
 
 export class GroupService {
@@ -39,9 +40,7 @@ export class GroupService {
           where: { id: userId },
           select: { id: true, fullName: true, profilePicKey: true },
         });
-        const initiatorPicUrl = initiator?.profilePicKey
-          ? `https://${env.AWS_CLOUDFRONT_DOMAIN}/${initiator.profilePicKey}`
-          : null;
+        const initiatorPicUrl = resolveProfilePicUrl(initiator?.profilePicKey, initiator?.id);
 
         let dropLocationLabel = '';
         try {
@@ -236,9 +235,7 @@ export class GroupService {
       const memberData: any = {
         userId: m.user.id,
         fullName: m.user.fullName,
-        profilePicUrl: m.user.profilePicKey
-          ? `https://${env.AWS_CLOUDFRONT_DOMAIN}/${m.user.profilePicKey}`
-          : null,
+        profilePicUrl: resolveProfilePicUrl(m.user.profilePicKey, m.user.id),
         confirmedGoWith: m.confirmedGoWith,
         sharedPhone: m.sharedPhone,
         startedJourney: m.startedJourney,
@@ -592,9 +589,7 @@ export class GroupService {
         members: activeGroup.members.map((m: any) => ({
           userId: m.userId,
           fullName: m.user.fullName,
-          profilePicUrl: m.user.profilePicKey
-            ? `https://${env.AWS_CLOUDFRONT_DOMAIN}/${m.user.profilePicKey}`
-            : null,
+          profilePicUrl: resolveProfilePicUrl(m.user.profilePicKey, m.user.id),
           confirmedGoWith: m.confirmedGoWith,
         })),
       },
@@ -635,9 +630,7 @@ export class GroupService {
         members: g.members.map((m: any) => ({
           userId: m.userId,
           fullName: m.user.fullName,
-          profilePicUrl: m.user.profilePicKey
-            ? `https://${env.AWS_CLOUDFRONT_DOMAIN}/${m.user.profilePicKey}`
-            : null,
+          profilePicUrl: resolveProfilePicUrl(m.user.profilePicKey, m.user.id),
         })),
       })),
     };

@@ -46,15 +46,30 @@ export class UserController {
 
   async uploadAvatar(req: Request, res: Response, next: NextFunction) {
     try {
-      if (!req.file) {
+      let imageBuffer: Buffer | null = null;
+      if (req.file) {
+        imageBuffer = req.file.buffer;
+      } else if (req.body?.image) {
+        const raw = req.body.image as string;
+        const match = raw.match(/^data:([^;]+);base64,(.+)$/);
+        if (match) {
+          imageBuffer = Buffer.from(match[2], 'base64');
+        } else {
+          imageBuffer = Buffer.from(raw, 'base64');
+        }
+      }
+
+      if (!imageBuffer) {
         res.status(400).json({ error: 'No image file provided' });
         return;
       }
-      if (req.file.size > 15 * 1024 * 1024) {
-        res.status(400).json({ error: 'File too large. Max 15MB.' });
+
+      if (imageBuffer.length > 25 * 1024 * 1024) {
+        res.status(400).json({ error: 'File too large. Max 25MB.' });
         return;
       }
-      const result = await userService.uploadAvatar(req.user!.userId, req.file);
+
+      const result = await userService.uploadAvatar(req.user!.userId, imageBuffer);
       res.json(result);
     } catch (err) {
       next(err);

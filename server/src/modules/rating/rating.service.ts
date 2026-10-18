@@ -1,4 +1,5 @@
 import prisma from '../../config/db';
+import { resolveProfilePicUrl } from '../../utils/initials';
 import { createError } from '../../middleware/errorHandler';
 
 export class RatingService {
@@ -110,9 +111,7 @@ export class RatingService {
       .map((m) => ({
         userId: m.userId,
         fullName: m.user.fullName,
-        profilePicUrl: m.user.profilePicKey
-          ? `https://${process.env.AWS_CLOUDFRONT_DOMAIN}/${m.user.profilePicKey}`
-          : null,
+        profilePicUrl: resolveProfilePicUrl(m.user.profilePicKey, m.userId),
         rated: ratedUserIds.has(m.userId),
       }));
 

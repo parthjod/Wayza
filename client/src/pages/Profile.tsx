@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useAuthStore } from '../store/authStore';
 import { useToast } from '../components/ui/Toast';
 import { Avatar } from '../components/ui/Avatar';
 import { Spinner } from '../components/ui/Spinner';
@@ -61,7 +62,7 @@ async function compressImage(file: File, maxDim = 800, quality = 0.85): Promise<
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, setUser } = useAuth();
+  const { user } = useAuth();
   const { showToast } = useToast();
 
   const [fullName, setFullName] = useState('');
@@ -69,7 +70,6 @@ export default function Profile() {
   const [phone, setPhone] = useState('');
   const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [loading, setLoading] = useState(true);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -190,10 +190,10 @@ export default function Profile() {
       .then((blob) => {
         const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
         closeCameraModal();
+        setShowPhotoActions(false);
         setPreviewUrl(capturedPhoto);
         setPendingPhotoFile(file);
         setHasChanges(true);
-        processAndUploadFile(file);
       })
       .catch((err) => {
         console.error('Failed to process captured photo:', err);
@@ -228,65 +228,46 @@ export default function Profile() {
     }
     setSaving(true);
     try {
-      // 1. If photo was selected and not yet uploaded, ensure upload completes
+      let updatedPicUrl = profilePicUrl;
+
+      // 1. If a new photo was selected, compress and upload
       if (pendingPhotoFile) {
         const compressed = await compressImage(pendingPhotoFile);
         const result = await userApi.uploadAvatar(compressed);
         const rawUrl = result.profilePicUrl;
-        const newPicUrl = rawUrl
+        updatedPicUrl = rawUrl
           ? (rawUrl.startsWith('data:') ? rawUrl : `${rawUrl}${rawUrl.includes('?') ? '&' : '?'}t=${Date.now()}`)
           : null;
-        if (newPicUrl) {
-          setProfilePicUrl(newPicUrl);
-          setUser({ ...user!, profilePicUrl: newPicUrl });
+        if (updatedPicUrl) {
+          setProfilePicUrl(updatedPicUrl);
         }
         setPendingPhotoFile(null);
       }
 
-      // 2. Save full name if changed
-      await userApi.updateMe(fullName.trim());
-      setUser({ ...user!, fullName: fullName.trim() });
+      // 2. Save full name if provided
+      const trimmedName = fullName.trim();
+      await userApi.updateMe(trimmedName);
+
+      // 3. Atomically update auth store so all screens (Home, Navbar, Profile) sync instantly
+      const currentUser = useAuthStore.getState().user;
+      useAuthStore.getState().setUser({
+        ...(currentUser || {}),
+        id: currentUser?.id || user?.id || '',
+        fullName: trimmedName,
+        profilePicUrl: updatedPicUrl,
+      });
+
+      setPreviewUrl(null);
       setHasChanges(false);
       showToast('Profile updated ✓', 'success');
+
+      // 4. Redirect to home page
+      navigate('/home', { replace: true });
     } catch (err: any) {
+      console.error('Save profile error:', err);
       showToast(err.response?.data?.error || 'Failed to save', 'error');
     } finally {
       setSaving(false);
-    }
-  };
-
-  const processAndUploadFile = async (file: File) => {
-    setShowPhotoActions(false);
-
-    // 1. Instantly display image locally on profile icon
-    const localPreview = URL.createObjectURL(file);
-    setPreviewUrl(localPreview);
-    setPendingPhotoFile(file);
-    setHasChanges(true);
-
-    setUploading(true);
-    try {
-      // 2. Compress client-side so it's lightweight and never exceeds NGINX/server limits
-      const compressed = await compressImage(file);
-      const result = await userApi.uploadAvatar(compressed);
-      const rawUrl = result.profilePicUrl;
-      const newPicUrl = rawUrl
-        ? (rawUrl.startsWith('data:') ? rawUrl : `${rawUrl}${rawUrl.includes('?') ? '&' : '?'}t=${Date.now()}`)
-        : null;
-
-      if (newPicUrl) {
-        setProfilePicUrl(newPicUrl);
-        setUser({ ...user!, profilePicUrl: newPicUrl });
-      }
-      setPendingPhotoFile(null);
-      showToast('Photo updated ✓', 'success');
-    } catch (err: any) {
-      console.error('Photo upload error:', err);
-      showToast(err.response?.data?.error || 'Failed to upload photo', 'error');
-    } finally {
-      setUploading(false);
-      if (galleryInputRef.current) galleryInputRef.current.value = '';
-      if (cameraInputRef.current) cameraInputRef.current.value = '';
     }
   };
 
@@ -303,8 +284,10 @@ export default function Profile() {
     setPreviewUrl(localPreview);
     setPendingPhotoFile(file);
     setHasChanges(true);
+    setShowPhotoActions(false);
 
-    processAndUploadFile(file);
+    if (galleryInputRef.current) galleryInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
   };
 
   const handleRemovePhoto = async () => {
@@ -314,8 +297,10 @@ export default function Profile() {
       await userApi.deleteAvatar();
       setPreviewUrl(null);
       setProfilePicUrl(null);
-      if (user) {
-        setUser({ ...user, profilePicUrl: null });
+      setPendingPhotoFile(null);
+      const currentUser = useAuthStore.getState().user;
+      if (currentUser) {
+        useAuthStore.getState().setUser({ ...currentUser, profilePicUrl: null });
       }
       showToast('Profile picture removed ✓', 'success');
     } catch (err: any) {
@@ -438,7 +423,7 @@ export default function Profile() {
                 </svg>
               </div>
 
-              {uploading && (
+              {saving && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm rounded-full">
                   <Spinner size="sm" />
                 </div>
