@@ -107,85 +107,118 @@ export function RatingModal({ open, onClose, groupId, onDone }: RatingModalProps
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+    <div className="wayza-rating-overlay">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-md"
+      <button
+        type="button"
+        className="wayza-rating-backdrop"
         onClick={onClose}
+        aria-label="Close rating modal"
+        tabIndex={-1}
       />
 
-      {/* Modal card */}
+      {/* Modal Card */}
       <div
-        className="relative w-full max-w-md rounded-[28px] bg-gradient-to-b from-[#0a0f1e]/98 to-[#06091a]/98 border border-blue-500/40 shadow-[0_0_50px_rgba(37,99,235,0.2)] animate-fade-in-up overflow-hidden"
+        className="wayza-rating-modal animate-fade-in-up"
         role="dialog"
         aria-modal="true"
+        aria-labelledby="wayza-rating-title"
       >
-        {/* Glow ring accent */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-px bg-gradient-to-r from-transparent via-blue-400/60 to-transparent" />
+        <div className="wayza-rating-top-glow" />
 
-        {/* ── SCREEN 1: Co-rider List ── */}
+        {/* SCREEN 1: Co-rider Selection List */}
         {screen === 'list' && (
-          <div className="p-5 sm:p-6">
+          <div className="wayza-rating-content wayza-rating-list-screen">
             {/* Header */}
-            <div className="flex items-start justify-between mb-5">
-              <div className="flex flex-col items-center w-full text-center gap-1">
-                <div className="w-14 h-14 rounded-full bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-3xl mb-1 shadow-[0_0_20px_rgba(251,191,36,0.15)]">
-                  ⭐
-                </div>
-                <h2 className="font-instrument text-2xl text-white tracking-tight">
-                  Rate Your Co-rider
-                </h2>
-                <p className="text-sm text-slate-400">
-                  Select a co-rider to rate your experience
-                </p>
-              </div>
-              <button
-                onClick={onClose}
-                className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-slate-800/80 border border-white/5 text-slate-300 hover:text-white hover:bg-slate-700 transition-all cursor-pointer text-base"
-                aria-label="Close"
-              >
-                ✕
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="wayza-rating-close wayza-list-close"
+              aria-label="Close rating"
+            >
+              ×
+            </button>
 
-            {/* Rider list */}
+            <header className="wayza-rating-list-header">
+              <div className="wayza-rating-star-badge">
+                <span>★</span>
+              </div>
+
+              <h2 id="wayza-rating-title" className="wayza-rating-title">
+                Rate Your Co-rider
+              </h2>
+
+              <p className="wayza-rating-subtitle">
+                Select a co-rider to rate your experience
+              </p>
+            </header>
+
+            {/* Rider List */}
             {loading ? (
-              <div className="flex justify-center py-8">
-                <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+              <div className="wayza-rating-loading">
+                <div className="wayza-rating-spinner" />
               </div>
             ) : coRiders.length === 0 ? (
-              <p className="text-center text-slate-400 py-6 text-sm">No co-riders to rate.</p>
+              <div className="wayza-rating-empty">
+                <p>No co-riders to rate.</p>
+              </div>
             ) : (
-              <div className="flex flex-col gap-2.5 max-h-[380px] overflow-y-auto pr-1">
+              <div className="wayza-rider-list">
                 {coRiders.map((rider) => (
                   <button
                     key={rider.userId}
+                    type="button"
                     disabled={rider.rated}
-                    onClick={() => !rider.rated && handleSelectRider(rider)}
-                    className={`w-full flex items-center justify-between gap-3 p-3.5 rounded-2xl border transition-all duration-200 text-left cursor-pointer
-                      ${rider.rated
-                        ? 'bg-slate-800/40 border-white/5 opacity-60 cursor-default'
-                        : 'bg-gradient-to-r from-[#111e32]/90 to-[#101a2c]/90 hover:from-[#172943] hover:to-[#14223a] border-blue-400/20 hover:border-blue-400/50'
-                      }`}
+                    onClick={() => {
+                      if (!rider.rated) handleSelectRider(rider);
+                    }}
+                    className={`wayza-rider-row ${
+                      rider.rated ? 'wayza-rider-row-rated' : ''
+                    }`}
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="relative flex-shrink-0">
-                        <Avatar name={rider.fullName} imageUrl={rider.profilePicUrl} size="md" />
-                        {rider.rated && (
-                          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-400 rounded-full border-2 border-[#101a2c] flex items-center justify-center text-[9px] font-bold text-black">
-                            ✓
-                          </div>
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-white truncate">{rider.fullName}</p>
-                        <p className="text-xs text-slate-400 truncate">
-                          {rider.rated ? 'Rated ✓' : `Co-rider • ${formatDate(rideDate)}`}
-                        </p>
-                      </div>
+                    {/* Avatar */}
+                    <div className="wayza-rider-avatar-wrap">
+                      <Avatar
+                        name={rider.fullName}
+                        imageUrl={rider.profilePicUrl}
+                        size="lg"
+                        className="!w-[76px] !h-[76px] text-xl font-semibold"
+                      />
+
+                      {rider.rated && (
+                        <span
+                          className="wayza-rider-rated-indicator"
+                          aria-label="Already rated"
+                        >
+                          ✓
+                        </span>
+                      )}
                     </div>
+
+                    {/* Details */}
+                    <div className="wayza-rider-details">
+                      <p className="wayza-rider-name">
+                        {rider.fullName}
+                      </p>
+
+                      <p className="wayza-rider-meta">
+                        {rider.rated ? (
+                          'Rated ✓'
+                        ) : (
+                          <>
+                            <span className="wayza-rider-meta-label">
+                              Co-rider
+                            </span>
+                            <span className="wayza-rider-meta-dot">•</span>
+                            <span>{formatDate(rideDate)}</span>
+                          </>
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Arrow */}
                     {!rider.rated && (
-                      <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-blue-600/20 border border-blue-500/30 text-blue-300 text-base">
+                      <span className="wayza-rider-arrow" aria-hidden="true">
                         ›
                       </span>
                     )}
@@ -195,155 +228,211 @@ export function RatingModal({ open, onClose, groupId, onDone }: RatingModalProps
             )}
 
             {/* Footer */}
-            <div className="flex gap-2 mt-4">
+            <div className="wayza-rating-list-footer">
               <button
-                onClick={() => { onClose(); onDone(); }}
-                className="flex-1 py-3 rounded-full bg-slate-800/60 border border-white/10 text-slate-300 hover:text-white hover:bg-slate-700 text-sm font-medium transition-all cursor-pointer"
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onDone();
+                }}
+                className="wayza-rating-skip-btn"
               >
                 {unratedCount === 0 ? 'Done' : 'Skip for now'}
               </button>
-              {unratedCount === 0 && (
-                <button
-                  onClick={() => { onClose(); onDone(); }}
-                  className="flex-1 py-3 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-bold shadow-[0_0_18px_rgba(37,99,235,0.3)] transition-all cursor-pointer"
-                >
-                  Done ✓
-                </button>
-              )}
             </div>
           </div>
         )}
 
-        {/* ── SCREEN 2: Rating Form ── */}
+        {/* SCREEN 2: Rating Form */}
         {screen === 'form' && selected && (
-          <div className="p-5 sm:p-6">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
+          <div className="wayza-rating-content wayza-rating-form-screen">
+            {/* Navigation */}
+            <div className="wayza-rating-form-nav">
               <button
+                type="button"
                 onClick={() => setScreen('list')}
-                className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-800/80 border border-white/5 text-slate-300 hover:text-white hover:bg-slate-700 transition-all cursor-pointer text-base"
-                aria-label="Back"
+                className="wayza-rating-close wayza-rating-back"
+                aria-label="Back to co-rider list"
               >
                 ‹
               </button>
-              <div className="flex-1 text-center">
-                <div className="w-10 h-10 rounded-full bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-2xl mx-auto mb-0.5">
-                  ⭐
-                </div>
-              </div>
+
+              <div className="wayza-rating-nav-spacer" />
+
               <button
+                type="button"
                 onClick={onClose}
-                className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-800/80 border border-white/5 text-slate-300 hover:text-white hover:bg-slate-700 transition-all cursor-pointer text-base"
-                aria-label="Close"
+                className="wayza-rating-close"
+                aria-label="Close rating"
               >
-                ✕
+                ×
               </button>
             </div>
 
-            <h2 className="font-instrument text-2xl text-white text-center tracking-tight mb-0.5">
-              Rate Your Co-rider
-            </h2>
-            <p className="text-xs text-slate-400 text-center mb-4">
-              Help keep Wayza safe and friendly for everyone
-            </p>
+            {/* Header */}
+            <header className="wayza-rating-form-header">
+              <h2 id="wayza-rating-title" className="wayza-rating-title">
+                Rate Your Co-rider
+              </h2>
 
-            {/* Selected rider card */}
-            <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-[#111e32]/80 border border-blue-400/20 mb-5">
-              <Avatar name={selected.fullName} imageUrl={selected.profilePicUrl} size="lg" />
-              <div>
-                <p className="text-base font-bold text-white">{selected.fullName}</p>
-                <p className="text-xs text-slate-400">Co-rider • {formatDate(rideDate)}</p>
+              <p className="wayza-rating-subtitle">
+                Help keep Wayza safe and friendly for everyone
+              </p>
+            </header>
+
+            {/* Selected Rider */}
+            <div className="wayza-selected-rider">
+              <Avatar
+                name={selected.fullName}
+                imageUrl={selected.profilePicUrl}
+                size="lg"
+                className="!w-[76px] !h-[76px] text-xl font-semibold"
+              />
+
+              <div className="wayza-selected-rider-details">
+                <p className="wayza-selected-rider-name">
+                  {selected.fullName}
+                </p>
+
+                <p className="wayza-selected-rider-meta">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
+                    <circle cx="12" cy="10" r="2.5" />
+                  </svg>
+                  <span>Co-rider</span>
+                  <span className="wayza-rider-meta-dot">•</span>
+                  <span>{formatDate(rideDate)}</span>
+                </p>
               </div>
             </div>
 
-            {/* Stars */}
-            <div className="flex flex-col items-center mb-5">
-              <div className="flex gap-2 mb-1">
+            {/* Interactive Stars */}
+            <section className="wayza-rating-stars-section">
+              <div className="wayza-rating-stars" role="group" aria-label="Choose a rating">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <button
                     key={n}
+                    type="button"
                     onClick={() => setStars(n)}
                     onMouseEnter={() => setHoveredStar(n)}
                     onMouseLeave={() => setHoveredStar(0)}
-                    className="text-4xl transition-transform hover:scale-110 active:scale-95 cursor-pointer leading-none"
+                    onFocus={() => setHoveredStar(n)}
+                    onBlur={() => setHoveredStar(0)}
                     aria-label={`${n} star${n !== 1 ? 's' : ''}`}
+                    aria-pressed={stars === n}
+                    className={`wayza-rating-star ${
+                      n <= displayStar ? 'wayza-rating-star-active' : ''
+                    }`}
                   >
                     {n <= displayStar ? '★' : '☆'}
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-slate-400">
-                {displayStar > 0
-                  ? `${displayStar} out of 5`
-                  : 'Tap to rate'}
+
+              <p className="wayza-rating-star-hint" aria-live="polite">
+                {displayStar > 0 ? `${displayStar} out of 5` : 'Tap to rate'}
               </p>
-            </div>
+            </section>
 
             {/* Quick Tags */}
-            <div className="mb-4">
-              <p className="text-xs text-slate-400 mb-2">Quick Tags (optional)</p>
-              <div className="flex flex-wrap gap-1.5">
+            <section className="wayza-rating-tag-section">
+              <p className="wayza-rating-section-label">
+                Quick Tags <span>(optional)</span>
+              </p>
+
+              <div className="wayza-rating-tags">
                 {POSITIVE_TAGS.map((t) => (
                   <button
                     key={t.value}
+                    type="button"
                     onClick={() => toggleTag(t.value)}
-                    className={`px-2.5 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 cursor-pointer
-                      ${selectedTags.includes(t.value)
-                        ? 'bg-blue-600 border-blue-500 text-white shadow-[0_0_10px_rgba(37,99,235,0.4)]'
-                        : 'bg-blue-600/10 border-blue-500/30 text-blue-300 hover:bg-blue-600/20'
-                      }`}
+                    aria-pressed={selectedTags.includes(t.value)}
+                    className={`wayza-rating-tag wayza-rating-tag-positive ${
+                      selectedTags.includes(t.value) ? 'is-selected' : ''
+                    }`}
                   >
                     {t.label}
                   </button>
                 ))}
+
                 {NEGATIVE_TAGS.map((t) => (
                   <button
                     key={t.value}
+                    type="button"
                     onClick={() => toggleTag(t.value)}
-                    className={`px-2.5 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 cursor-pointer
-                      ${selectedTags.includes(t.value)
-                        ? 'bg-red-600 border-red-500 text-white shadow-[0_0_10px_rgba(220,38,38,0.4)]'
-                        : 'bg-red-600/10 border-red-500/30 text-red-300 hover:bg-red-600/20'
-                      }`}
+                    aria-pressed={selectedTags.includes(t.value)}
+                    className={`wayza-rating-tag wayza-rating-tag-negative ${
+                      selectedTags.includes(t.value) ? 'is-selected' : ''
+                    }`}
                   >
                     {t.label}
                   </button>
                 ))}
               </div>
-            </div>
+            </section>
 
-            {/* Optional note */}
-            <div className="mb-5">
-              <p className="text-xs text-slate-400 mb-1.5">Add a note (optional)</p>
-              <div className="relative">
+            {/* Optional Note */}
+            <section className="wayza-rating-note-section">
+              <label
+                htmlFor="wayza-rating-comment"
+                className="wayza-rating-section-label"
+              >
+                Add a note <span>(optional)</span>
+              </label>
+
+              <div className="wayza-rating-textarea-wrap">
                 <textarea
+                  id="wayza-rating-comment"
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="Write something (optional)..."
                   maxLength={200}
-                  rows={3}
-                  className="w-full bg-[#0d1525]/80 border border-white/10 rounded-2xl px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50 resize-none transition-colors"
-                  style={{ fontSize: '16px' }}
+                  rows={4}
+                  className="wayza-rating-textarea"
                 />
-                <span className="absolute bottom-2 right-3 text-[10px] text-slate-500">
+
+                <span className="wayza-rating-char-count">
                   {comment.length}/200
                 </span>
               </div>
-            </div>
+            </section>
 
-            {/* Submit button */}
+            {/* Submit */}
             <button
+              type="button"
               onClick={handleSubmit}
               disabled={stars === 0 || submitting}
-              className="w-full py-4 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-base shadow-[0_0_24px_rgba(37,99,235,0.3)] transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+              className="wayza-rating-submit-btn"
             >
               {submitting ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  Submitting...
+                  <span className="wayza-rating-spinner wayza-rating-spinner-small" />
+                  <span>Submitting...</span>
                 </>
               ) : (
-                <>✈ Submit Rating</>
+                <>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m22 2-7 20-4-9-9-4Z" />
+                    <path d="M22 2 11 13" />
+                  </svg>
+                  <span>Submit Rating</span>
+                </>
               )}
             </button>
           </div>

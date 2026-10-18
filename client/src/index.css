@@ -5784,3 +5784,1143 @@ body {
     transition: none;
   }
 }
+
+/* =====================================================
+   WAYZA — CO-RIDER RATING MODAL
+   ===================================================== */
+
+.wayza-rating-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 16px;
+  box-sizing: border-box;
+  isolation: isolate;
+}
+
+.wayza-rating-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+
+  background: rgba(2, 8, 20, 0.7);
+
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+
+  cursor: default;
+}
+
+.wayza-rating-modal {
+  position: relative;
+  isolation: isolate;
+
+  width: min(880px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  box-sizing: border-box;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  background: linear-gradient(
+    155deg,
+    rgba(7, 17, 35, 0.98),
+    rgba(5, 12, 27, 0.98)
+  );
+
+  border: 1px solid rgba(37, 111, 255, 0.8);
+  border-radius: 30px;
+
+  box-shadow:
+    0 0 30px rgba(37, 99, 235, 0.2),
+    0 0 70px rgba(37, 99, 235, 0.1),
+    0 30px 90px rgba(0, 0, 0, 0.48);
+
+  scrollbar-width: thin;
+  scrollbar-color: rgba(96, 165, 250, 0.3) transparent;
+}
+
+.wayza-rating-modal::-webkit-scrollbar {
+  width: 6px;
+}
+
+.wayza-rating-modal::-webkit-scrollbar-thumb {
+  background: rgba(96, 165, 250, 0.3);
+  border-radius: 99px;
+}
+
+.wayza-rating-top-glow {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+
+  width: 55%;
+  height: 1px;
+  margin: 0 auto -1px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(96, 165, 250, 0.65),
+    transparent
+  );
+
+  pointer-events: none;
+}
+
+.wayza-rating-content {
+  position: relative;
+  box-sizing: border-box;
+  padding: 34px 40px 32px;
+}
+
+.wayza-rating-content button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.wayza-rating-content button:focus-visible,
+.wayza-rating-textarea:focus-visible {
+  outline: 2px solid #60c9ff;
+  outline-offset: 3px;
+}
+
+/* =====================================================
+   SHARED TYPOGRAPHY AND CLOSE BUTTON
+   ===================================================== */
+
+.wayza-rating-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  width: 48px;
+  height: 48px;
+  padding: 0;
+
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 50%;
+
+  background: rgba(30, 41, 59, 0.78);
+  color: rgba(241, 245, 249, 0.9);
+
+  font-family: inherit;
+  font-size: 30px;
+  font-weight: 300;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.wayza-rating-close:hover {
+  background: rgba(51, 65, 85, 0.9);
+  border-color: rgba(148, 163, 184, 0.32);
+}
+
+.wayza-rating-close:active {
+  transform: scale(0.95);
+}
+
+.wayza-rating-title {
+  margin: 0;
+  color: #f8fafc;
+
+  font-family: "Instrument Serif", Georgia, serif;
+  font-size: clamp(35px, 4vw, 48px);
+  font-weight: 400;
+  line-height: 1.14;
+  letter-spacing: -0.025em;
+  text-align: center;
+}
+
+.wayza-rating-subtitle {
+  margin: 12px 0 0;
+  color: #9eacc4;
+
+  font-size: clamp(15px, 1.8vw, 21px);
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* =====================================================
+   SCREEN 1 — RIDER SELECTION
+   ===================================================== */
+
+.wayza-rating-list-screen {
+  padding-top: 38px;
+}
+
+.wayza-list-close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+}
+
+.wayza-rating-list-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  text-align: center;
+  margin-bottom: 32px;
+  padding-inline: 42px;
+}
+
+.wayza-rating-star-badge {
+  display: grid;
+  place-items: center;
+
+  width: 96px;
+  height: 96px;
+  margin-bottom: 18px;
+
+  border: 2px solid rgba(245, 186, 22, 0.65);
+  border-radius: 50%;
+
+  background: radial-gradient(
+    circle,
+    rgba(245, 158, 11, 0.15),
+    rgba(245, 158, 11, 0.035)
+  );
+
+  box-shadow: 0 0 28px rgba(245, 158, 11, 0.08);
+}
+
+.wayza-rating-star-badge span {
+  color: #ffd33d;
+  font-size: 52px;
+  line-height: 1;
+  text-shadow: 0 0 15px rgba(250, 204, 21, 0.25);
+}
+
+/* Rider list */
+.wayza-rider-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  max-height: min(52vh, 500px);
+  overflow-y: auto;
+
+  padding: 1px 2px 3px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(96, 165, 250, 0.25) transparent;
+}
+
+.wayza-rider-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.wayza-rider-list::-webkit-scrollbar-thumb {
+  background: rgba(96, 165, 250, 0.28);
+  border-radius: 99px;
+}
+
+.wayza-rider-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+
+  width: 100%;
+  min-height: 114px;
+  padding: 16px 20px;
+  box-sizing: border-box;
+
+  text-align: left;
+  color: #f8fafc;
+
+  background: linear-gradient(
+    115deg,
+    rgba(17, 32, 55, 0.94),
+    rgba(13, 25, 45, 0.92)
+  );
+
+  border: 1px solid rgba(96, 165, 250, 0.29);
+  border-radius: 25px;
+
+  cursor: pointer;
+
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.wayza-rider-row:not(:disabled):hover {
+  border-color: rgba(59, 130, 246, 0.75);
+  background: linear-gradient(
+    115deg,
+    rgba(23, 47, 79, 0.98),
+    rgba(17, 36, 64, 0.98)
+  );
+}
+
+.wayza-rider-row:not(:disabled):active {
+  transform: scale(0.99);
+}
+
+.wayza-rider-row-rated {
+  opacity: 0.62;
+  cursor: default;
+}
+
+.wayza-rider-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+}
+
+.wayza-rider-rated-indicator {
+  position: absolute;
+  right: -3px;
+  bottom: 0;
+
+  display: grid;
+  place-items: center;
+
+  width: 23px;
+  height: 23px;
+
+  border: 2px solid #0b172b;
+  border-radius: 50%;
+
+  background: #10c995;
+  color: #03251c;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.wayza-rider-details {
+  min-width: 0;
+  flex: 1;
+}
+
+.wayza-rider-name {
+  margin: 0;
+
+  color: #f8fafc;
+  font-size: clamp(18px, 2vw, 24px);
+  font-weight: 650;
+  line-height: 1.3;
+
+  overflow-wrap: anywhere;
+}
+
+.wayza-rider-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  margin: 7px 0 0;
+
+  color: #9eacc4;
+  font-size: clamp(13px, 1.6vw, 17px);
+  line-height: 1.4;
+}
+
+.wayza-rider-meta-label,
+.wayza-rider-meta-dot {
+  flex-shrink: 0;
+}
+
+.wayza-rider-meta-dot {
+  color: #697b98;
+}
+
+.wayza-rider-arrow {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  width: 54px;
+  height: 54px;
+
+  border: 1px solid rgba(59, 130, 246, 0.42);
+  border-radius: 50%;
+
+  background: rgba(37, 99, 235, 0.13);
+  color: #dceaff;
+
+  font-size: 37px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+/* Footer */
+.wayza-rating-list-footer {
+  margin-top: 26px;
+}
+
+.wayza-rating-skip-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  min-height: 64px;
+  padding: 14px 22px;
+
+  border: 1px solid rgba(59, 130, 246, 0.45);
+  border-radius: 999px;
+
+  background: rgba(18, 37, 67, 0.58);
+  color: #b8c7e0;
+
+  font-family: inherit;
+  font-size: 21px;
+  font-weight: 600;
+
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.wayza-rating-skip-btn:hover {
+  background: rgba(37, 99, 235, 0.15);
+  border-color: rgba(59, 130, 246, 0.75);
+}
+
+/* Loading and empty states */
+.wayza-rating-loading {
+  display: flex;
+  justify-content: center;
+  padding: 36px;
+}
+
+.wayza-rating-spinner {
+  width: 34px;
+  height: 34px;
+
+  border: 3px solid rgba(96, 165, 250, 0.25);
+  border-top-color: #60a5fa;
+  border-radius: 50%;
+
+  animation: wayza-rating-spin 0.8s linear infinite;
+}
+
+@keyframes wayza-rating-spin {
+  to { transform: rotate(360deg); }
+}
+
+.wayza-rating-empty {
+  padding: 36px 16px;
+  color: #9eacc4;
+  font-size: 16px;
+  text-align: center;
+}
+
+/* =====================================================
+   SCREEN 2 — RATING FORM
+   ===================================================== */
+
+.wayza-rating-form-screen {
+  padding-top: 22px;
+}
+
+.wayza-rating-form-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  margin-bottom: 8px;
+}
+
+.wayza-rating-nav-spacer {
+  flex: 1;
+}
+
+.wayza-rating-back {
+  font-size: 36px;
+}
+
+.wayza-rating-form-header {
+  margin: 8px 0 26px;
+  text-align: center;
+}
+
+/* Selected co-rider */
+.wayza-selected-rider {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+
+  min-height: 128px;
+  padding: 18px 22px;
+  margin-bottom: 22px;
+  box-sizing: border-box;
+
+  background: linear-gradient(
+    115deg,
+    rgba(17, 32, 55, 0.95),
+    rgba(13, 25, 45, 0.95)
+  );
+
+  border: 1px solid rgba(96, 165, 250, 0.29);
+  border-radius: 24px;
+}
+
+.wayza-selected-rider-details {
+  min-width: 0;
+  flex: 1;
+}
+
+.wayza-selected-rider-name {
+  margin: 0;
+
+  color: #f8fafc;
+  font-size: clamp(20px, 2.5vw, 27px);
+  font-weight: 600;
+  line-height: 1.3;
+
+  overflow-wrap: anywhere;
+}
+
+.wayza-selected-rider-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  margin: 8px 0 0;
+
+  color: #9eacc4;
+  font-size: clamp(14px, 1.7vw, 18px);
+  line-height: 1.45;
+}
+
+.wayza-selected-rider-meta svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: #fb6472;
+}
+
+/* Stars */
+.wayza-rating-stars-section {
+  margin: 6px 0 24px;
+  text-align: center;
+}
+
+.wayza-rating-stars {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(6px, 1.8vw, 20px);
+}
+
+.wayza-rating-star {
+  display: grid;
+  place-items: center;
+
+  width: clamp(43px, 7vw, 76px);
+  height: clamp(46px, 7.2vw, 80px);
+  padding: 0;
+
+  border: 0;
+  background: transparent;
+
+  color: #f8fafc;
+  font-family: inherit;
+  font-size: clamp(40px, 6vw, 66px);
+  font-weight: 400;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    color 120ms ease,
+    transform 120ms ease;
+}
+
+.wayza-rating-star:hover {
+  transform: scale(1.1);
+}
+
+.wayza-rating-star-active {
+  color: #ffd34e;
+  text-shadow: 0 0 18px rgba(250, 204, 21, 0.18);
+}
+
+.wayza-rating-star-hint {
+  margin: 8px 0 0;
+  color: #9eacc4;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+/* =====================================================
+   QUICK TAGS
+   ===================================================== */
+
+.wayza-rating-tag-section {
+  margin-bottom: 22px;
+}
+
+.wayza-rating-section-label {
+  display: block;
+  margin: 0 0 12px;
+
+  color: #e7edf8;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.wayza-rating-section-label span {
+  color: #9eacc4;
+  font-weight: 400;
+}
+
+.wayza-rating-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 11px;
+}
+
+.wayza-rating-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  min-height: 46px;
+  padding: 9px 16px;
+  box-sizing: border-box;
+
+  border: 1px solid;
+  border-radius: 999px;
+
+  font-family: inherit;
+  font-size: clamp(13px, 1.55vw, 17px);
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: center;
+
+  cursor: pointer;
+
+  transition:
+    background 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    transform 120ms ease;
+}
+
+.wayza-rating-tag:active {
+  transform: scale(0.97);
+}
+
+.wayza-rating-tag-positive {
+  border-color: rgba(42, 151, 255, 0.8);
+  background: rgba(19, 94, 180, 0.12);
+  color: #b8dfff;
+}
+
+.wayza-rating-tag-positive:hover {
+  background: rgba(37, 99, 235, 0.2);
+}
+
+.wayza-rating-tag-positive.is-selected {
+  border-color: #2698ff;
+  background: rgba(37, 99, 235, 0.38);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(37, 99, 235, 0.17);
+}
+
+.wayza-rating-tag-negative {
+  border-color: rgba(244, 73, 107, 0.8);
+  background: rgba(190, 24, 61, 0.1);
+  color: #ffbdc7;
+}
+
+.wayza-rating-tag-negative:hover {
+  background: rgba(190, 24, 61, 0.18);
+}
+
+.wayza-rating-tag-negative.is-selected {
+  border-color: #fb456b;
+  background: rgba(190, 24, 61, 0.36);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(244, 63, 94, 0.15);
+}
+
+/* =====================================================
+   OPTIONAL COMMENT
+   ===================================================== */
+
+.wayza-rating-note-section {
+  margin-bottom: 22px;
+}
+
+.wayza-rating-textarea-wrap {
+  position: relative;
+}
+
+.wayza-rating-textarea {
+  display: block;
+  width: 100%;
+  min-height: 138px;
+  box-sizing: border-box;
+
+  padding: 16px 17px 34px;
+
+  border: 1px solid rgba(96, 129, 171, 0.26);
+  border-radius: 20px;
+
+  background: rgba(10, 23, 43, 0.82);
+  color: #f8fafc;
+
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.55;
+
+  resize: vertical;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.wayza-rating-textarea::placeholder {
+  color: #72839e;
+  opacity: 1;
+}
+
+.wayza-rating-textarea:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.7);
+  background: rgba(12, 28, 51, 0.92);
+}
+
+.wayza-rating-char-count {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+
+  color: #71819b;
+  font-size: 13px;
+  line-height: 1.2;
+
+  pointer-events: none;
+}
+
+/* Submit button */
+.wayza-rating-submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+
+  width: 100%;
+  min-height: 66px;
+  padding: 15px 22px;
+  box-sizing: border-box;
+
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  border-radius: 999px;
+
+  background: linear-gradient(
+    105deg,
+    #1768ff 0%,
+    #087ff5 53%,
+    #11bce9 100%
+  );
+
+  color: #fff;
+  font-family: inherit;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.3;
+
+  box-shadow: 0 7px 24px rgba(37, 99, 235, 0.24);
+
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 120ms ease,
+    opacity 160ms ease;
+}
+
+.wayza-rating-submit-btn svg {
+  width: 25px;
+  height: 25px;
+  flex-shrink: 0;
+}
+
+.wayza-rating-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(
+    105deg,
+    #347aff 0%,
+    #2191ff 53%,
+    #27c8ed 100%
+  );
+
+  box-shadow: 0 9px 28px rgba(37, 99, 235, 0.32);
+  transform: translateY(-1px);
+}
+
+.wayza-rating-submit-btn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.wayza-rating-submit-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.wayza-rating-spinner-small {
+  width: 22px;
+  height: 22px;
+  border-width: 2px;
+  border-color: rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+}
+
+/* =====================================================
+   TABLET
+   ===================================================== */
+
+@media (max-width: 700px) {
+  .wayza-rating-overlay {
+    padding: 12px;
+  }
+
+  .wayza-rating-modal {
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    border-radius: 25px;
+  }
+
+  .wayza-rating-content {
+    padding: 28px 24px 26px;
+  }
+
+  .wayza-rating-list-header {
+    margin-bottom: 26px;
+  }
+
+  .wayza-rating-star-badge {
+    width: 82px;
+    height: 82px;
+    margin-bottom: 16px;
+  }
+
+  .wayza-rating-star-badge span {
+    font-size: 45px;
+  }
+
+  .wayza-rider-row {
+    min-height: 100px;
+    padding: 14px 16px;
+    gap: 14px;
+    border-radius: 21px;
+  }
+
+  .wayza-rider-avatar-wrap > * {
+    flex-shrink: 0;
+  }
+
+  .wayza-rider-arrow {
+    width: 46px;
+    height: 46px;
+    font-size: 32px;
+  }
+
+  .wayza-rating-skip-btn {
+    min-height: 56px;
+    font-size: 18px;
+  }
+
+  .wayza-selected-rider {
+    min-height: 108px;
+    gap: 16px;
+    padding: 15px 17px;
+  }
+
+  .wayza-rating-tag {
+    min-height: 42px;
+    padding: 9px 13px;
+  }
+
+  .wayza-rating-submit-btn {
+    min-height: 60px;
+    font-size: 19px;
+  }
+}
+
+/* =====================================================
+   MOBILE
+   ===================================================== */
+
+@media (max-width: 480px) {
+  .wayza-rating-overlay {
+    padding: 8px;
+  }
+
+  .wayza-rating-modal {
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    border-radius: 22px;
+  }
+
+  .wayza-rating-content {
+    padding: 25px 17px 20px;
+  }
+
+  /* List screen */
+  .wayza-rating-list-screen {
+    padding-top: 29px;
+  }
+
+  .wayza-list-close {
+    top: 13px;
+    right: 13px;
+  }
+
+  .wayza-rating-close {
+    width: 42px;
+    height: 42px;
+    font-size: 27px;
+  }
+
+  .wayza-rating-list-header {
+    padding-inline: 8px;
+    margin-bottom: 23px;
+  }
+
+  .wayza-rating-star-badge {
+    width: 72px;
+    height: 72px;
+    margin-bottom: 13px;
+  }
+
+  .wayza-rating-star-badge span {
+    font-size: 40px;
+  }
+
+  .wayza-rating-title {
+    font-size: clamp(32px, 8vw, 38px);
+  }
+
+  .wayza-rating-subtitle {
+    margin-top: 9px;
+    font-size: 15px;
+  }
+
+  .wayza-rider-list {
+    gap: 12px;
+    max-height: 42dvh;
+  }
+
+  .wayza-rider-row {
+    min-height: 88px;
+    padding: 11px;
+    gap: 11px;
+    border-radius: 17px;
+  }
+
+  .wayza-rider-name {
+    font-size: 16px;
+  }
+
+  .wayza-rider-meta {
+    gap: 5px;
+    margin-top: 5px;
+    font-size: 12px;
+  }
+
+  .wayza-rider-arrow {
+    width: 40px;
+    height: 40px;
+    font-size: 29px;
+  }
+
+  .wayza-rider-rated-indicator {
+    width: 20px;
+    height: 20px;
+  }
+
+  .wayza-rating-list-footer {
+    margin-top: 20px;
+  }
+
+  .wayza-rating-skip-btn {
+    min-height: 51px;
+    font-size: 16px;
+  }
+
+  /* Form screen */
+  .wayza-rating-form-screen {
+    padding-top: 13px;
+  }
+
+  .wayza-rating-form-nav {
+    margin-bottom: 5px;
+  }
+
+  .wayza-rating-form-header {
+    margin: 6px 0 20px;
+  }
+
+  .wayza-rating-form-header .wayza-rating-title {
+    font-size: clamp(31px, 8vw, 37px);
+  }
+
+  .wayza-rating-form-header .wayza-rating-subtitle {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .wayza-selected-rider {
+    min-height: 88px;
+    margin-bottom: 19px;
+    padding: 11px;
+    gap: 12px;
+    border-radius: 18px;
+  }
+
+  .wayza-selected-rider > * {
+    flex-shrink: 0;
+  }
+
+  .wayza-selected-rider-details {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .wayza-selected-rider-name {
+    font-size: 18px;
+  }
+
+  .wayza-selected-rider-meta {
+    gap: 5px;
+    font-size: 12px;
+  }
+
+  .wayza-selected-rider-meta svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .wayza-rating-stars-section {
+    margin: 0 0 22px;
+  }
+
+  .wayza-rating-stars {
+    gap: clamp(2px, 1.7vw, 8px);
+  }
+
+  .wayza-rating-star {
+    width: clamp(43px, 12vw, 57px);
+    height: 54px;
+    font-size: clamp(39px, 10vw, 50px);
+  }
+
+  .wayza-rating-star-hint {
+    margin-top: 5px;
+    font-size: 15px;
+  }
+
+  .wayza-rating-tag-section {
+    margin-bottom: 19px;
+  }
+
+  .wayza-rating-section-label {
+    margin-bottom: 10px;
+    font-size: 16px;
+  }
+
+  .wayza-rating-tags {
+    gap: 8px;
+  }
+
+  .wayza-rating-tag {
+    min-height: 39px;
+    padding: 8px 11px;
+    font-size: 12px;
+  }
+
+  .wayza-rating-note-section {
+    margin-bottom: 17px;
+  }
+
+  .wayza-rating-textarea {
+    min-height: 118px;
+    padding: 13px 13px 32px;
+    border-radius: 17px;
+  }
+
+  .wayza-rating-char-count {
+    right: 13px;
+    bottom: 10px;
+    font-size: 12px;
+  }
+
+  .wayza-rating-submit-btn {
+    min-height: 54px;
+    padding: 12px 16px;
+    font-size: 16px;
+  }
+
+  .wayza-rating-submit-btn svg {
+    width: 21px;
+    height: 21px;
+  }
+}
+
+/* Very narrow phones */
+@media (max-width: 350px) {
+  .wayza-rating-content {
+    padding-inline: 13px;
+  }
+
+  .wayza-rider-row {
+    gap: 8px;
+    padding-inline: 9px;
+  }
+
+  .wayza-rider-name {
+    font-size: 15px;
+  }
+
+  .wayza-rider-arrow {
+    width: 34px;
+    height: 34px;
+  }
+
+  .wayza-rating-tags {
+    gap: 6px;
+  }
+
+  .wayza-rating-tag {
+    padding-inline: 9px;
+    font-size: 11px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .wayza-rating-spinner {
+    animation-duration: 1.8s;
+  }
+
+  .wayza-rating-content button {
+    transition: none;
+  }
+}
