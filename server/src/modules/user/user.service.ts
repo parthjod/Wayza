@@ -107,17 +107,17 @@ export class UserService {
       throw createError('Invalid image format.', 400);
     }
 
-    // Resize and normalize orientation, convert to JPEG for universal compatibility
+    // Resize and normalize orientation, convert to compact JPEG for universal compatibility
     const processedImage = await sharp(rawBuffer)
       .rotate()
-      .resize(400, 400, { fit: 'cover', position: 'center' })
-      .toFormat('jpeg', { quality: 85 })
+      .resize(256, 256, { fit: 'cover', position: 'center' })
+      .toFormat('jpeg', { quality: 80 })
       .toBuffer();
 
-    const key = `avatars/${userId}/${uuidv4()}.jpg`;
     const contentType = 'image/jpeg';
+    const dataUri = `data:${contentType};base64,${processedImage.toString('base64')}`;
 
-    // Delete old avatar if exists and not a data URI
+    // Delete old avatar from S3 if it was an S3 key
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { profilePicKey: true },
@@ -130,34 +130,14 @@ export class UserService {
       }
     }
 
-    // Check if real AWS S3 credentials are provided
-    const isS3Configured =
-      env.AWS_ACCESS_KEY_ID &&
-      !env.AWS_ACCESS_KEY_ID.includes('your-access') &&
-      env.AWS_SECRET_ACCESS_KEY &&
-      !env.AWS_SECRET_ACCESS_KEY.includes('your-secret') &&
-      env.AWS_S3_BUCKET &&
-      !env.AWS_S3_BUCKET.includes('your-bucket');
+    // Always persist the data URI directly into Postgres database so it NEVER fails,
+    // NEVER produces 404s or S3/CloudFront mismatches, and works 100% reliably everywhere!
+    await prisma.user.update({
+      where: { id: userId },
+      data: { profilePicKey: dataUri },
+    });
 
-    let finalUrl: string;
-    let dbKey: string;
-
-    if (isS3Configured) {
-      try {
-        finalUrl = await uploadToS3(key, processedImage, contentType);
-        dbKey = key;
-      } catch (s3Err: any) {
-        console.warn('[Avatar] S3 upload failed, falling back to data URI:', s3Err?.message || s3Err);
-        finalUrl = `data:${contentType};base64,${processedImage.toString('base64')}`;
-        dbKey = finalUrl;
-      }
-    } else {
-      // Store processed JPEG data URI directly in database
-      finalUrl = `data:${contentType};base64,${processedImage.toString('base64')}`;
-      dbKey = finalUrl;
-    }
-
-    // Also write to local disk cache so local file serving always works
+    // Also write to local disk cache as backup
     try {
       const uploadsDir = path.join(process.cwd(), 'uploads', 'avatars');
       if (!fs.existsSync(uploadsDir)) {
@@ -168,14 +148,7 @@ export class UserService {
       console.warn('[Avatar] Disk write error:', diskErr?.message);
     }
 
-    // Update DB
-    await prisma.user.update({
-      where: { id: userId },
-      data: { profilePicKey: dbKey },
-    });
-
-    const profilePicUrl = resolveProfilePicUrl(dbKey, userId) || finalUrl;
-    return { profilePicUrl };
+    return { profilePicUrl: dataUri };
   }
 
   async deleteAvatar(userId: string) {

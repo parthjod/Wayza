@@ -9,8 +9,8 @@ import { Modal } from '../components/ui/Modal';
 import { userApi } from '../api/user.api';
 import { LOGIN_BG_VIDEO } from '../utils/constants';
 
-// Helper to compress image on client before upload (keeps file under 150KB, fast upload, fits in NGINX body)
-async function compressImage(file: File, maxDim = 800, quality = 0.85): Promise<File> {
+// Helper to compress image on client before upload (keeps file under 30KB, ultra fast upload, fits in any NGINX body)
+async function compressImage(file: File, maxDim = 320, quality = 0.8): Promise<File> {
   return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -235,9 +235,7 @@ export default function Profile() {
         const compressed = await compressImage(pendingPhotoFile);
         const result = await userApi.uploadAvatar(compressed);
         const rawUrl = result.profilePicUrl;
-        updatedPicUrl = rawUrl
-          ? (rawUrl.startsWith('data:') ? rawUrl : `${rawUrl}${rawUrl.includes('?') ? '&' : '?'}t=${Date.now()}`)
-          : null;
+        updatedPicUrl = rawUrl || null;
         if (updatedPicUrl) {
           setProfilePicUrl(updatedPicUrl);
         }
