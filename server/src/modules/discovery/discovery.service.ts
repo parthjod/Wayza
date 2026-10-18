@@ -20,6 +20,23 @@ interface ActiveUserData {
 
 const ACTIVE_INDEX_KEY = 'active:users:index';
 
+/**
+ * Check if two destination labels share common keywords or are identical
+ */
+function areLabelsSimilar(a?: string | null, b?: string | null): boolean {
+  if (!a || !b) return false;
+  const cleanA = a.toLowerCase().trim();
+  const cleanB = b.toLowerCase().trim();
+  if (cleanA === cleanB) return true;
+  if (cleanA.includes(cleanB) || cleanB.includes(cleanA)) return true;
+
+  // Compare significant words (>= 3 chars) excluding common noise words
+  const stopWords = new Set(['the', 'and', 'for', 'near', 'gate', 'road', 'stand', 'stop', 'circle', 'chowk', 'opp', 'opposite', 'pune']);
+  const wordsA = cleanA.split(/[\s,.-]+/).filter((w) => w.length >= 3 && !stopWords.has(w));
+  const wordsB = cleanB.split(/[\s,.-]+/).filter((w) => w.length >= 3 && !stopWords.has(w));
+  return wordsA.some((w) => wordsB.includes(w));
+}
+
 export class DiscoveryService {
   /**
    * Publish user's location for discovery
@@ -144,6 +161,8 @@ export class DiscoveryService {
       dropLocationLabel: string;
       rating?: number;
       reviewsCount?: number;
+      sameDestination?: boolean;
+      destinationDistanceMeters?: number;
     }> = [];
 
     // Get blacklisted user IDs to exclude
@@ -203,6 +222,10 @@ export class DiscoveryService {
       });
     });
 
+    // Threshold for destination proximity (3.5 km covers same neighborhood or campus gates)
+    const MAX_DESTINATION_PROXIMITY_METERS = 3500;
+    const hasSelfDropCoords = typeof self.dropLat === 'number' && typeof self.dropLng === 'number';
+
     for (const otherUserId of candidateUserIds) {
       if (otherUserId === userId) continue;
       if (blacklistedIds.has(otherUserId)) continue;
@@ -218,38 +241,69 @@ export class DiscoveryService {
       const other: ActiveUserData = JSON.parse(raw);
       const distance = haversineDistance(self.lat, self.lng, other.lat, other.lng);
 
-      if (distance <= self.searchRadiusMeters) {
-        const meta = userMetaMap.get(other.userId);
-        const ridesCount = meta?.ridesCount ?? 0;
-        const warnings = meta?.warningCount ?? 0;
-        const storedAvg = meta?.avgRating ?? 0;
-        const storedCount = meta?.reviewsCount ?? 0;
-        // Use real rating if available; fall back to a ride-based estimate for new users
-        let rating: number;
-        let reviewsCount: number;
-        if (storedCount > 0) {
-          rating = storedAvg;
-          reviewsCount = storedCount;
-        } else {
-          const calcRating = Math.min(5.0, Math.max(3.8, 4.8 + ridesCount * 0.05 - warnings * 0.4));
-          rating = Math.round(calcRating * 10) / 10;
-          reviewsCount = Math.max(1, ridesCount);
-        }
-
-        nearbyUsers.push({
-          userId: other.userId,
-          fullName: other.fullName || 'Rider',
-          profilePicUrl: resolveProfilePicUrl(other.profilePicKey, other.userId),
-          distanceMeters: Math.round(distance),
-          dropLocationLabel: other.dropLocationLabel || 'Campus',
-          rating,
-          reviewsCount,
-        });
+      // 1. Pickup proximity check: must be within search radius
+      if (distance > self.searchRadiusMeters) {
+        continue;
       }
+
+      // 2. Destination proximity check
+      const hasOtherDropCoords = typeof other.dropLat === 'number' && typeof other.dropLng === 'number';
+      let dropDistanceMeters: number | null = null;
+      if (hasSelfDropCoords && hasOtherDropCoords) {
+        dropDistanceMeters = haversineDistance(self.dropLat!, self.dropLng!, other.dropLat!, other.dropLng!);
+      }
+
+      const labelMatch = areLabelsSimilar(self.dropLocationLabel, other.dropLocationLabel);
+
+      // Same destination if within 3.5 km or labels share common keywords
+      const isSameDestination = (dropDistanceMeters !== null && dropDistanceMeters <= MAX_DESTINATION_PROXIMITY_METERS) || labelMatch;
+
+      // Filter out completely opposite destinations:
+      // If both have coordinates and drop points are > 5 km apart AND labels don't match,
+      // they are going in different directions and cannot share a ride.
+      if (dropDistanceMeters !== null && dropDistanceMeters > 5000 && !labelMatch) {
+        continue;
+      }
+
+      const meta = userMetaMap.get(other.userId);
+      const ridesCount = meta?.ridesCount ?? 0;
+      const warnings = meta?.warningCount ?? 0;
+      const storedAvg = meta?.avgRating ?? 0;
+      const storedCount = meta?.reviewsCount ?? 0;
+      // Use real rating if available; fall back to a ride-based estimate for new users
+      let rating: number;
+      let reviewsCount: number;
+      if (storedCount > 0) {
+        rating = storedAvg;
+        reviewsCount = storedCount;
+      } else {
+        const calcRating = Math.min(5.0, Math.max(3.8, 4.8 + ridesCount * 0.05 - warnings * 0.4));
+        rating = Math.round(calcRating * 10) / 10;
+        reviewsCount = Math.max(1, ridesCount);
+      }
+
+      nearbyUsers.push({
+        userId: other.userId,
+        fullName: other.fullName || 'Rider',
+        profilePicUrl: resolveProfilePicUrl(other.profilePicKey, other.userId),
+        distanceMeters: Math.round(distance),
+        dropLocationLabel: other.dropLocationLabel || 'Campus',
+        rating,
+        reviewsCount,
+        sameDestination: isSameDestination,
+        destinationDistanceMeters: dropDistanceMeters !== null ? Math.round(dropDistanceMeters) : undefined,
+      });
     }
 
-    // Sort: highest rating first, highest reviews first, then closest distance
+    // Sort:
+    // 1. Same destination / route matches first
+    // 2. Highest rating
+    // 3. Highest reviews
+    // 4. Closest distance
     nearbyUsers.sort((a: any, b: any) => {
+      if (a.sameDestination !== b.sameDestination) {
+        return a.sameDestination ? -1 : 1;
+      }
       if (b.rating !== a.rating) return b.rating - a.rating;
       if (b.reviewsCount !== a.reviewsCount) return b.reviewsCount - a.reviewsCount;
       return a.distanceMeters - b.distanceMeters;
