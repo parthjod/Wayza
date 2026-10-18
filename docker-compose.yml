@@ -24,6 +24,7 @@ services:
     image: redis:7-alpine
     container_name: wayza-redis
     restart: unless-stopped
+    command: redis-server --maxmemory 100mb --maxmemory-policy allkeys-lru
     ports:
       - "6379:6379"
     volumes:
