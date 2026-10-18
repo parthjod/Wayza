@@ -98,10 +98,21 @@ export function setupSocket(io: Server) {
       }
     });
 
-    // --- Dynamic Room Management ---
-    socket.on('join-room', (groupId: string) => {
-      if (typeof groupId === 'string' && groupId.length > 0) {
-        socket.join(`group:${groupId}`);
+    // --- Dynamic Room Management (Authorized) ---
+    socket.on('join-room', async (groupId: string) => {
+      try {
+        if (typeof groupId === 'string' && groupId.length > 0) {
+          const member = await prisma.groupMember.findUnique({
+            where: { groupId_userId: { groupId, userId } },
+          });
+          if (member) {
+            socket.join(`group:${groupId}`);
+          } else {
+            console.warn(`[Security Alert] Unauthorized attempt by user ${userId} to join room group:${groupId}`);
+          }
+        }
+      } catch (err) {
+        console.error('[Security] Error verifying group membership on join-room:', err);
       }
     });
 
