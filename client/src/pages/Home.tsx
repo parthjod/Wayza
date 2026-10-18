@@ -1308,6 +1308,7 @@ export default function Home() {
                         {isCompleted && pendingRatingIds.has(ride.id) && (
                           <button
                             onClick={() => {
+                              setShowHistoryModal(false);
                               setRatingGroupId(ride.id);
                               setShowRatingModal(true);
                             }}
