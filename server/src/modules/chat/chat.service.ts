@@ -53,24 +53,22 @@ export class ChatService {
    * Save a chat message (called from socket handler)
    */
   async saveMessage(groupId: string, senderId: string, content: string) {
-    // Verify membership
-    const member = await prisma.groupMember.findUnique({
-      where: { groupId_userId: { groupId, userId: senderId } },
-    });
-    if (!member) throw createError('Not a member of this group', 403);
-
-    // Check blacklist
-    const user = await prisma.user.findUnique({
-      where: { id: senderId },
-      select: { fullName: true, blacklisted: true },
-    });
-    if (!user) throw createError('User not found', 404);
-    if (user.blacklisted) throw createError('Account suspended', 403);
-
-    // Validate content length
+    // Validate content length first before hitting the database
     if (!content || content.length === 0 || content.length > 1000) {
       throw createError('Message must be 1–1000 characters', 400);
     }
+
+    // Verify membership and fetch user in a single database round-trip
+    const member = await prisma.groupMember.findUnique({
+      where: { groupId_userId: { groupId, userId: senderId } },
+      include: {
+        user: { select: { fullName: true, blacklisted: true } },
+      },
+    });
+
+    if (!member) throw createError('Not a member of this group', 403);
+    if (!member.user) throw createError('User not found', 404);
+    if (member.user.blacklisted) throw createError('Account suspended', 403);
 
     const message = await prisma.chatMessage.create({
       data: {
@@ -84,7 +82,7 @@ export class ChatService {
       id: message.id,
       groupId: message.groupId,
       senderId: message.senderId,
-      senderName: user.fullName,
+      senderName: member.user.fullName,
       content: message.content,
       createdAt: message.createdAt.toISOString(),
     };
@@ -147,8 +145,8 @@ export class ChatService {
 
     const processedImage = await sharp(file.buffer)
       .rotate()
-      .resize(1600, 1600, { fit: 'inside', withoutEnlargement: true })
-      .toFormat('jpeg', { quality: 85 })
+      .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+      .toFormat('jpeg', { quality: 80 })
       .toBuffer();
 
     const fileId = `${uuidv4()}.jpg`;
@@ -159,7 +157,7 @@ export class ChatService {
     const localFilePath = path.join(uploadDir, fileId);
     await fs.promises.writeFile(localFilePath, processedImage);
 
-    // 2. Also back up to S3 if credentials are configured
+    // 2. Back up to S3 asynchronously in background (don't block the user's upload response)
     const isS3Configured =
       env.AWS_ACCESS_KEY_ID &&
       !env.AWS_ACCESS_KEY_ID.includes('your-access') &&
@@ -169,11 +167,9 @@ export class ChatService {
       !env.AWS_S3_BUCKET.includes('your-bucket');
 
     if (isS3Configured) {
-      try {
-        await uploadToS3(`chat/${groupId}/${fileId}`, processedImage, 'image/jpeg');
-      } catch (s3Err: any) {
-        console.warn('[ChatImage] S3 backup failed (local disk backup active):', s3Err?.message || s3Err);
-      }
+      uploadToS3(`chat/${groupId}/${fileId}`, processedImage, 'image/jpeg').catch((s3Err: any) => {
+        console.warn('[ChatImage] S3 background backup failed:', s3Err?.message || s3Err);
+      });
     }
 
     // 3. Permanent, short URL that fits in VARCHAR(1000) and is always viewable
