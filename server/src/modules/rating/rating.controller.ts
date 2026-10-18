@@ -4,7 +4,7 @@ import { ratingService } from './rating.service';
 export class RatingController {
   async submit(req: Request, res: Response, next: NextFunction) {
     try {
-      const { groupId } = req.params;
+      const groupId = req.params.groupId as string;
       const { toUserId, stars, tags, comment } = req.body;
       const result = await ratingService.submitRating(
         groupId,
@@ -22,7 +22,7 @@ export class RatingController {
 
   async getPending(req: Request, res: Response, next: NextFunction) {
     try {
-      const { groupId } = req.params;
+      const groupId = req.params.groupId as string;
       const result = await ratingService.getPendingRatings(groupId, req.user!.userId);
       res.json(result);
     } catch (err) {
