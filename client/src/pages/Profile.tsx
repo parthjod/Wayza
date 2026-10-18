@@ -73,6 +73,7 @@ export default function Profile() {
   const [hasChanges, setHasChanges] = useState(false);
   const [loading, setLoading] = useState(true);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [pendingPhotoFile, setPendingPhotoFile] = useState<File | null>(null);
   const [deletingAvatar, setDeletingAvatar] = useState(false);
 
   // Modals
@@ -189,6 +190,9 @@ export default function Profile() {
       .then((blob) => {
         const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
         closeCameraModal();
+        setPreviewUrl(capturedPhoto);
+        setPendingPhotoFile(file);
+        setHasChanges(true);
         processAndUploadFile(file);
       })
       .catch((err) => {
@@ -224,6 +228,22 @@ export default function Profile() {
     }
     setSaving(true);
     try {
+      // 1. If photo was selected and not yet uploaded, ensure upload completes
+      if (pendingPhotoFile) {
+        const compressed = await compressImage(pendingPhotoFile);
+        const result = await userApi.uploadAvatar(compressed);
+        const rawUrl = result.profilePicUrl;
+        const newPicUrl = rawUrl
+          ? (rawUrl.startsWith('data:') ? rawUrl : `${rawUrl}${rawUrl.includes('?') ? '&' : '?'}t=${Date.now()}`)
+          : null;
+        if (newPicUrl) {
+          setProfilePicUrl(newPicUrl);
+          setUser({ ...user!, profilePicUrl: newPicUrl });
+        }
+        setPendingPhotoFile(null);
+      }
+
+      // 2. Save full name if changed
       await userApi.updateMe(fullName.trim());
       setUser({ ...user!, fullName: fullName.trim() });
       setHasChanges(false);
@@ -241,6 +261,8 @@ export default function Profile() {
     // 1. Instantly display image locally on profile icon
     const localPreview = URL.createObjectURL(file);
     setPreviewUrl(localPreview);
+    setPendingPhotoFile(file);
+    setHasChanges(true);
 
     setUploading(true);
     try {
@@ -256,6 +278,7 @@ export default function Profile() {
         setProfilePicUrl(newPicUrl);
         setUser({ ...user!, profilePicUrl: newPicUrl });
       }
+      setPendingPhotoFile(null);
       showToast('Photo updated ✓', 'success');
     } catch (err: any) {
       console.error('Photo upload error:', err);
@@ -271,10 +294,15 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 15 * 1024 * 1024) {
-      showToast('Image too large. Max 15MB.', 'error');
+    if (file.size > 25 * 1024 * 1024) {
+      showToast('Image too large. Max 25MB.', 'error');
       return;
     }
+
+    const localPreview = URL.createObjectURL(file);
+    setPreviewUrl(localPreview);
+    setPendingPhotoFile(file);
+    setHasChanges(true);
 
     processAndUploadFile(file);
   };

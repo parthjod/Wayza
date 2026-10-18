@@ -6,6 +6,8 @@ import { revokeAllUserTokens } from '../../utils/jwt';
 import { createError } from '../../middleware/errorHandler';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
+import path from 'path';
 
 export class UserService {
   async getMe(userId: string) {
@@ -63,6 +65,15 @@ export class UserService {
       return {
         contentType: 'image/jpeg',
         redirectUrl: user.profilePicKey,
+      };
+    }
+
+    // Check disk cache first
+    const diskPath = path.join(process.cwd(), 'uploads', 'avatars', `${userId}.jpg`);
+    if (fs.existsSync(diskPath)) {
+      return {
+        contentType: 'image/jpeg',
+        filePath: diskPath,
       };
     }
 
@@ -154,6 +165,17 @@ export class UserService {
       dbKey = finalUrl;
     }
 
+    // Also write to local disk cache so local file serving always works
+    try {
+      const uploadsDir = path.join(process.cwd(), 'uploads', 'avatars');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+      fs.writeFileSync(path.join(uploadsDir, `${userId}.jpg`), processedImage);
+    } catch (diskErr: any) {
+      console.warn('[Avatar] Disk write error:', diskErr?.message);
+    }
+
     // Update DB
     await prisma.user.update({
       where: { id: userId },
@@ -179,6 +201,12 @@ export class UserService {
       } catch {
         // Non-critical
       }
+    }
+    const diskPath = path.join(process.cwd(), 'uploads', 'avatars', `${userId}.jpg`);
+    if (fs.existsSync(diskPath)) {
+      try {
+        fs.unlinkSync(diskPath);
+      } catch {}
     }
     await prisma.user.update({
       where: { id: userId },

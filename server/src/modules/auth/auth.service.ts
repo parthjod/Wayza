@@ -170,9 +170,29 @@ export class AuthService {
     if (cleanPhone.length > 10 && cleanPhone.startsWith('91')) cleanPhone = cleanPhone.slice(2);
     if (cleanPhone.length === 10) {
       cleanPhone = `+91${cleanPhone}`;
+      // Phone number must be unique per user
+      const existingPhoneUser = await prisma.user.findUnique({
+        where: { phone: cleanPhone },
+      });
+      if (existingPhoneUser) {
+        throw createError(
+          'This phone number is already registered to another account. Please use a unique phone number.',
+          409,
+          'phone_exists'
+        );
+      }
+    } else if (data.phone && data.phone.trim().length > 0) {
+      throw createError(
+        'Please enter a valid 10-digit mobile number.',
+        400,
+        'invalid_phone'
+      );
     } else {
       // Unique fallback phone if omitted
       cleanPhone = `+91${Math.floor(6000000000 + Math.random() * 3999999999)}`;
+      while (await prisma.user.findUnique({ where: { phone: cleanPhone } })) {
+        cleanPhone = `+91${Math.floor(6000000000 + Math.random() * 3999999999)}`;
+      }
     }
 
     // Store pending signup in memory + Redis (15 min TTL)
@@ -317,7 +337,11 @@ export class AuthService {
           let candidatePhone = pendingData.phone;
           const phoneOccupied = await prisma.user.findUnique({ where: { phone: candidatePhone } });
           if (phoneOccupied) {
-            candidatePhone = `+91${Math.floor(6000000000 + Math.random() * 3999999999)}`;
+            throw createError(
+              'This phone number is already registered to another account. Please use a unique phone number.',
+              409,
+              'phone_exists'
+            );
           }
 
           user = await prisma.user.create({
@@ -522,14 +546,26 @@ export class AuthService {
     if (cleanPhone.length > 10 && cleanPhone.startsWith('91')) cleanPhone = cleanPhone.slice(2);
     if (cleanPhone.length === 10) {
       cleanPhone = `+91${cleanPhone}`;
+      // Phone number must be unique per user
+      const phoneOccupied = await prisma.user.findUnique({ where: { phone: cleanPhone } });
+      if (phoneOccupied) {
+        throw createError(
+          'This phone number is already registered to another account. Please use a unique phone number.',
+          409,
+          'phone_exists'
+        );
+      }
+    } else if (data.phone && data.phone.trim().length > 0) {
+      throw createError(
+        'Please enter a valid 10-digit mobile number.',
+        400,
+        'invalid_phone'
+      );
     } else {
       cleanPhone = `+91${Math.floor(6000000000 + Math.random() * 3999999999)}`;
-    }
-
-    // Ensure phone is unique in database
-    const phoneOccupied = await prisma.user.findUnique({ where: { phone: cleanPhone } });
-    if (phoneOccupied) {
-      cleanPhone = `+91${Math.floor(6000000000 + Math.random() * 3999999999)}`;
+      while (await prisma.user.findUnique({ where: { phone: cleanPhone } })) {
+        cleanPhone = `+91${Math.floor(6000000000 + Math.random() * 3999999999)}`;
+      }
     }
 
     // 5. Create user in database with emailVerified = true

@@ -21,7 +21,9 @@ export class UserController {
       }
       res.setHeader('Content-Type', avatar.contentType);
       res.setHeader('Cache-Control', 'public, max-age=86400');
-      if (avatar.buffer) {
+      if (avatar.filePath) {
+        res.sendFile(avatar.filePath);
+      } else if (avatar.buffer) {
         res.send(avatar.buffer);
       } else if (avatar.stream) {
         avatar.stream.pipe(res);

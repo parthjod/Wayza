@@ -11,7 +11,7 @@ export const userApi = {
     formData.append('image', file);
     return api
       .post<{ profilePicUrl: string }>('/user/me/avatar', formData, {
-        headers: { 'Content-Type': undefined },
+        headers: { 'Content-Type': 'multipart/form-data' },
       })
       .then((r) => r.data);
   },

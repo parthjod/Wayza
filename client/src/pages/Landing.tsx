@@ -163,6 +163,10 @@ export default function Landing() {
       navigate('/home', { replace: true });
     } catch (err: any) {
       const msg = err.response?.data?.error || 'Registration failed';
+      const code = err.response?.data?.code;
+      if (code === 'phone_exists' || code === 'invalid_phone' || msg.toLowerCase().includes('phone')) {
+        setPhoneError(msg);
+      }
       showToast(msg, 'error');
     } finally {
       setSignupLoading(false);
