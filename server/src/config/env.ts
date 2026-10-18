@@ -51,6 +51,6 @@ export const env = {
   OTP_TTL_SECONDS: parseInt(process.env.OTP_TTL_SECONDS || '300', 10),
   OTP_MAX_ATTEMPTS: parseInt(process.env.OTP_MAX_ATTEMPTS || '3', 10),
   OTP_MAX_REQUESTS: parseInt(process.env.OTP_MAX_REQUESTS || '20', 10),
-  LOCATION_TTL_SECONDS: parseInt(process.env.LOCATION_TTL_SECONDS || '1800', 10),
+  LOCATION_TTL_SECONDS: parseInt(process.env.LOCATION_TTL_SECONDS || '300', 10),
   DATA_RETENTION_DAYS: parseInt(process.env.DATA_RETENTION_DAYS || '90', 10),
 } as const;

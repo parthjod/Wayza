@@ -130,6 +130,10 @@ export class DiscoveryService {
 
     const self: ActiveUserData = JSON.parse(selfRaw);
 
+    // Refresh requester's presence TTL while app is open and polling radar
+    await redis.expire(`active:${userId}`, env.LOCATION_TTL_SECONDS);
+    await redis.zadd(ACTIVE_INDEX_KEY, Date.now() + env.LOCATION_TTL_SECONDS * 1000, userId).catch(() => {});
+
     // Get active user IDs without blocking redis.keys
     const candidateUserIds = await this.getActiveCandidateUserIds();
     const nearbyUsers: Array<{
