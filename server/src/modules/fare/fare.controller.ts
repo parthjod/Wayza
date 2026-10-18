@@ -20,9 +20,7 @@ export class FareController {
           splits: result.splits,
           totalFare,
           rideEnded: true,
-        });
-        io.to(`group:${groupId}`).emit('journey:all-ended', {
-          groupId,
+          submittedBy: req.user!.userId,
         });
       }
       res.json(result);

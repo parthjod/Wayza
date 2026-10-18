@@ -6,7 +6,6 @@ import { useToast } from '../components/ui/Toast';
 import { Avatar } from '../components/ui/Avatar';
 import { Modal } from '../components/ui/Modal';
 import { Spinner } from '../components/ui/Spinner';
-import { RatingModal } from '../components/ui/RatingModal';
 import { groupApi } from '../api/group.api';
 import { chatApi } from '../api/chat.api';
 import { journeyApi } from '../api/journey.api';
@@ -103,8 +102,6 @@ export default function Chat() {
   const [showFareSplitModal, setShowFareSplitModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showMenuPanel, setShowMenuPanel] = useState(false);
-  const [showRatingModal, setShowRatingModal] = useState(false);
-  const [ratingGroupId, setRatingGroupId] = useState<string | null>(null);
 
   // Attachment & Image preview state
   const [showAttachMenu, setShowAttachMenu] = useState(false);
@@ -183,12 +180,15 @@ export default function Chat() {
     });
     socket.on('fare:split-submitted', (data: any) => {
       if (isLeavingRef.current) return;
+      setShowRideCompletedModal(false);
+      // Submitter is already being redirected to home
+      if (data?.submittedBy && data.submittedBy === user?.id) {
+        return;
+      }
       setFareSplitResult(data);
       setShowFareSplitModal(true);
       loadGroup();
       showToast('Fare split submitted! 🎉', 'success');
-      // Non-submitters see the rating modal after they acknowledge
-      // (submitters get it from handleSubmitFare)
     });
 
     return () => {
@@ -225,6 +225,8 @@ export default function Chat() {
 
       if (data.status === 'JOURNEY_ENDED' && !data.fareSplit) {
         setShowRideCompletedModal(true);
+      } else if (data.status === 'SPLIT_DONE' || data.fareSplit) {
+        setShowRideCompletedModal(false);
       }
 
       // Initialize split members with all member IDs
@@ -394,9 +396,9 @@ export default function Chat() {
       await fareApi.submit(groupId, fareNum, splitMembers);
       showToast('Fare split submitted! 🎉', 'success');
       setShowFareSplitModal(false);
-      // Trigger rating modal before navigating home
-      setRatingGroupId(groupId);
-      setShowRatingModal(true);
+      setShowRideCompletedModal(false);
+      isLeavingRef.current = true;
+      navigate('/home', { replace: true });
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Failed to submit fare split', 'error');
     }
@@ -408,9 +410,9 @@ export default function Chat() {
       await fareApi.acknowledge(groupId);
       showToast('Fare split acknowledged ✓', 'success');
       setShowFareSplitModal(false);
-      // Trigger rating modal before navigating home
-      setRatingGroupId(groupId);
-      setShowRatingModal(true);
+      setShowRideCompletedModal(false);
+      isLeavingRef.current = true;
+      navigate('/home', { replace: true });
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Failed to acknowledge fare', 'error');
     }
@@ -1288,21 +1290,6 @@ export default function Chat() {
         </div>
       )}
 
-      {/* Rating Modal — shown after fare submit or acknowledge */}
-      {ratingGroupId && (
-        <RatingModal
-          open={showRatingModal}
-          groupId={ratingGroupId}
-          onClose={() => {
-            setShowRatingModal(false);
-            navigate('/home', { replace: true });
-          }}
-          onDone={() => {
-            setShowRatingModal(false);
-            navigate('/home', { replace: true });
-          }}
-        />
-      )}
     </div>
   );
 }
