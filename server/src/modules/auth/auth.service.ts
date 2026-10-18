@@ -176,7 +176,7 @@ export class AuthService {
       });
       if (existingPhoneUser) {
         throw createError(
-          'This phone number is already registered to another account. Please use a unique phone number.',
+          'This phone number is already registered to another account.',
           409,
           'phone_exists'
         );
@@ -338,7 +338,7 @@ export class AuthService {
           const phoneOccupied = await prisma.user.findUnique({ where: { phone: candidatePhone } });
           if (phoneOccupied) {
             throw createError(
-              'This phone number is already registered to another account. Please use a unique phone number.',
+              'This phone number is already registered to another account.',
               409,
               'phone_exists'
             );
@@ -550,7 +550,7 @@ export class AuthService {
       const phoneOccupied = await prisma.user.findUnique({ where: { phone: cleanPhone } });
       if (phoneOccupied) {
         throw createError(
-          'This phone number is already registered to another account. Please use a unique phone number.',
+          'This phone number is already registered to another account.',
           409,
           'phone_exists'
         );
