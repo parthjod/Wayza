@@ -540,10 +540,10 @@ export default function Home() {
                 })()
               ) : (
                 <div className="relative">
+                  {/* Autocomplete Search Input Bar */}
                   <div className="relative flex items-center">
                     <svg
-                      style={{ left: "20px" }}
-                      className="absolute w-4 h-4 text-white/40 pointer-events-none"
+                      className="absolute left-5 w-[18px] h-[18px] text-white/45 pointer-events-none"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -555,68 +555,186 @@ export default function Home() {
                         d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
                       />
                     </svg>
+
                     <input
                       type="text"
                       value={customLocation}
                       onChange={(e) => setCustomLocation(e.target.value)}
                       placeholder="Type your destination (e.g. Kothrud, Swargate)..."
-                      className="w-full bg-white/7 border border-white/20 rounded-full text-white placeholder:text-white/40 focus:border-white/50 focus:outline-none focus:ring-1 focus:ring-white/30"
                       autoFocus
-                      style={{
-                        width: "100%",
-                        height: "48px",
-                        paddingLeft: "48px",
-                        paddingRight: "44px",
-                        fontSize: "16px",
-                        boxSizing: "border-box",
-                        borderRadius: "9999px",
-                      }}
+                      className="
+                        w-full h-12 pl-12 pr-12
+                        rounded-full
+                        bg-[#172b43]/90
+                        border border-white/25
+                        text-white text-base
+                        placeholder:text-white/40
+                        shadow-[0_4px_18px_rgba(0,0,0,0.15)]
+                        transition-all duration-200
+                        focus:outline-none
+                        focus:border-[#65aeff]
+                        focus:ring-2 focus:ring-[#398bff]/30
+                      "
+                      style={{ boxSizing: "border-box" }}
                     />
+
                     <button
                       type="button"
                       onClick={() => {
                         setShowCustomInput(false);
                         setAutocompleteResults([]);
                       }}
-                      className="absolute right-4 text-white/50 hover:text-white text-sm cursor-pointer"
+                      className="
+                        absolute right-4
+                        flex items-center justify-center
+                        w-7 h-7 rounded-full
+                        text-white/50 hover:text-white
+                        hover:bg-white/10
+                        transition-colors cursor-pointer
+                      "
                       title="Cancel"
+                      aria-label="Close location search"
                     >
-                      ✕
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 6l12 12M18 6L6 18"
+                        />
+                      </svg>
                     </button>
                   </div>
 
+                  {/* Floating Autocomplete Suggestions Panel */}
                   {autocompleteResults.length > 0 && (
-                    <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl bg-[#121622]/95 backdrop-blur-xl border border-white/15 shadow-2xl max-h-56 overflow-y-auto z-30 p-1.5 flex flex-col gap-1">
-                      {autocompleteResults.map((result, i) => (
-                        <button
-                          key={i}
-                          type="button"
-                          onClick={() =>
-                            selectDropLocation(result.label, result.lat, result.lng)
-                          }
-                          className="w-full text-left px-3.5 py-2.5 rounded-xl text-sm text-white/90 hover:bg-white/12 hover:text-white transition-colors cursor-pointer flex items-center gap-2.5"
-                        >
-                          <svg
-                            className="w-4 h-4 flex-shrink-0 text-emerald-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={1.8}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
-                            />
-                          </svg>
-                          <span className="truncate">{result.label}</span>
-                        </button>
-                      ))}
+                    <div
+                      className="
+                        absolute top-full left-0 right-0 mt-1
+                        z-30 overflow-hidden
+                        rounded-[22px]
+                        bg-[#101d30]/95
+                        backdrop-blur-2xl
+                        border border-white/15
+                        shadow-[0_16px_40px_rgba(0,0,0,0.35)]
+                      "
+                    >
+                      <div className="max-h-[320px] overflow-y-auto p-1.5">
+                        {autocompleteResults.map((result, i) => {
+                          const parts = result.label
+                            .split(",")
+                            .map((part) => part.trim())
+                            .filter(Boolean);
+
+                          // Split longer addresses into a title and a secondary location.
+                          const hasDetailedAddress = parts.length >= 4;
+                          const title = hasDetailedAddress
+                            ? parts.slice(0, 2).join(", ")
+                            : result.label;
+
+                          const subtitle = hasDetailedAddress
+                            ? parts.slice(2).join(", ")
+                            : "";
+
+                          return (
+                            <button
+                              key={`${result.label}-${i}`}
+                              type="button"
+                              onClick={() =>
+                                selectDropLocation(result.label, result.lat, result.lng)
+                              }
+                              className={`
+                                group w-full min-h-[52px]
+                                flex items-center gap-3
+                                px-3 py-2.5
+                                rounded-[16px]
+                                text-left
+                                transition-all duration-150
+                                cursor-pointer
+                                ${
+                                  i === 0
+                                    ? "bg-[#234365]/75 border border-[#579de0]/35"
+                                    : "border border-transparent hover:bg-white/[0.07] hover:border-white/10"
+                                }
+                                ${
+                                  i !== autocompleteResults.length - 1
+                                    ? "mb-0.5"
+                                    : ""
+                                }
+                              `}
+                            >
+                              {/* Location icon */}
+                              <span
+                                className={`
+                                  flex-shrink-0
+                                  w-[40px] h-[40px]
+                                  rounded-full
+                                  flex items-center justify-center
+                                  border
+                                  transition-colors
+                                  ${
+                                    i === 0
+                                      ? "bg-[#4fa6ff] border-[#80c0ff]/60 text-[#071b32]"
+                                      : "bg-white/[0.07] border-white/10 text-white/85 group-hover:bg-white/10"
+                                  }
+                                `}
+                              >
+                                <svg
+                                  className="w-[19px] h-[19px]"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={1.8}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
+                                  />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
+                                  />
+                                </svg>
+                              </span>
+
+                              {/* Location name and optional address details */}
+                              <span className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
+                                <span className="block truncate text-[14px] leading-5 font-medium text-white/95">
+                                  {title}
+                                </span>
+
+                                {subtitle && (
+                                  <span className="block truncate text-[13px] leading-[18px] text-slate-300/75">
+                                    {subtitle}
+                                  </span>
+                                )}
+                              </span>
+
+                              {/* Right chevron */}
+                              <svg
+                                className="w-[18px] h-[18px] flex-shrink-0 text-white/75 group-hover:text-white transition-colors"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={1.8}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M9 5l7 7-7 7"
+                                />
+                              </svg>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
