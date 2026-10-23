@@ -33,13 +33,14 @@ export class LocationService {
 
     // 2. Fetch from Photon (OSM geocoder, fast & built for typeahead autocomplete)
     try {
-      // Bias towards Pune coordinates (lat: 18.518, lon: 73.815)
+      // Bias towards Pune coordinates (lat: 18.518, lon: 73.815) and India bounding box
       const photonRes = await axios.get('https://photon.komoot.io/api/', {
         params: {
           q: sanitized,
           lat: 18.518,
           lon: 73.815,
-          limit: 8,
+          bbox: '68.1,6.5,97.4,37.1',
+          limit: 15,
         },
         timeout: 3000,
       });
@@ -49,6 +50,18 @@ export class LocationService {
           const props = feat.properties || {};
           const coords = feat.geometry?.coordinates;
           if (!coords || coords.length < 2) continue;
+
+          const lat = coords[1];
+          const lng = coords[0];
+
+          // Strictly restrict to India
+          const countryCode = props.countrycode?.toUpperCase();
+          const country = props.country?.toLowerCase();
+          const inIndiaCoords = lat >= 6.5 && lat <= 37.5 && lng >= 68.0 && lng <= 97.5;
+
+          if (countryCode && countryCode !== 'IN') continue;
+          if (country && country !== 'india') continue;
+          if (!inIndiaCoords) continue;
 
           // Build clean readable label: e.g. "Kothrud, Karve Nagar, Pune"
           const parts = [
@@ -60,9 +73,6 @@ export class LocationService {
 
           const label = Array.from(new Set(parts)).join(', ');
           if (!label) continue;
-
-          const lat = coords[1];
-          const lng = coords[0];
 
           const exists = results.some(
             (r) =>
@@ -76,14 +86,18 @@ export class LocationService {
         }
       }
     } catch {
-      // 3. Fallback to Nominatim if Photon is unavailable
+      // Photon unavailable or timed out
+    }
+
+    // 3. Fallback / supplementary search from Nominatim (restricted strictly to India)
+    if (results.length < 4) {
       try {
         const response = await axios.get('https://nominatim.openstreetmap.org/search', {
           params: {
             q: sanitized,
             format: 'json',
-            limit: 6,
-            countrycodes: 'in',
+            limit: 8,
+            countrycodes: 'in', // Restrict to India
             addressdetails: 1,
           },
           headers: {
@@ -95,6 +109,18 @@ export class LocationService {
         if (Array.isArray(response.data)) {
           for (const item of response.data) {
             const address = item.address || {};
+            const lat = parseFloat(item.lat);
+            const lng = parseFloat(item.lon);
+
+            // Strictly restrict to India
+            const countryCode = address.country_code?.toUpperCase();
+            const country = address.country?.toLowerCase();
+            const inIndiaCoords = lat >= 6.5 && lat <= 37.5 && lng >= 68.0 && lng <= 97.5;
+
+            if (countryCode && countryCode !== 'IN') continue;
+            if (country && country !== 'india') continue;
+            if (!inIndiaCoords) continue;
+
             const parts = [
               item.name || address.suburb || address.neighbourhood,
               address.suburb || address.neighbourhood,
@@ -104,8 +130,6 @@ export class LocationService {
 
             const label =
               Array.from(new Set(parts)).join(', ') || item.display_name?.substring(0, 100);
-            const lat = parseFloat(item.lat);
-            const lng = parseFloat(item.lon);
 
             const exists = results.some(
               (r) =>
