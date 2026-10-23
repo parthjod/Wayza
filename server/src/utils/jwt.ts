@@ -10,17 +10,17 @@ export interface TokenPayload {
 }
 
 /**
- * Generate a short-lived access token (15 min)
+ * Generate an access token (valid 1 day)
  */
 export function generateAccessToken(payload: TokenPayload): string {
-  return jwt.sign(payload, env.JWT_ACCESS_SECRET, { expiresIn: '15m' });
+  return jwt.sign(payload, env.JWT_ACCESS_SECRET, { expiresIn: '1d' });
 }
 
 /**
- * Generate a long-lived refresh token (7 days)
+ * Generate a long-lived refresh token (valid 30 days / 1 month)
  */
 export function generateRefreshToken(payload: TokenPayload): string {
-  return jwt.sign(payload, env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+  return jwt.sign(payload, env.JWT_REFRESH_SECRET, { expiresIn: '30d' });
 }
 
 /**
@@ -55,12 +55,12 @@ export function hashToken(token: string): string {
 }
 
 /**
- * Store refresh token hash in Redis (for rotation tracking)
+ * Store refresh token hash in Redis (for rotation tracking) - valid 30 days
  */
 export async function storeRefreshToken(
   userId: string,
   tokenHash: string,
-  ttlSeconds: number = 7 * 24 * 3600
+  ttlSeconds: number = 30 * 24 * 3600
 ): Promise<void> {
   await redis.setex(`rt:${userId}:${tokenHash}`, ttlSeconds, '1');
 }
@@ -74,11 +74,11 @@ export async function isRefreshTokenRevoked(tokenHash: string): Promise<boolean>
 }
 
 /**
- * Revoke a refresh token
+ * Revoke a refresh token (blacklisted for 30 days)
  */
 export async function revokeRefreshToken(
   tokenHash: string,
-  ttlSeconds: number = 7 * 24 * 3600
+  ttlSeconds: number = 30 * 24 * 3600
 ): Promise<void> {
   await redis.setex(`rt:revoked:${tokenHash}`, ttlSeconds, '1');
 }
@@ -104,7 +104,7 @@ export async function revokeAllUserTokens(userId: string): Promise<void> {
     const pipeline = redis.pipeline();
     for (const key of keys) {
       const tokenHash = key.split(':').pop()!;
-      pipeline.setex(`rt:revoked:${tokenHash}`, 7 * 24 * 3600, '1');
+      pipeline.setex(`rt:revoked:${tokenHash}`, 30 * 24 * 3600, '1');
       pipeline.del(key);
     }
     await pipeline.exec();
@@ -125,7 +125,7 @@ export function setAuthCookies(
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? 'strict' : 'lax',
-    maxAge: 15 * 60 * 1000, // 15 min
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
     path: '/',
   });
 
@@ -133,7 +133,7 @@ export function setAuthCookies(
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? 'strict' : 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days (1 month)
     path: '/',
   });
 }
