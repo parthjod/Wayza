@@ -543,11 +543,16 @@ export default function Home() {
                   {/* Autocomplete Search Input Bar */}
                   <div className="relative flex items-center">
                     <svg
-                      className="absolute left-5 w-[18px] h-[18px] text-white/45 pointer-events-none"
+                      className="absolute w-[18px] h-[18px] text-white/45 pointer-events-none"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
                       strokeWidth={1.8}
+                      style={{
+                        left: "18px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                      }}
                     >
                       <path
                         strokeLinecap="round"
@@ -562,20 +567,12 @@ export default function Home() {
                       onChange={(e) => setCustomLocation(e.target.value)}
                       placeholder="Type your destination (e.g. Kothrud, Swargate)..."
                       autoFocus
-                      className="
-                        w-full h-12 pl-12 pr-12
-                        rounded-full
-                        bg-[#172b43]/90
-                        border border-white/25
-                        text-white text-base
-                        placeholder:text-white/40
-                        shadow-[0_4px_18px_rgba(0,0,0,0.15)]
-                        transition-all duration-200
-                        focus:outline-none
-                        focus:border-[#65aeff]
-                        focus:ring-2 focus:ring-[#398bff]/30
-                      "
-                      style={{ boxSizing: "border-box" }}
+                      className="w-full h-12 rounded-full bg-[#172b43]/90 border border-white/25 text-white text-base placeholder:text-white/40 shadow-[0_4px_18px_rgba(0,0,0,0.15)] transition-all duration-200 focus:outline-none focus:border-[#65aeff] focus:ring-2 focus:ring-[#398bff]/30"
+                      style={{
+                        paddingLeft: "52px",
+                        paddingRight: "48px",
+                        boxSizing: "border-box",
+                      }}
                     />
 
                     <button
@@ -584,14 +581,12 @@ export default function Home() {
                         setShowCustomInput(false);
                         setAutocompleteResults([]);
                       }}
-                      className="
-                        absolute right-4
-                        flex items-center justify-center
-                        w-7 h-7 rounded-full
-                        text-white/50 hover:text-white
-                        hover:bg-white/10
-                        transition-colors cursor-pointer
-                      "
+                      className="absolute flex items-center justify-center w-7 h-7 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                      style={{
+                        right: "14px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                      }}
                       title="Cancel"
                       aria-label="Close location search"
                     >
