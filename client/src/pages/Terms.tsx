@@ -28,7 +28,7 @@ export default function Terms() {
     'absolute left-0 top-1 bottom-1 w-[3.5px] rounded-full bg-[#1685ff]';
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#070b13] font-sans text-white selection:bg-[#398bff]/30 selection:text-white">
+    <div className="terms-page relative flex min-h-screen w-full flex-col overflow-x-hidden bg-[#070b13] font-sans text-white selection:bg-[#398bff]/30 selection:text-white">
       {/* Background ambient video */}
       <video
         autoPlay

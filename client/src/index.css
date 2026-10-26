@@ -6936,3 +6936,35 @@ body {
     transition: none;
   }
 }
+
+/* Terms and Liability Page Layout & Reset */
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  display: block;
+}
+
+#root {
+  max-width: none;
+  padding: 0;
+  text-align: left;
+}
+
+.terms-page {
+  width: 100%;
+  min-height: 100vh;
+}
+
+@media (max-width: 640px) {
+  .terms-page {
+    overflow-x: clip;
+  }
+}
