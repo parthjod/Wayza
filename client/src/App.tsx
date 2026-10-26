@@ -12,6 +12,7 @@ const Home = lazy(() => import('./pages/Home'));
 const Chat = lazy(() => import('./pages/Chat'));
 const Profile = lazy(() => import('./pages/Profile'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const Terms = lazy(() => import('./pages/Terms'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +38,8 @@ function App() {
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 <Route path="/" element={<Landing />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/tnc" element={<Terms />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
                 <Route
                   path="/home"
