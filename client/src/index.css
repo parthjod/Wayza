@@ -6944,38 +6944,10 @@ body,
   width: 100%;
   min-height: 100%;
   margin: 0;
+  padding: 0;
 }
 
 body {
   min-width: 320px;
   min-height: 100vh;
-  display: block;
-}
-
-#root {
-  max-width: none;
-  padding: 0;
-  text-align: left;
-}
-
-.terms-page {
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-}
-
-.terms-container {
-  width: 100%;
-  max-width: 54rem;
-  margin-left: auto !important;
-  margin-right: auto !important;
-}
-
-@media (max-width: 640px) {
-  .terms-page {
-    overflow-x: clip;
-  }
 }
