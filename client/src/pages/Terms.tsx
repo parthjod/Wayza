@@ -19,13 +19,10 @@ export default function Terms() {
     'text-[14px] sm:text-[15px] text-slate-300/90 leading-[1.85]';
 
   const legalCard =
-    'rounded-3xl border border-white/[0.09] bg-[#0c1626]/85 backdrop-blur-2xl p-6 sm:p-8 shadow-[0_12px_36px_rgba(0,0,0,0.25)] hover:border-white/[0.16] transition-all duration-300';
+    'rounded-3xl border border-white/[0.09] bg-[#0c1626]/85 backdrop-blur-2xl p-6 sm:p-9 shadow-[0_12px_36px_rgba(0,0,0,0.25)] hover:border-white/[0.16] transition-all duration-300';
 
   const badgeClass =
     'flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1688ff] to-[#075bd7] text-base sm:text-lg font-bold text-white shadow-[0_4px_16px_rgba(0,107,255,0.3)]';
-
-  const blueAccent =
-    'absolute left-0 top-1.5 bottom-1.5 w-[3.5px] rounded-full bg-[#1685ff]';
 
   return (
     <div className="terms-page relative min-h-screen w-full bg-[#070b13] font-sans text-white selection:bg-[#398bff]/30 selection:text-white overflow-x-hidden flex flex-col items-center">
@@ -50,7 +47,7 @@ export default function Terms() {
 
       {/* Sticky Header Bar - Centered Content */}
       <header className="sticky top-0 z-30 w-full border-b border-white/[0.08] bg-[#070b13]/85 backdrop-blur-xl">
-        <div className="terms-container mx-auto flex items-center justify-between gap-4 px-4 py-3.5 sm:px-6 sm:py-4">
+        <div className="terms-container mx-auto flex items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3 sm:gap-4">
             <button
               type="button"
@@ -92,30 +89,30 @@ export default function Terms() {
       </header>
 
       {/* Main Centered Content */}
-      <main className="terms-container relative z-10 mx-auto w-full px-4 sm:px-6 md:px-8 py-10 sm:py-14 space-y-8 sm:space-y-10">
+      <main className="terms-container relative z-10 mx-auto w-full px-4 sm:px-6 md:px-8 py-10 sm:py-16 space-y-10 sm:space-y-12">
         
         {/* Centralized Hero Title */}
-        <div className="flex flex-col items-center justify-center text-center max-w-2xl mx-auto space-y-3 pt-2 pb-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1 text-xs font-medium text-blue-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse" />
+        <div className="flex flex-col items-center justify-center text-center max-w-2xl mx-auto space-y-4 pt-2 pb-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-1.5 text-xs font-medium text-blue-400 shadow-sm">
+            <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
             <span>Safety Governance &amp; User Protection</span>
           </div>
 
-          <h1 className="font-instrument text-3xl sm:text-4xl md:text-5xl italic tracking-tight text-white leading-[1.15]">
+          <h1 className="font-instrument text-3xl sm:text-4xl md:text-5xl italic tracking-tight text-white leading-[1.18]">
             Terms of Service &amp; Financial Disclaimer
           </h1>
 
-          <p className="text-xs sm:text-sm font-medium uppercase tracking-[0.15em] text-slate-400 pt-1">
+          <p className="text-xs sm:text-sm font-medium uppercase tracking-[0.16em] text-slate-400 pt-1">
             Academic Session 2026–2027
-            <span className="mx-2 text-blue-400">•</span>
+            <span className="mx-2.5 text-blue-400">•</span>
             MIT-WPU Pune Community
           </p>
         </div>
 
         {/* Financial Disclaimer Banner */}
-        <div className="rounded-3xl border border-amber-500/50 bg-gradient-to-br from-[#2a1d12]/95 via-[#221812]/95 to-[#191310]/95 p-6 sm:p-8 shadow-[0_12px_36px_rgba(0,0,0,0.3)]">
-          <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
-            <div className="flex h-13 w-13 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl border border-amber-500/40 bg-amber-500/[0.14] text-amber-300 shadow-md">
+        <div className="rounded-3xl border border-amber-500/50 bg-gradient-to-br from-[#2a1d12]/95 via-[#221812]/95 to-[#191310]/95 p-6 sm:p-9 shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
+          <div className="flex flex-col sm:flex-row items-start gap-5 sm:gap-6">
+            <div className="flex h-13 w-13 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl border border-amber-500/40 bg-amber-500/[0.15] text-amber-300 shadow-md">
               <svg
                 className="h-7 w-7 sm:h-8 sm:w-8"
                 fill="none"
@@ -131,12 +128,12 @@ export default function Terms() {
               </svg>
             </div>
 
-            <div className="min-w-0 flex-1">
-              <h2 className="text-base sm:text-lg md:text-xl font-bold leading-snug text-amber-300 mb-2">
+            <div className="min-w-0 flex-1 space-y-2">
+              <h2 className="text-base sm:text-lg md:text-xl font-bold leading-snug text-amber-300">
                 Crucial Financial Disclaimer: Zero Monetary Responsibility
               </h2>
 
-              <p className="text-[14px] sm:text-[15px] leading-[1.8] text-slate-200/95">
+              <p className="text-[14px] sm:text-[15px] leading-[1.85] text-slate-200/95">
                 Wayza is strictly an informational student peer-discovery utility.
                 Wayza does{' '}
                 <span className="font-bold text-white underline decoration-amber-400 decoration-2 underline-offset-2">not</span>{' '}
@@ -158,7 +155,7 @@ export default function Terms() {
 
         {/* Section 1 */}
         <section className={legalCard}>
-          <div className="mb-5 flex items-start gap-4">
+          <div className="mb-6 flex items-start gap-4">
             <span className={badgeClass}>1</span>
 
             <div className="min-w-0 flex-1 pt-0.5">
@@ -175,51 +172,63 @@ export default function Terms() {
             </div>
           </div>
 
-          <div className="space-y-3.5 pl-0 sm:pl-2">
-            <div className="relative pl-5">
-              <span className={blueAccent} />
-              <p className={bodyText}>
-                <strong className="font-semibold text-white">
-                  Intermediary Status:
-                </strong>{' '}
-                In accordance with Section 79 of the Information Technology
-                Act, 2000 (India), Wayza functions strictly as an electronic
-                platform / technical intermediary facilitating voluntary
-                communications between students.
-              </p>
+          <div className="space-y-4 mt-6">
+            <div className="p-4 sm:p-5 rounded-2xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.035] transition-all">
+              <div className="flex items-start gap-3.5">
+                <span className="mt-2 h-2 w-2 rounded-full bg-blue-400 shrink-0 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
+                <div>
+                  <h3 className="text-white font-semibold text-[15px] mb-1">
+                    Intermediary Status (Section 79 IT Act)
+                  </h3>
+                  <p className={bodyText}>
+                    In accordance with Section 79 of the Information Technology
+                    Act, 2000 (India), Wayza functions strictly as an electronic
+                    platform / technical intermediary facilitating voluntary
+                    communications between students.
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="relative pl-5">
-              <span className={blueAccent} />
-              <p className={bodyText}>
-                <strong className="font-semibold text-white">
-                  Not a Transportation Aggregator:
-                </strong>{' '}
-                Wayza is <span className="underline decoration-blue-400 decoration-1">not</span> a motor cab
-                aggregator (like Uber, Ola, or Rapido), public transport
-                carrier, fleet operator, or taxi service. Wayza does not own,
-                inspect, lease, or operate motor vehicles, nor does it hire,
-                license, or employ drivers.
-              </p>
+            <div className="p-4 sm:p-5 rounded-2xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.035] transition-all">
+              <div className="flex items-start gap-3.5">
+                <span className="mt-2 h-2 w-2 rounded-full bg-blue-400 shrink-0 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
+                <div>
+                  <h3 className="text-white font-semibold text-[15px] mb-1">
+                    Not a Transportation Aggregator
+                  </h3>
+                  <p className={bodyText}>
+                    Wayza is <span className="underline decoration-blue-400 decoration-1">not</span> a motor cab
+                    aggregator (like Uber, Ola, or Rapido), public transport
+                    carrier, fleet operator, or taxi service. Wayza does not own,
+                    inspect, lease, or operate motor vehicles, nor does it hire,
+                    license, or employ drivers.
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <div className="relative pl-5">
-              <span className={blueAccent} />
-              <p className={bodyText}>
-                <strong className="font-semibold text-white">
-                  Independent Commercial Transactions:
-                </strong>{' '}
-                Any auto-rickshaw, cab, taxi, or personal vehicle engaged by
-                student groups is a direct contract between the passengers and
-                the third-party driver.
-              </p>
+            <div className="p-4 sm:p-5 rounded-2xl border border-white/[0.07] bg-white/[0.02] hover:bg-white/[0.035] transition-all">
+              <div className="flex items-start gap-3.5">
+                <span className="mt-2 h-2 w-2 rounded-full bg-blue-400 shrink-0 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
+                <div>
+                  <h3 className="text-white font-semibold text-[15px] mb-1">
+                    Independent Commercial Transactions
+                  </h3>
+                  <p className={bodyText}>
+                    Any auto-rickshaw, cab, taxi, or personal vehicle engaged by
+                    student groups is a direct contract between the passengers and
+                    the third-party driver.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
         {/* Section 2 */}
         <section className={legalCard}>
-          <div className="mb-5 flex items-start gap-4">
+          <div className="mb-6 flex items-start gap-4">
             <span className={badgeClass}>2</span>
 
             <div className="min-w-0 flex-1 pt-0.5">
@@ -235,10 +244,10 @@ export default function Terms() {
             </div>
           </div>
 
-          {/* Responsive 2-column grid with generous spacing */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+          {/* Distinct, spacious point cards */}
+          <div className="space-y-4.5 mt-6">
             {/* Payment custody */}
-            <div className="flex items-start gap-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 transition-all hover:border-blue-500/35 hover:bg-white/[0.05]">
+            <div className="flex flex-col sm:flex-row items-start gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5 sm:p-6 transition-all hover:border-blue-500/35 hover:bg-white/[0.04]">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500/15 text-blue-400">
                 <svg
                   className="h-5 w-5"
@@ -256,9 +265,9 @@ export default function Terms() {
                 </svg>
               </div>
 
-              <div className="min-w-0 flex-1">
-                <h3 className="mb-1 text-[15px] font-semibold text-white">
-                  A. No Payment Custody
+              <div className="min-w-0 flex-1 space-y-1">
+                <h3 className="text-base font-semibold text-white">
+                  A. Zero Payment Custody or Gateways
                 </h3>
                 <p className={bodyText}>
                   Wayza does not possess, operate, or integrate any payment
@@ -269,7 +278,7 @@ export default function Terms() {
             </div>
 
             {/* Peer-to-peer payments */}
-            <div className="flex items-start gap-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 transition-all hover:border-blue-500/35 hover:bg-white/[0.05]">
+            <div className="flex flex-col sm:flex-row items-start gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5 sm:p-6 transition-all hover:border-blue-500/35 hover:bg-white/[0.04]">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500/15 text-blue-400">
                 <svg
                   className="h-5 w-5"
@@ -286,18 +295,18 @@ export default function Terms() {
                 </svg>
               </div>
 
-              <div className="min-w-0 flex-1">
-                <h3 className="mb-1 text-[15px] font-semibold text-white">
-                  B. Peer-to-Peer UPI &amp; Cash
+              <div className="min-w-0 flex-1 space-y-1">
+                <h3 className="text-base font-semibold text-white">
+                  B. Purely Peer-to-Peer Settlements (UPI / GPay / Cash)
                 </h3>
                 <p className={bodyText}>
-                  Any UPI links or GPay QR codes shared in group chats serve solely as informational shortcuts. Transfers happen externally on banking apps; Wayza cannot reverse or refund transfers.
+                  Any UPI links or GPay QR codes shared in group chats serve solely as informational shortcuts for student convenience. Transfers happen externally directly on banking apps; Wayza cannot reverse, refund, or investigate transfers.
                 </p>
               </div>
             </div>
 
             {/* Non-payment */}
-            <div className="flex items-start gap-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 transition-all hover:border-blue-500/35 hover:bg-white/[0.05]">
+            <div className="flex flex-col sm:flex-row items-start gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5 sm:p-6 transition-all hover:border-blue-500/35 hover:bg-white/[0.04]">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500/15 text-blue-400">
                 <svg
                   className="h-5 w-5"
@@ -315,19 +324,19 @@ export default function Terms() {
                 </svg>
               </div>
 
-              <div className="min-w-0 flex-1">
-                <h3 className="mb-1 text-[15px] font-semibold text-white">
+              <div className="min-w-0 flex-1 space-y-1">
+                <h3 className="text-base font-semibold text-white">
                   C. Non-Payment &amp; Peer Default
                 </h3>
                 <p className={bodyText}>
                   Wayza does <strong className="text-white">not</strong>{' '}
-                  guarantee that co-passengers will fulfill their agreed share. You are personally responsible for verifying payments before parting ways.
+                  guarantee that co-passengers will fulfill their agreed share. You are personally responsible for verifying payments before parting ways. Wayza cannot recover unpaid shares or act as a collection agent.
                 </p>
               </div>
             </div>
 
             {/* Fare calculations */}
-            <div className="flex items-start gap-3.5 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 transition-all hover:border-blue-500/35 hover:bg-white/[0.05]">
+            <div className="flex flex-col sm:flex-row items-start gap-4 rounded-2xl border border-white/[0.08] bg-white/[0.025] p-5 sm:p-6 transition-all hover:border-blue-500/35 hover:bg-white/[0.04]">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500/15 text-blue-400">
                 <svg
                   className="h-5 w-5"
@@ -345,9 +354,9 @@ export default function Terms() {
                 </svg>
               </div>
 
-              <div className="min-w-0 flex-1">
-                <h3 className="mb-1 text-[15px] font-semibold text-white">
-                  D. Advisory Estimations Only
+              <div className="min-w-0 flex-1 space-y-1">
+                <h3 className="text-base font-semibold text-white">
+                  D. Advisory Mathematical Estimations Only
                 </h3>
                 <p className={bodyText}>
                   Any split calculations shown in the app are non-binding mathematical approximations for planning. Students must always pay the actual metered or negotiated fare charged by the driver.
@@ -359,7 +368,7 @@ export default function Terms() {
 
         {/* Section 3 */}
         <section className={legalCard}>
-          <div className="mb-5 flex items-start gap-4">
+          <div className="mb-6 flex items-start gap-4">
             <span className={badgeClass}>3</span>
 
             <div className="min-w-0 flex-1 pt-0.5">
@@ -375,44 +384,47 @@ export default function Terms() {
             </div>
           </div>
 
-          <ul className={`${bodyText} space-y-3 pl-1 sm:pl-2`}>
-            <li className="flex items-start gap-3.5">
-              <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
-              <span>
+          <div className="space-y-3.5 mt-6">
+            <div className="p-4 sm:p-5 rounded-2xl border border-white/[0.07] bg-white/[0.02] flex items-start gap-4">
+              <span className="mt-2 h-2 w-2 rounded-full bg-blue-400 shrink-0 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
+              <p className={bodyText}>
                 Wayza disclaims all liability for road traffic accidents,
                 mechanical failures, bodily injury, or death occurring during
                 travel.
-              </span>
-            </li>
-            <li className="flex items-start gap-3.5">
-              <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
-              <span>
+              </p>
+            </div>
+
+            <div className="p-4 sm:p-5 rounded-2xl border border-white/[0.07] bg-white/[0.02] flex items-start gap-4">
+              <span className="mt-2 h-2 w-2 rounded-full bg-blue-400 shrink-0 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
+              <p className={bodyText}>
                 Wayza is not responsible for the competence, licensure,
                 driving behavior, sobriety, or criminal acts of any
                 third-party cab, taxi, or auto-rickshaw driver.
-              </span>
-            </li>
-            <li className="flex items-start gap-3.5">
-              <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
-              <span>
+              </p>
+            </div>
+
+            <div className="p-4 sm:p-5 rounded-2xl border border-white/[0.07] bg-white/[0.02] flex items-start gap-4">
+              <span className="mt-2 h-2 w-2 rounded-full bg-blue-400 shrink-0 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
+              <p className={bodyText}>
                 Wayza assumes no liability for items lost, forgotten, stolen,
                 or damaged inside vehicles or during transit.
-              </span>
-            </li>
-            <li className="flex items-start gap-3.5">
-              <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
-              <span>
+              </p>
+            </div>
+
+            <div className="p-4 sm:p-5 rounded-2xl border border-white/[0.07] bg-white/[0.02] flex items-start gap-4">
+              <span className="mt-2 h-2 w-2 rounded-full bg-blue-400 shrink-0 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
+              <p className={bodyText}>
                 Wayza is not responsible for academic consequences,
                 examination delays, missed train/flight departures, or
                 detours due to traffic conditions.
-              </span>
-            </li>
-          </ul>
+              </p>
+            </div>
+          </div>
         </section>
 
         {/* Section 4 */}
         <section className={legalCard}>
-          <div className="mb-5 flex items-start gap-4">
+          <div className="mb-6 flex items-start gap-4">
             <span className={badgeClass}>4</span>
 
             <div className="min-w-0 flex-1 pt-0.5">
@@ -432,41 +444,43 @@ export default function Terms() {
             </div>
           </div>
 
-          <ul className={`${bodyText} space-y-3 pl-1 sm:pl-2`}>
-            <li className="flex items-start gap-3.5">
-              <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
-              <span>
-                <strong className="font-semibold text-white">
-                  Zero Tolerance Policy:
-                </strong>{' '}
+          <div className="space-y-4 mt-6">
+            <div className="p-4 sm:p-5 rounded-2xl border border-red-500/20 bg-red-500/[0.03] space-y-1.5">
+              <div className="flex items-center gap-2 text-red-400 font-semibold text-sm">
+                <span className="h-2 w-2 rounded-full bg-red-400" />
+                <span>Zero Tolerance Policy</span>
+              </div>
+              <p className={bodyText}>
                 Any harassment, hate speech, stalking, unwelcome physical
                 conduct, intoxication, or illicit activities will result in
                 immediate permanent account termination.
-              </span>
-            </li>
-            <li className="flex items-start gap-3.5">
-              <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
-              <span>
-                <strong className="font-semibold text-white">
-                  Reporting to Campus Authorities:
-                </strong>{' '}
+              </p>
+            </div>
+
+            <div className="p-4 sm:p-5 rounded-2xl border border-amber-500/20 bg-amber-500/[0.03] space-y-1.5">
+              <div className="flex items-center gap-2 text-amber-400 font-semibold text-sm">
+                <span className="h-2 w-2 rounded-full bg-amber-400" />
+                <span>Reporting to Campus Authorities</span>
+              </div>
+              <p className={bodyText}>
                 In cases of severe misconduct, fraud, or safety breaches,
                 incident records will be escalated to the MIT-WPU Disciplinary
                 Committee and local law enforcement.
-              </span>
-            </li>
-            <li className="flex items-start gap-3.5">
-              <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
-              <span>
-                <strong className="font-semibold text-white">
-                  Account Responsibility:
-                </strong>{' '}
+              </p>
+            </div>
+
+            <div className="p-4 sm:p-5 rounded-2xl border border-blue-500/20 bg-blue-500/[0.03] space-y-1.5">
+              <div className="flex items-center gap-2 text-blue-400 font-semibold text-sm">
+                <span className="h-2 w-2 rounded-full bg-blue-400" />
+                <span>Account Responsibility</span>
+              </div>
+              <p className={bodyText}>
                 You may not share your account or impersonate any other
                 student. You are strictly responsible for all actions
                 conducted under your credentials.
-              </span>
-            </li>
-          </ul>
+              </p>
+            </div>
+          </div>
         </section>
 
         {/* Section 5 */}
@@ -479,7 +493,7 @@ export default function Terms() {
                 Ephemeral Data &amp; Location Privacy
               </h2>
 
-              <p className={`${bodyText} mt-2`}>
+              <p className={`${bodyText} mt-3`}>
                 Wayza values student privacy. Geospatial coordinates, pickup
                 landmarks, and live match requests are retained temporarily in
                 volatile memory strictly to facilitate active session
@@ -500,7 +514,7 @@ export default function Terms() {
                 Indemnification &amp; Limitation of Liability
               </h2>
 
-              <p className={`${bodyText} mt-2`}>
+              <p className={`${bodyText} mt-3`}>
                 To the maximum extent permitted by applicable Indian laws, you
                 agree to indemnify, defend, and hold harmless Wayza, its
                 student developers, project contributors, and affiliated
@@ -524,7 +538,7 @@ export default function Terms() {
                 Governing Law &amp; Jurisdiction
               </h2>
 
-              <p className={`${bodyText} mt-2`}>
+              <p className={`${bodyText} mt-3`}>
                 These terms shall be governed by and construed in accordance
                 with the laws of the Republic of India. Any controversy,
                 dispute, or claim arising out of or in connection with these
@@ -540,7 +554,7 @@ export default function Terms() {
         </section>
 
         {/* Centered Footer */}
-        <footer className="mt-14 pt-8 pb-10 border-t border-white/[0.08] w-full flex flex-col items-center justify-center gap-4 text-center">
+        <footer className="mt-16 pt-10 pb-12 border-t border-white/[0.08] w-full flex flex-col items-center justify-center gap-4 text-center">
           <p className="text-xs sm:text-sm text-slate-400">
             © 2026 Wayza Student Mobility. MIT-WPU Pune Community.
           </p>
