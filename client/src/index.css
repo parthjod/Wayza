@@ -13,10 +13,10 @@
 }
 
 /* Base styles */
-@layer base {
-  *, ::before, ::after {
-    box-sizing: border-box;
-  }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 html {
@@ -6935,19 +6935,4 @@ body {
   .wayza-rating-content button {
     transition: none;
   }
-}
-
-/* Terms and Liability Page Layout & Reset */
-html,
-body,
-#root {
-  width: 100%;
-  min-height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  min-width: 320px;
-  min-height: 100vh;
 }
