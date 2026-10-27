@@ -96,7 +96,6 @@ export default function Chat() {
 
   // Modals
   const [showSharePhoneModal, setShowSharePhoneModal] = useState(false);
-  const [showStartJourneyModal, setShowStartJourneyModal] = useState(false);
   const [showEndJourneyModal, setShowEndJourneyModal] = useState(false);
   const [showRideCompletedModal, setShowRideCompletedModal] = useState(false);
   const [showFareSplitModal, setShowFareSplitModal] = useState(false);
@@ -291,6 +290,12 @@ export default function Chat() {
       } else {
         showToast('Confirmed! Waiting for others...', 'success');
       }
+      // Auto-start journey immediately upon confirming
+      try {
+        await journeyApi.start(groupId);
+      } catch {
+        // Journey start may fail if not all confirmed yet — that's fine
+      }
       await loadGroup();
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Failed', 'error');
@@ -303,22 +308,6 @@ export default function Chat() {
       await groupApi.sharePhone(groupId);
       showToast('Phone number shared', 'success');
       setShowSharePhoneModal(false);
-      await loadGroup();
-    } catch (err: any) {
-      showToast(err.response?.data?.error || 'Failed', 'error');
-    }
-  };
-
-  const handleStartJourney = async () => {
-    if (!groupId) return;
-    try {
-      const result = await journeyApi.start(groupId);
-      if (result.allStarted) {
-        showToast('Journey started! 🚗', 'success');
-      } else {
-        showToast('Waiting for others to start...', 'info');
-      }
-      setShowStartJourneyModal(false);
       await loadGroup();
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Failed', 'error');
@@ -376,6 +365,14 @@ export default function Chat() {
   const handleEndJourney = async () => {
     if (!groupId) return;
     try {
+      // Ensure user is marked as started before ending (covers the case where
+      // their start call was silently skipped at confirm-time because not all
+      // members had confirmed yet)
+      try {
+        await journeyApi.start(groupId);
+      } catch {
+        // Already started or other benign error — safe to ignore
+      }
       const result = await journeyApi.end(groupId);
       if (result.allEnded) {
         setShowRideCompletedModal(true);
@@ -818,18 +815,9 @@ export default function Chat() {
             </button>
           )}
 
-          {/* Start Journey button */}
-          {group.status === 'CONFIRMED' && !selfMember?.startedJourney && (
-            <button
-              onClick={() => setShowStartJourneyModal(true)}
-              className="chat-action-btn chat-action-btn--journey"
-            >
-              Start Journey ({startedCount}/{group.members.length})
-            </button>
-          )}
 
-          {/* End Journey button */}
-          {group.status === 'JOURNEY_STARTED' && !selfMember?.endedJourney && (
+          {/* End Journey button — shown once confirmed or journey started */}
+          {(group.status === 'CONFIRMED' || group.status === 'JOURNEY_STARTED') && !selfMember?.endedJourney && (
             <button
               onClick={() => setShowEndJourneyModal(true)}
               className="chat-action-btn chat-action-btn--end"
@@ -982,21 +970,6 @@ export default function Chat() {
         </div>
       </Modal>
 
-      {/* Start Journey Modal */}
-      <Modal open={showStartJourneyModal} onClose={() => setShowStartJourneyModal(false)} className="confirm-journey-modal">
-        <h3 className="confirm-journey-heading">Start Journey</h3>
-        <p className="confirm-journey-message">
-          Starting journey with {otherNames}?
-        </p>
-        <div className="confirm-journey-actions">
-          <button onClick={() => setShowStartJourneyModal(false)} className="confirm-journey-cancel-btn">
-            Cancel
-          </button>
-          <button onClick={handleStartJourney} className="confirm-journey-start-btn">
-            Start
-          </button>
-        </div>
-      </Modal>
 
       {/* End Journey Modal — custom overlay so the landscape background stays visible */}
       {showEndJourneyModal && (
