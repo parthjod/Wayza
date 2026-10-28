@@ -3607,34 +3607,25 @@ body {
   transform: scale(0.97);
 }
 
-/* Legacy Go with <name> button — keep for backward compat */
 .chat-go-btn {
-  flex: 1;
-  height: 48px;
-  border-radius: 9999px;
-  border: none;
-  background: linear-gradient(90deg, #29b5ff 0%, #1555ff 100%);
+  width: 100%;
+  background: linear-gradient(110deg, #22b5f5 0%, #1760ff 100%);
   color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  transition: filter 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
-  box-shadow: 0 4px 14px rgba(21, 85, 255, 0.30);
-  font-family: inherit;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border: none;
+  border-radius: 9999px;
+  box-shadow: 0 4px 14px rgba(23, 96, 255, 0.2);
 }
 
 .chat-go-btn:hover:not(:disabled) {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(21, 85, 255, 0.45);
+  filter: brightness(1.05);
 }
 
 .chat-go-btn:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: scale(0.995);
+}
+
+.chat-go-btn:disabled {
+  cursor: not-allowed;
 }
 
 .chat-go-btn--confirmed {

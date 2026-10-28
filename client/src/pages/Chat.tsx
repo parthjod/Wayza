@@ -790,18 +790,35 @@ export default function Chat() {
             <button
               onClick={handleConfirmGo}
               disabled={selfMember?.confirmedGoWith || otherMembers.length === 0}
-              className={`chat-action-btn ${selfMember?.confirmedGoWith
+              className={`chat-action-btn w-full min-h-[58px] rounded-full flex flex-col items-center justify-center gap-0.5 px-4 py-2 text-center transition-all duration-200 ${selfMember?.confirmedGoWith
                 ? 'chat-action-btn--confirmed'
                 : otherMembers.length === 0
                   ? 'opacity-50 cursor-not-allowed bg-white/10'
                   : 'chat-go-btn'
                 }`}
             >
-              {selfMember?.confirmedGoWith
-                ? `✓ Confirmed (${confirmedCount}/${group.members.length})`
-                : otherMembers.length > 0
-                  ? `Go with ${otherNames}`
-                  : 'Waiting for members to join…'}
+              <span className="text-sm font-semibold leading-5">
+                {selfMember?.confirmedGoWith
+                  ? `✓ Confirmed (${confirmedCount}/${group.members.length})`
+                  : otherMembers.length > 0
+                    ? `Go with ${otherNames}`
+                    : 'Waiting for members to join…'}
+              </span>
+
+              {!selfMember?.confirmedGoWith && otherMembers.length > 0 && (
+                <span
+                  className="text-xs font-normal leading-4 text-white/90"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.location.href = '/terms';
+                  }}
+                >
+                  By clicking Go, you agree to{' '}
+                  <span className="underline underline-offset-2 font-medium">
+                    Terms &amp; Liability Policy
+                  </span>
+                </span>
+              )}
             </button>
           )}
 
