@@ -500,7 +500,6 @@ export default function Chat() {
   const otherMembers = group.members.filter((m) => m.userId !== user?.id);
   const allConfirmed = group.members.every((m) => m.confirmedGoWith);
   const confirmedCount = group.members.filter((m) => m.confirmedGoWith).length;
-  const startedCount = group.members.filter((m) => m.startedJourney).length;
   const endedCount = group.members.filter((m) => m.endedJourney).length;
   const otherNames = otherMembers.map((m) => m.fullName).join(' & ');
   const computedSplit = splitMembers.length >= 2 && totalFare

@@ -6,7 +6,7 @@ const sectionHeadingClass =
 const paragraphClass = 'text-[15px] sm:text-[16px] leading-[2] text-slate-300';
 const clauseClass = 'space-y-7 sm:space-y-8';
 
-function MetaIcon({ children }) {
+function MetaIcon({ children }: { children: React.ReactNode }) {
   return (
     <span
       className="mt-0.5 inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#17365a] bg-[#0d1b2d] text-blue-400 shadow-sm shadow-black/20"
@@ -17,7 +17,7 @@ function MetaIcon({ children }) {
   );
 }
 
-function SectionHeading({ children }) {
+function SectionHeading({ children }: { children: React.ReactNode }) {
   return <h2 className={sectionHeadingClass}>{children}</h2>;
 }
 
