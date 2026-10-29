@@ -2,7 +2,12 @@ import api from './client';
 import type { User } from '../types';
 
 export const userApi = {
-  getMe: () => api.get<User & { phone: string; collegeEmail: string; emailVerified: boolean }>('/user/me').then((r) => r.data),
+  getMe: () =>
+    api
+      .get<User & { phone: string; collegeEmail: string; emailVerified: boolean; avgRating: number; reviewsCount: number }>(
+        '/user/me'
+      )
+      .then((r) => r.data),
 
   updateMe: (fullName: string) => api.patch('/user/me', { fullName }).then((r) => r.data),
 

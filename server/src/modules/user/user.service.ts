@@ -21,6 +21,8 @@ export class UserService {
         collegeEmail: true,
         emailVerified: true,
         profilePicKey: true,
+        avgRating: true,
+        reviewsCount: true,
       },
     });
 

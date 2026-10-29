@@ -6,6 +6,8 @@ export interface User {
   collegeEmail?: string;
   emailVerified?: boolean;
   profilePicUrl: string | null;
+  avgRating?: number;
+  reviewsCount?: number;
 }
 
 // Auth types

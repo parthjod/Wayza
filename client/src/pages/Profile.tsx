@@ -69,6 +69,8 @@ export default function Profile() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
+  const [avgRating, setAvgRating] = useState<number>(0);
+  const [reviewsCount, setReviewsCount] = useState<number>(0);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -214,6 +216,8 @@ export default function Profile() {
       setEmail(data.collegeEmail);
       setPhone(data.phone);
       setProfilePicUrl(data.profilePicUrl);
+      setAvgRating(data.avgRating ?? 0);
+      setReviewsCount(data.reviewsCount ?? 0);
     } catch {
       showToast('Failed to load profile', 'error');
     } finally {
@@ -464,6 +468,33 @@ export default function Profile() {
           </div>
 
           <div className="profile-divider" />
+
+          {/* Ratings Section */}
+          <div className="profile-rating-card">
+            <div className="profile-rating-top">
+              <div className="profile-rating-info">
+                <span className="profile-rating-title">Your Rating</span>
+              </div>
+
+              <div className="profile-rating-badge">
+                <span className="profile-rating-star">★</span>
+                <span className="profile-rating-score">
+                  {reviewsCount > 0 ? avgRating.toFixed(1) : '5.0'}
+                </span>
+                <span className="profile-rating-scale">/ 5.0</span>
+              </div>
+            </div>
+
+            {/* Safety policy warning note */}
+            <div className="profile-rating-policy">
+              <svg viewBox="0 0 20 20" fill="currentColor" className="profile-rating-policy-icon">
+                <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+              </svg>
+              <p className="profile-rating-policy-text">
+                <strong>Note:</strong> If your rating falls below <strong>2.5</strong>, you will be blacklisted.
+              </p>
+            </div>
+          </div>
 
           {/* Full name */}
           <div className="profile-field">

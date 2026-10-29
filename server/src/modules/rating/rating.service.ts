@@ -1,6 +1,7 @@
 import prisma from '../../config/db';
 import { resolveProfilePicUrl } from '../../utils/initials';
 import { createError } from '../../middleware/errorHandler';
+import { revokeAllUserTokens } from '../../utils/jwt';
 
 export class RatingService {
   /**
@@ -64,13 +65,23 @@ export class RatingService {
       _count: { stars: true },
     });
 
+    const newAvgRating = Math.round((aggregate._avg.stars ?? 0) * 10) / 10;
+    const newReviewsCount = aggregate._count.stars;
+    const shouldBlacklist = newReviewsCount >= 1 && newAvgRating < 2.5;
+
     await prisma.user.update({
       where: { id: toUserId },
       data: {
-        avgRating: Math.round((aggregate._avg.stars ?? 0) * 10) / 10,
-        reviewsCount: aggregate._count.stars,
+        avgRating: newAvgRating,
+        reviewsCount: newReviewsCount,
+        ...(shouldBlacklist ? { blacklisted: true } : {}),
       },
     });
+
+    if (shouldBlacklist) {
+      await revokeAllUserTokens(toUserId);
+      console.warn(`[RatingService] User ${toUserId} blacklisted: rating fell below 2.5 (${newAvgRating})`);
+    }
 
     return { ratingId: rating.id };
   }
