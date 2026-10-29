@@ -76,6 +76,7 @@ export interface Group {
   members: GroupMember[];
   journey: Journey | null;
   fareSplit: FareSplitData | null;
+  createdAt?: string;
 }
 
 // Chat types

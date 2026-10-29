@@ -170,6 +170,12 @@ export default function Chat() {
       if (isLeavingRef.current || data?.userId === user?.id) return;
       loadGroup();
     });
+    socket.on('group:disbanded', () => {
+      if (isLeavingRef.current) return;
+      isLeavingRef.current = true;
+      showToast('The group was disbanded due to 30 mins inactivity', 'info');
+      navigate('/home', { replace: true });
+    });
     socket.on('journey:progress', () => { if (!isLeavingRef.current) loadGroup(); });
     socket.on('journey:all-started', () => { if (!isLeavingRef.current) loadGroup(); });
     socket.on('journey:all-ended', () => {
@@ -199,6 +205,7 @@ export default function Chat() {
       socket.off('group:phone-shared');
       socket.off('group:member-joined');
       socket.off('group:member-left');
+      socket.off('group:disbanded');
       socket.off('journey:progress');
       socket.off('journey:all-started');
       socket.off('journey:all-ended');
@@ -232,6 +239,28 @@ export default function Chat() {
 
     return () => clearTimeout(timer);
   }, [group?.status, group?.journey?.startedAt]);
+
+  // 30 mins timeout when group is forming: automatically leave group if "Go with" not finalized
+  useEffect(() => {
+    if (group?.status !== 'FORMING') return;
+    const startTimeStr = group.createdAt;
+    if (!startTimeStr) return;
+
+    const startTime = new Date(startTimeStr).getTime();
+    const THIRTY_MINS_MS = 30 * 60 * 1000;
+    const timeRemaining = (startTime + THIRTY_MINS_MS) - Date.now();
+
+    if (timeRemaining <= 0) {
+      handleLeaveGroup('The group was disbanded due to 30 mins inactivity');
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      handleLeaveGroup('The group was disbanded due to 30 mins inactivity');
+    }, timeRemaining);
+
+    return () => clearTimeout(timer);
+  }, [group?.status, group?.createdAt]);
 
   const loadGroup = async () => {
     if (!groupId || isLeavingRef.current) return;
@@ -467,7 +496,7 @@ export default function Chat() {
     }
   };
 
-  const handleLeaveGroup = async () => {
+  const handleLeaveGroup = async (customMessage?: any) => {
     if (!groupId || isLeavingRef.current) return;
     isLeavingRef.current = true;
     try {
@@ -475,7 +504,7 @@ export default function Chat() {
     } catch {
       // Ignore error if already removed or group disbanded
     } finally {
-      showToast('You left the group', 'info');
+      showToast(typeof customMessage === 'string' ? customMessage : 'You left the group', 'info');
       navigate('/home', { replace: true });
     }
   };

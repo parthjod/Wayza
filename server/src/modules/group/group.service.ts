@@ -223,6 +223,24 @@ export class GroupService {
     const isMember = group.members.some((m: any) => m.userId === userId);
     if (!isMember) throw createError('Not a member of this group', 403);
 
+    // Auto-disband FORMING group if unfinalized for 30 minutes or more
+    if (group.status === 'FORMING') {
+      const THIRTY_MINS_MS = 30 * 60 * 1000;
+      if (Date.now() - new Date(group.createdAt).getTime() >= THIRTY_MINS_MS) {
+        await prisma.group.update({
+          where: { id: groupId },
+          data: { status: 'DISBANDED' },
+        });
+        if (io) {
+          io.to(`group:${groupId}`).emit('group:disbanded', {
+            groupId,
+            reason: 'Group timed out: Go with was not finalized within 30 minutes',
+          });
+        }
+        group.status = 'DISBANDED';
+      }
+    }
+
     // Auto-end journey if ongoing for 2 hours or more
     if (group.status === 'JOURNEY_STARTED') {
       const journeyStart = group.journey?.startedAt || group.updatedAt;
@@ -296,6 +314,7 @@ export class GroupService {
       members,
       journey: group.journey,
       fareSplit: group.fareSplit,
+      createdAt: group.createdAt.toISOString(),
     };
   }
 
@@ -618,6 +637,18 @@ export class GroupService {
 
     if (!activeGroup) return { activeGroup: null };
 
+    // If group is FORMING and has been unfinalized for 30 minutes or more, auto-disband it
+    if (activeGroup.status === 'FORMING') {
+      const THIRTY_MINS_MS = 30 * 60 * 1000;
+      if (Date.now() - new Date(activeGroup.createdAt).getTime() >= THIRTY_MINS_MS) {
+        await prisma.group.update({
+          where: { id: activeGroup.id },
+          data: { status: 'DISBANDED' },
+        });
+        return { activeGroup: null };
+      }
+    }
+
     // If journey has been ongoing for 2 hours or more, auto-end it
     if (activeGroup.status === 'JOURNEY_STARTED') {
       const journeyStart = activeGroup.journey?.startedAt || activeGroup.updatedAt;
@@ -681,6 +712,42 @@ export class GroupService {
         })),
       })),
     };
+  }
+  /**
+   * Auto-disband FORMING groups where "Go with" has not been finalized within 30 minutes
+   */
+  async autoDisbandExpiredFormingGroups(io?: any) {
+    const THIRTY_MINS_MS = 30 * 60 * 1000;
+    const expiryThreshold = new Date(Date.now() - THIRTY_MINS_MS);
+
+    const expiredGroups = await prisma.group.findMany({
+      where: {
+        status: 'FORMING',
+        createdAt: { lte: expiryThreshold },
+      },
+      include: {
+        members: true,
+      },
+    });
+
+    for (const group of expiredGroups) {
+      try {
+        await prisma.group.update({
+          where: { id: group.id },
+          data: { status: 'DISBANDED' },
+        });
+
+        if (io) {
+          io.to(`group:${group.id}`).emit('group:disbanded', {
+            groupId: group.id,
+            reason: 'Group timed out: Go with was not finalized within 30 minutes',
+          });
+        }
+        console.log(`[GroupService] Auto-disbanded unfinalized FORMING group ${group.id} after 30 minutes timeout`);
+      } catch (err) {
+        console.error(`[GroupService] Failed to auto-disband group ${group.id}:`, err);
+      }
+    }
   }
 }
 
