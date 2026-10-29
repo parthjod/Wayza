@@ -6,6 +6,7 @@ import { env } from './config/env';
 import { createRedisPubClient, createRedisSubClient } from './config/redis';
 import { setupSocket } from './socket/socket';
 import { journeyService } from './modules/journey/journey.service';
+import { groupService } from './modules/group/group.service';
 
 const server = http.createServer(app);
 
@@ -45,19 +46,27 @@ setupSocket(io);
 // Make io accessible from request context (for emitting events from API controllers)
 app.set('io', io);
 
-// Periodic check: Auto-end ongoing journeys that have exceeded the 2-hour timeout
-const JOURNEY_TIMEOUT_CHECK_INTERVAL_MS = 30 * 1000; // Check every 30 seconds
-const journeyTimeoutInterval = setInterval(async () => {
+// Periodic check: Auto-end ongoing journeys (> 2 hrs) and auto-disband unfinalized forming groups (> 30 mins)
+const TIMEOUT_CHECK_INTERVAL_MS = 30 * 1000; // Check every 30 seconds
+const timeoutInterval = setInterval(async () => {
   try {
     await journeyService.checkAndAutoEndExpiredJourneys(io);
   } catch (err) {
     console.error('Error auto-ending expired journeys:', err);
   }
-}, JOURNEY_TIMEOUT_CHECK_INTERVAL_MS);
+  try {
+    await groupService.autoDisbandExpiredFormingGroups(io);
+  } catch (err) {
+    console.error('Error auto-disbanding expired forming groups:', err);
+  }
+}, TIMEOUT_CHECK_INTERVAL_MS);
 
-// Initial check on server start
+// Initial checks on server start
 journeyService.checkAndAutoEndExpiredJourneys(io).catch((err) => {
   console.error('Error during initial auto-end journeys check:', err);
+});
+groupService.autoDisbandExpiredFormingGroups(io).catch((err) => {
+  console.error('Error during initial auto-disband forming groups check:', err);
 });
 
 // Start server
@@ -76,7 +85,7 @@ server.listen(env.PORT, () => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received. Shutting down gracefully...');
-  clearInterval(journeyTimeoutInterval);
+  clearInterval(timeoutInterval);
   server.close(() => {
     process.exit(0);
   });
