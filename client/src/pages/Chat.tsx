@@ -174,6 +174,7 @@ export default function Chat() {
     socket.on('journey:all-started', () => { if (!isLeavingRef.current) loadGroup(); });
     socket.on('journey:all-ended', () => {
       if (isLeavingRef.current) return;
+      setShowEndJourneyModal(false);
       loadGroup();
       setShowRideCompletedModal(true);
     });
@@ -209,6 +210,28 @@ export default function Chat() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // 2 hours timeout when journey is ongoing: automatically end journey after 2 hours
+  useEffect(() => {
+    if (group?.status !== 'JOURNEY_STARTED') return;
+    const startTimeStr = group.journey?.startedAt;
+    if (!startTimeStr) return;
+
+    const startTime = new Date(startTimeStr).getTime();
+    const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+    const timeRemaining = (startTime + TWO_HOURS_MS) - Date.now();
+
+    if (timeRemaining <= 0) {
+      loadGroup();
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      loadGroup();
+    }, timeRemaining);
+
+    return () => clearTimeout(timer);
+  }, [group?.status, group?.journey?.startedAt]);
 
   const loadGroup = async () => {
     if (!groupId || isLeavingRef.current) return;
