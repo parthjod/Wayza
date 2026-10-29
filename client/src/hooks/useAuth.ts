@@ -15,6 +15,8 @@ export function useAuth() {
           id: data.id,
           fullName: data.fullName,
           profilePicUrl: data.profilePicUrl,
+          avgRating: data.avgRating,
+          reviewsCount: data.reviewsCount,
         });
       })
       .catch(() => {
