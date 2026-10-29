@@ -232,9 +232,9 @@ export class GroupService {
           data: { status: 'DISBANDED' },
         });
         if (io) {
-          io.to(`group:${groupId}`).emit('group:disbanded', {
+          io.to(`group:${groupId}`).emit('group:member-left', {
             groupId,
-            reason: 'Group timed out: Go with was not finalized within 30 minutes',
+            userId: 'system',
           });
         }
         group.status = 'DISBANDED';
@@ -314,7 +314,6 @@ export class GroupService {
       members,
       journey: group.journey,
       fareSplit: group.fareSplit,
-      createdAt: group.createdAt.toISOString(),
     };
   }
 
@@ -738,9 +737,9 @@ export class GroupService {
         });
 
         if (io) {
-          io.to(`group:${group.id}`).emit('group:disbanded', {
+          io.to(`group:${group.id}`).emit('group:member-left', {
             groupId: group.id,
-            reason: 'Group timed out: Go with was not finalized within 30 minutes',
+            userId: 'system',
           });
         }
         console.log(`[GroupService] Auto-disbanded unfinalized FORMING group ${group.id} after 30 minutes timeout`);

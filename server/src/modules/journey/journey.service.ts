@@ -174,17 +174,17 @@ export class JourneyService {
       data: { allEnded: true, endedAt: now },
     });
 
-    // Update group status to JOURNEY_ENDED
+    // Update group status to DISBANDED so chat collapses and redirects to home
     await prisma.group.update({
       where: { id: groupId },
-      data: { status: 'JOURNEY_ENDED' },
+      data: { status: 'DISBANDED' },
     });
 
-    // Notify all participants in the group chat room
+    // Notify all participants in the group chat room to trigger loadGroup and redirect to home
     if (io) {
-      io.to(`group:${groupId}`).emit('journey:progress', {
+      io.to(`group:${groupId}`).emit('group:member-left', {
         groupId,
-        allEnded: true,
+        userId: 'system',
       });
       io.to(`group:${groupId}`).emit('journey:all-ended', {
         groupId,

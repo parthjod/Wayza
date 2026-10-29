@@ -170,17 +170,10 @@ export default function Chat() {
       if (isLeavingRef.current || data?.userId === user?.id) return;
       loadGroup();
     });
-    socket.on('group:disbanded', () => {
-      if (isLeavingRef.current) return;
-      isLeavingRef.current = true;
-      showToast('The group was disbanded due to 30 mins inactivity', 'info');
-      navigate('/home', { replace: true });
-    });
     socket.on('journey:progress', () => { if (!isLeavingRef.current) loadGroup(); });
     socket.on('journey:all-started', () => { if (!isLeavingRef.current) loadGroup(); });
     socket.on('journey:all-ended', () => {
       if (isLeavingRef.current) return;
-      setShowEndJourneyModal(false);
       loadGroup();
       setShowRideCompletedModal(true);
     });
@@ -205,7 +198,6 @@ export default function Chat() {
       socket.off('group:phone-shared');
       socket.off('group:member-joined');
       socket.off('group:member-left');
-      socket.off('group:disbanded');
       socket.off('journey:progress');
       socket.off('journey:all-started');
       socket.off('journey:all-ended');
@@ -217,50 +209,6 @@ export default function Chat() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  // 2 hours timeout when journey is ongoing: automatically end journey after 2 hours
-  useEffect(() => {
-    if (group?.status !== 'JOURNEY_STARTED') return;
-    const startTimeStr = group.journey?.startedAt;
-    if (!startTimeStr) return;
-
-    const startTime = new Date(startTimeStr).getTime();
-    const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
-    const timeRemaining = (startTime + TWO_HOURS_MS) - Date.now();
-
-    if (timeRemaining <= 0) {
-      loadGroup();
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      loadGroup();
-    }, timeRemaining);
-
-    return () => clearTimeout(timer);
-  }, [group?.status, group?.journey?.startedAt]);
-
-  // 30 mins timeout when group is forming: automatically leave group if "Go with" not finalized
-  useEffect(() => {
-    if (group?.status !== 'FORMING') return;
-    const startTimeStr = group.createdAt;
-    if (!startTimeStr) return;
-
-    const startTime = new Date(startTimeStr).getTime();
-    const THIRTY_MINS_MS = 30 * 60 * 1000;
-    const timeRemaining = (startTime + THIRTY_MINS_MS) - Date.now();
-
-    if (timeRemaining <= 0) {
-      handleLeaveGroup('The group was disbanded due to 30 mins inactivity');
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      handleLeaveGroup('The group was disbanded due to 30 mins inactivity');
-    }, timeRemaining);
-
-    return () => clearTimeout(timer);
-  }, [group?.status, group?.createdAt]);
 
   const loadGroup = async () => {
     if (!groupId || isLeavingRef.current) return;
@@ -496,7 +444,7 @@ export default function Chat() {
     }
   };
 
-  const handleLeaveGroup = async (customMessage?: any) => {
+  const handleLeaveGroup = async () => {
     if (!groupId || isLeavingRef.current) return;
     isLeavingRef.current = true;
     try {
@@ -504,7 +452,7 @@ export default function Chat() {
     } catch {
       // Ignore error if already removed or group disbanded
     } finally {
-      showToast(typeof customMessage === 'string' ? customMessage : 'You left the group', 'info');
+      showToast('You left the group', 'info');
       navigate('/home', { replace: true });
     }
   };
