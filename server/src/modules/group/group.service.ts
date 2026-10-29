@@ -3,6 +3,7 @@ import { redis } from '../../config/redis';
 import { env } from '../../config/env';
 import { resolveProfilePicUrl } from '../../utils/initials';
 import { createError } from '../../middleware/errorHandler';
+import { journeyService } from '../journey/journey.service';
 
 export class GroupService {
   /**
@@ -192,7 +193,7 @@ export class GroupService {
    * Get full group state
    */
   async getGroup(groupId: string, userId: string, io?: any) {
-    const group = await prisma.group.findUnique({
+    let group = await prisma.group.findUnique({
       where: { id: groupId },
       include: {
         members: {
@@ -221,6 +222,41 @@ export class GroupService {
     // Check membership
     const isMember = group.members.some((m: any) => m.userId === userId);
     if (!isMember) throw createError('Not a member of this group', 403);
+
+    // Auto-end journey if ongoing for 2 hours or more
+    if (group.status === 'JOURNEY_STARTED') {
+      const journeyStart = group.journey?.startedAt || group.updatedAt;
+      const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+      if (journeyStart && (Date.now() - new Date(journeyStart).getTime() >= TWO_HOURS_MS)) {
+        await journeyService.autoEndJourney(groupId, io);
+        const refreshedGroup = await prisma.group.findUnique({
+          where: { id: groupId },
+          include: {
+            members: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                    phone: true,
+                    profilePicKey: true,
+                  },
+                },
+              },
+            },
+            journey: true,
+            fareSplit: {
+              include: {
+                participants: true,
+              },
+            },
+          },
+        });
+        if (refreshedGroup) {
+          group = refreshedGroup;
+        }
+      }
+    }
 
     // If active group, record user joined if not already recorded
     if (group.status !== 'DISBANDED') {
@@ -568,6 +604,7 @@ export class GroupService {
         members: { some: { userId } },
       },
       include: {
+        journey: true,
         members: {
           include: {
             user: {
@@ -580,6 +617,16 @@ export class GroupService {
     });
 
     if (!activeGroup) return { activeGroup: null };
+
+    // If journey has been ongoing for 2 hours or more, auto-end it
+    if (activeGroup.status === 'JOURNEY_STARTED') {
+      const journeyStart = activeGroup.journey?.startedAt || activeGroup.updatedAt;
+      const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
+      if (journeyStart && (Date.now() - new Date(journeyStart).getTime() >= TWO_HOURS_MS)) {
+        await journeyService.autoEndJourney(activeGroup.id);
+        return { activeGroup: null };
+      }
+    }
 
     return {
       activeGroup: {
