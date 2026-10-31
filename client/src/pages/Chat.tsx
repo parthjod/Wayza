@@ -1031,7 +1031,7 @@ export default function Chat() {
             </h3>
 
             <p className="pickup-modal-subtitle">
-              Please follow the pickup sequence below to get the lowest transit cost.
+              Follow this sequence to ensure the cheapest combined ride fare.
             </p>
           </div>
 
@@ -1075,8 +1075,8 @@ export default function Chat() {
 
               <p className="pickup-booker-description">
                 {pickupSequenceData.suggestedBooker.userId === user?.id
-                  ? "Please book the ride from your app in the order shown below."
-                  : `Ask ${pickupSequenceData.suggestedBooker.fullName.split(" ")[0]} to book the ride on Uber/Ola in this sequence.`}
+                  ? 'Please book the ride on Uber/Ola in the sequence shown below.'
+                  : `Ask ${pickupSequenceData.suggestedBooker.fullName.split(' ')[0]} to book the ride on Uber/Ola in this sequence.`}
               </p>
             </div>
           </div>
@@ -1089,15 +1089,12 @@ export default function Chat() {
             const isUser = stop.userId === user?.id;
 
             return (
-              <div
-                key={stop.userId}
-                className="pickup-step-item"
-              >
+              <div key={stop.userId} className="pickup-step-item">
                 {/* Timeline Number and Connector */}
                 <div className="pickup-step-left">
                   <div
                     className={`pickup-step-number ${
-                      isBooker ? "pickup-step-number--active" : ""
+                      isBooker ? 'pickup-step-number--active' : ''
                     }`}
                   >
                     {stop.order}
@@ -1109,7 +1106,7 @@ export default function Chat() {
                 {/* Pickup Card */}
                 <div
                   className={`pickup-step-card ${
-                    isBooker ? "pickup-step-card--first" : ""
+                    isBooker ? 'pickup-step-card--first' : ''
                   }`}
                 >
                   <div className="pickup-step-details">
@@ -1117,7 +1114,7 @@ export default function Chat() {
                       <Avatar
                         name={stop.fullName}
                         imageUrl={stop.profilePicUrl}
-                        size="md"
+                        size="sm"
                       />
                     </div>
 
@@ -1142,7 +1139,7 @@ export default function Chat() {
 
                       <p className="pickup-step-description">
                         {isBooker
-                          ? "Start ride / Pickup Point 1"
+                          ? 'Start ride / Pickup Point 1'
                           : `Pickup Stop #${stop.order}`}
                       </p>
                     </div>
@@ -1150,11 +1147,7 @@ export default function Chat() {
 
                   {stop.distanceToNextMeters > 0 && (
                     <span className="pickup-distance">
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        aria-hidden="true"
-                      >
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="w-3.5 h-3.5">
                         <path
                           d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"
                           stroke="currentColor"
@@ -1170,7 +1163,6 @@ export default function Chat() {
                           strokeWidth="2"
                         />
                       </svg>
-
                       ~{formatDistance(stop.distanceToNextMeters)}
                     </span>
                   )}
@@ -1194,17 +1186,13 @@ export default function Chat() {
                 </span>
 
                 <span className="pickup-destination-name">
-                  {pickupSequenceData?.destination?.label || "Campus"}
+                  {pickupSequenceData?.destination?.label || 'Campus'}
                 </span>
               </div>
 
               {pickupSequenceData?.totalDistanceMeters ? (
                 <span className="pickup-total-distance">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    aria-hidden="true"
-                  >
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="w-3.5 h-3.5">
                     <path
                       d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"
                       stroke="currentColor"
@@ -1220,10 +1208,7 @@ export default function Chat() {
                       strokeWidth="2"
                     />
                   </svg>
-
-                  Total ~{formatDistance(
-                    pickupSequenceData.totalDistanceMeters
-                  )}
+                  Total ~{formatDistance(pickupSequenceData.totalDistanceMeters)}
                 </span>
               ) : null}
             </div>
@@ -1233,11 +1218,8 @@ export default function Chat() {
         {/* Information Note */}
         <div className="pickup-note-box">
           <span className="pickup-note-icon">💡</span>
-
           <p>
-            <strong>Note:</strong> This is the suggested pickup sequence for
-            least transit cost. Book the ride on Uber, Ola, or Rapido
-            following this order to get the cheapest fare.
+            <strong>Note:</strong> This is the suggested pickup sequence for least transit cost. Book the ride on Uber, Ola, or Rapido following this order to get the cheapest fare.
           </p>
         </div>
 
