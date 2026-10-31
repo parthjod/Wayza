@@ -141,12 +141,14 @@ export interface SplitParticipant {
   userId: string;
   fullName?: string;
   amount: number;
+  percentage?: number;
   acknowledged: boolean;
 }
 
 export interface FareSplitResponse {
   splitId: string;
-  splits: Array<{ userId: string; fullName: string; amount: number }>;
+  totalFare?: number;
+  splits: Array<{ userId: string; fullName: string; amount: number; percentage?: number }>;
 }
 
 // Location types
