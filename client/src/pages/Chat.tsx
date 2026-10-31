@@ -1075,8 +1075,8 @@ export default function Chat() {
 
               <p className="pickup-booker-description">
                 {pickupSequenceData.suggestedBooker.userId === user?.id
-                  ? 'Please book the ride on Uber/Ola in the sequence shown below.'
-                  : `Ask ${pickupSequenceData.suggestedBooker.fullName.split(' ')[0]} to book the ride on Uber/Ola in this sequence.`}
+                  ? 'Please book the ride on an external platform in the sequence shown below.'
+                  : `Ask ${pickupSequenceData.suggestedBooker.fullName.split(' ')[0]} to book the ride on an external platform in this sequence.`}
               </p>
             </div>
           </div>
@@ -1219,7 +1219,7 @@ export default function Chat() {
         <div className="pickup-note-box">
           <span className="pickup-note-icon">💡</span>
           <p>
-            <strong>Note:</strong> This is the suggested pickup sequence for least transit cost. Book the ride on Uber, Ola, or Rapido following this order to get the cheapest fare.
+            <strong>Note:</strong> This is the suggested pickup sequence for least transit cost. Book the ride on an external platform following this order to get the cheapest fare.
           </p>
         </div>
 

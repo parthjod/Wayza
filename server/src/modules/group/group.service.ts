@@ -143,18 +143,39 @@ export class GroupService {
 
       // 4. Otherwise, create a brand-new group with fresh members and clean chat
       let resolvedDropLocation = 'MIT-WPU Campus';
+      let resolvedDropLat: number | null = null;
+      let resolvedDropLng: number | null = null;
       try {
         const rawInit = await redis.get(`active:${userId}`);
         const rawTarget = await redis.get(`active:${targetUserId}`);
         const parsedInit = rawInit ? JSON.parse(rawInit) : null;
         const parsedTarget = rawTarget ? JSON.parse(rawTarget) : null;
         resolvedDropLocation = parsedInit?.dropLocationLabel || parsedTarget?.dropLocationLabel || 'MIT-WPU Campus';
+        resolvedDropLat = parsedInit?.dropLat ?? parsedTarget?.dropLat ?? null;
+        resolvedDropLng = parsedInit?.dropLng ?? parsedTarget?.dropLng ?? null;
       } catch {}
+
+      if (!resolvedDropLat || !resolvedDropLng) {
+        const poi = await prisma.campusPOI.findFirst({
+          where: {
+            OR: [
+              { name: { equals: resolvedDropLocation, mode: 'insensitive' } },
+              { label: { equals: resolvedDropLocation, mode: 'insensitive' } },
+            ],
+          },
+        });
+        if (poi) {
+          resolvedDropLat = poi.lat;
+          resolvedDropLng = poi.lng;
+        }
+      }
 
       const group = await prisma.group.create({
         data: {
           status: 'FORMING',
           dropLocation: resolvedDropLocation,
+          dropLat: resolvedDropLat,
+          dropLng: resolvedDropLng,
           members: {
             create: [
               { userId },
@@ -395,10 +416,28 @@ export class GroupService {
 
     if (!group) throw createError('Group not found', 404);
 
-    // Destination coordinates fallback to MIT-WPU Front Gate if none specified
-    const destLat = group.dropLat ?? 18.5191;
-    const destLng = group.dropLng ?? 73.8553;
+    // Destination coordinates: prioritize group drop coordinates, then CampusPOI match, fallback to MIT-WPU Kothrud
+    let destLat = group.dropLat;
+    let destLng = group.dropLng;
     const destLabel = group.dropLocation || 'Campus';
+
+    if (!destLat || !destLng) {
+      const poi = await prisma.campusPOI.findFirst({
+        where: {
+          OR: [
+            { name: { equals: destLabel, mode: 'insensitive' } },
+            { label: { equals: destLabel, mode: 'insensitive' } },
+          ],
+        },
+      });
+      if (poi) {
+        destLat = poi.lat;
+        destLng = poi.lng;
+      } else {
+        destLat = 18.5184;
+        destLng = 73.8155;
+      }
+    }
 
     // Retrieve ephemeral live location for each member from Redis
     const memberLocations: Array<{

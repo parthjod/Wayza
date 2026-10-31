@@ -12,20 +12,20 @@ async function main() {
       {
         name: 'MIT WPU Front Gate',
         label: 'MIT WPU Front Gate',
-        lat: 18.5191,
-        lng: 73.8553,
+        lat: 18.5184,
+        lng: 73.8155,
       },
       {
         name: 'MIT WPU Back Gate',
         label: 'MIT WPU Back Gate',
-        lat: 18.5178,
-        lng: 73.8571,
+        lat: 18.5168,
+        lng: 73.8138,
       },
       {
         name: 'MIT WPU Sports Building',
         label: 'MIT WPU Sports Building',
-        lat: 18.5202,
-        lng: 73.8545,
+        lat: 18.5195,
+        lng: 73.8145,
       },
     ],
   });
