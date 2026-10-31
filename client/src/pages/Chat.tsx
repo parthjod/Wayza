@@ -1012,98 +1012,165 @@ export default function Chat() {
         </div>
       )}
 
-      {/* Optimal Pickup Sequence Modal — Appears when all confirmed */}
+      {/* Optimal Pickup Sequence Modal */}
       <Modal
         open={showPickupSequenceModal}
         onClose={() => setShowPickupSequenceModal(false)}
         className="pickup-modal-card"
       >
+        {/* Header */}
         <div className="pickup-modal-header">
-          <div>
+          <div className="pickup-header-content">
             <span className="pickup-modal-badge">
-              ⚡ Lowest Cost Route
+              <span className="pickup-badge-icon">⚡</span>
+              LOWEST COST ROUTE
             </span>
-            <h3 className="text-xl font-instrument text-white mt-1.5 font-semibold">
+
+            <h3 className="pickup-modal-title">
               Pickup Sequence
             </h3>
+
+            <p className="pickup-modal-subtitle">
+              Please follow the pickup sequence below to get the lowest transit cost.
+            </p>
           </div>
+
           <button
             onClick={() => setShowPickupSequenceModal(false)}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition-colors text-sm cursor-pointer"
+            className="pickup-modal-icon-close"
             aria-label="Close"
+            type="button"
           >
             ✕
           </button>
         </div>
 
-        {/* Booker recommendation banner */}
+        {/* Suggested Booker Banner */}
         {pickupSequenceData?.suggestedBooker && (
           <div className="pickup-booker-banner">
-            <div className="relative shrink-0">
+            <div className="pickup-avatar-large">
               <Avatar
                 name={pickupSequenceData.suggestedBooker.fullName}
                 imageUrl={pickupSequenceData.suggestedBooker.profilePicUrl}
                 size="md"
               />
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="pickup-booker-badge">Suggested Booker</span>
+
+            <div className="pickup-booker-info">
+              <div className="pickup-booker-labels">
+                <span className="pickup-booker-badge">
+                  SUGGESTED BOOKER
+                </span>
+
                 {pickupSequenceData.suggestedBooker.userId === user?.id && (
-                  <span className="text-[10px] text-blue-300 font-bold bg-blue-500/20 px-1.5 py-0.5 rounded">You</span>
+                  <span className="pickup-you-badge">
+                    You
+                  </span>
                 )}
               </div>
-              <p className="text-sm font-semibold text-white truncate mt-0.5">
+
+              <p className="pickup-booker-name">
                 {pickupSequenceData.suggestedBooker.fullName}
               </p>
-              <p className="text-xs text-white/70">
+
+              <p className="pickup-booker-description">
                 {pickupSequenceData.suggestedBooker.userId === user?.id
-                  ? 'Please book the ride from your app in the order shown below.'
-                  : `Ask ${pickupSequenceData.suggestedBooker.fullName.split(' ')[0]} to book the ride on Uber/Ola in this sequence.`}
+                  ? "Please book the ride from your app in the order shown below."
+                  : `Ask ${pickupSequenceData.suggestedBooker.fullName.split(" ")[0]} to book the ride on Uber/Ola in this sequence.`}
               </p>
             </div>
           </div>
         )}
 
-        {/* Sequence list */}
+        {/* Pickup Timeline */}
         <div className="pickup-steps-list">
-          {pickupSequenceData?.sequence.map((stop) => {
+          {pickupSequenceData?.sequence?.map((stop) => {
             const isBooker = stop.order === 1;
             const isUser = stop.userId === user?.id;
+
             return (
-              <div key={stop.userId} className="pickup-step-item">
+              <div
+                key={stop.userId}
+                className="pickup-step-item"
+              >
+                {/* Timeline Number and Connector */}
                 <div className="pickup-step-left">
-                  <div className={`pickup-step-number ${isBooker ? 'pickup-step-number--active' : ''}`}>
+                  <div
+                    className={`pickup-step-number ${
+                      isBooker ? "pickup-step-number--active" : ""
+                    }`}
+                  >
                     {stop.order}
                   </div>
+
                   <div className="pickup-step-connector" />
                 </div>
-                <div className={`pickup-step-card ${isBooker ? 'pickup-step-card--first' : ''}`}>
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <Avatar name={stop.fullName} imageUrl={stop.profilePicUrl} size="sm" />
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-medium text-white truncate">
+
+                {/* Pickup Card */}
+                <div
+                  className={`pickup-step-card ${
+                    isBooker ? "pickup-step-card--first" : ""
+                  }`}
+                >
+                  <div className="pickup-step-details">
+                    <div className="pickup-avatar-small">
+                      <Avatar
+                        name={stop.fullName}
+                        imageUrl={stop.profilePicUrl}
+                        size="md"
+                      />
+                    </div>
+
+                    <div className="pickup-step-info">
+                      <div className="pickup-step-title-row">
+                        <span className="pickup-step-name">
                           {stop.fullName}
                         </span>
+
                         {isUser && (
-                          <span className="text-[10px] text-blue-400 bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.2 rounded font-semibold">
+                          <span className="pickup-you-badge">
                             You
                           </span>
                         )}
+
                         {isBooker && (
-                          <span className="text-[10px] text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 rounded font-semibold">
+                          <span className="pickup-first-badge">
                             1st Pickup
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-white/60">
-                        {isBooker ? 'Start ride / Pickup Point 1' : `Pickup Stop #${stop.order}`}
+
+                      <p className="pickup-step-description">
+                        {isBooker
+                          ? "Start ride / Pickup Point 1"
+                          : `Pickup Stop #${stop.order}`}
                       </p>
                     </div>
                   </div>
+
                   {stop.distanceToNextMeters > 0 && (
-                    <span className="text-xs text-slate-400 font-mono shrink-0">
+                    <span className="pickup-distance">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <circle
+                          cx="12"
+                          cy="10"
+                          r="2.5"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        />
+                      </svg>
+
                       ~{formatDistance(stop.distanceToNextMeters)}
                     </span>
                   )}
@@ -1112,42 +1179,73 @@ export default function Chat() {
             );
           })}
 
-          {/* Final Destination stop */}
-          <div className="pickup-step-item">
+          {/* Final Destination */}
+          <div className="pickup-step-item pickup-destination-item">
             <div className="pickup-step-left">
               <div className="pickup-step-number pickup-step-number--dest">
                 🏁
               </div>
             </div>
-            <div className="pickup-step-card">
-              <div className="min-w-0">
-                <span className="text-xs text-red-300 font-semibold uppercase tracking-wider block">
-                  Final Destination
+
+            <div className="pickup-step-card pickup-destination-card">
+              <div className="pickup-destination-info">
+                <span className="pickup-destination-label">
+                  FINAL DESTINATION
                 </span>
-                <span className="text-sm font-medium text-white truncate block">
-                  {pickupSequenceData?.destination.label || 'Campus'}
+
+                <span className="pickup-destination-name">
+                  {pickupSequenceData?.destination?.label || "Campus"}
                 </span>
               </div>
+
               {pickupSequenceData?.totalDistanceMeters ? (
-                <span className="text-xs text-emerald-400 font-mono shrink-0 font-medium">
-                  Total ~{formatDistance(pickupSequenceData.totalDistanceMeters)}
+                <span className="pickup-total-distance">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle
+                      cx="12"
+                      cy="10"
+                      r="2.5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                  </svg>
+
+                  Total ~{formatDistance(
+                    pickupSequenceData.totalDistanceMeters
+                  )}
                 </span>
               ) : null}
             </div>
           </div>
         </div>
 
-        {/* Note Box */}
+        {/* Information Note */}
         <div className="pickup-note-box">
-          <span className="text-amber-400 text-sm">💡</span>
-          <span>
-            <strong>Note:</strong> This is the suggested pickup sequence for least transit cost. Book the ride on Uber, Ola, or Rapido following this order to get the cheapest fare.
-          </span>
+          <span className="pickup-note-icon">💡</span>
+
+          <p>
+            <strong>Note:</strong> This is the suggested pickup sequence for
+            least transit cost. Book the ride on Uber, Ola, or Rapido
+            following this order to get the cheapest fare.
+          </p>
         </div>
 
+        {/* Bottom Button */}
         <button
           onClick={() => setShowPickupSequenceModal(false)}
           className="pickup-modal-close-btn"
+          type="button"
         >
           Got it
         </button>
