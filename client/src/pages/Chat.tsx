@@ -347,12 +347,6 @@ export default function Chat() {
       } else {
         showToast('Confirmed! Waiting for others...', 'success');
       }
-      // Auto-start journey immediately upon confirming
-      try {
-        await journeyApi.start(groupId);
-      } catch {
-        // Journey start may fail if not all confirmed yet — that's fine
-      }
       await loadGroup();
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Failed', 'error');
@@ -422,14 +416,6 @@ export default function Chat() {
   const handleEndJourney = async () => {
     if (!groupId) return;
     try {
-      // Ensure user is marked as started before ending (covers the case where
-      // their start call was silently skipped at confirm-time because not all
-      // members had confirmed yet)
-      try {
-        await journeyApi.start(groupId);
-      } catch {
-        // Already started or other benign error — safe to ignore
-      }
       const result = await journeyApi.end(groupId);
       if (result.allEnded) {
         setShowRideCompletedModal(true);
@@ -959,7 +945,7 @@ export default function Chat() {
                 if (m.endedJourney) {
                   statusLabel = '🏁 Trip ended';
                   statusClass = 'group-member-status--confirmed';
-                } else if (m.startedJourney) {
+                } else if (group.status === 'JOURNEY_STARTED' && m.startedJourney) {
                   statusLabel = '🚗 In journey';
                   statusClass = 'group-member-status--journey';
                 } else if (m.confirmedGoWith) {

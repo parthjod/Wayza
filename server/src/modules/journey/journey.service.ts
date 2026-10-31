@@ -88,18 +88,32 @@ export class JourneyService {
     });
 
     if (!group) throw createError('Group not found', 404);
-    if (group.status !== 'JOURNEY_STARTED') {
-      throw createError('Journey must be started first', 400);
+    if (group.status !== 'JOURNEY_STARTED' && group.status !== 'CONFIRMED') {
+      throw createError('Group must be confirmed to end journey', 400);
     }
 
     const isMember = group.members.some((m: any) => m.userId === userId);
     if (!isMember) throw createError('Not a member of this group', 403);
 
-    const journey = await prisma.journey.findUnique({
+    let journey = await prisma.journey.findUnique({
       where: { groupId },
     });
 
-    if (!journey) throw createError('Journey not found', 404);
+    if (!journey) {
+      journey = await prisma.journey.create({
+        data: {
+          groupId,
+          startedAt: new Date(),
+          allStarted: true,
+          participants: {
+            create: group.members.map((m: any) => ({
+              userId: m.userId,
+              startedAt: new Date(),
+            })),
+          },
+        },
+      });
+    }
 
     // Update participant end time
     await prisma.journeyParticipant.updateMany({
