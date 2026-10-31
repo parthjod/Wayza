@@ -7375,6 +7375,15 @@ body {
   color: #38bdf8;
 }
 
+.pickup-distance--same {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 11.5px;
+}
+
+.pickup-distance--same svg {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
 /* Final Destination */
 .pickup-destination-card {
   background: rgba(239, 68, 68, 0.08);

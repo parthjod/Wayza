@@ -811,8 +811,8 @@ export default function Chat() {
 
         {/* Action buttons */}
         <div className="chat-actions-row">
-          {/* Confirmed button */}
-          {(group.status === 'FORMING' || group.status === 'CONFIRMED') && (
+          {/* Confirmed button — only shown while waiting for all members to confirm */}
+          {!allConfirmed && (
             <button
               onClick={handleConfirmGo}
               disabled={selfMember?.confirmedGoWith || otherMembers.length === 0}
@@ -1087,6 +1087,7 @@ export default function Chat() {
           {pickupSequenceData?.sequence?.map((stop) => {
             const isBooker = stop.order === 1;
             const isUser = stop.userId === user?.id;
+            const isLastStop = stop.order === (pickupSequenceData?.sequence?.length ?? 1);
 
             return (
               <div key={stop.userId} className="pickup-step-item">
@@ -1145,27 +1146,29 @@ export default function Chat() {
                     </div>
                   </div>
 
-                  {stop.distanceToNextMeters > 0 && (
-                    <span className="pickup-distance">
-                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="w-3.5 h-3.5">
-                        <path
-                          d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <circle
-                          cx="12"
-                          cy="10"
-                          r="2.5"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        />
-                      </svg>
-                      ~{formatDistance(stop.distanceToNextMeters)}
-                    </span>
-                  )}
+                  <span className={`pickup-distance ${stop.distanceToNextMeters <= 50 ? 'pickup-distance--same' : ''}`}>
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="w-3.5 h-3.5">
+                      <path
+                        d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <circle
+                        cx="12"
+                        cy="10"
+                        r="2.5"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      />
+                    </svg>
+                    {stop.distanceToNextMeters > 50
+                      ? `~${formatDistance(stop.distanceToNextMeters)}`
+                      : isLastStop
+                        ? 'At destination'
+                        : 'Same pickup'}
+                  </span>
                 </div>
               </div>
             );
