@@ -11,9 +11,9 @@ import { chatApi } from '../api/chat.api';
 import { journeyApi } from '../api/journey.api';
 import { fareApi } from '../api/fare.api';
 import { reportApi } from '../api/report.api';
-import { formatRelativeTime } from '../utils/formatDistance';
+import { formatDistance, formatRelativeTime } from '../utils/formatDistance';
 import { formatPhone } from '../utils/phone';
-import type { Group, ChatMessage as ChatMsg } from '../types';
+import type { Group, ChatMessage as ChatMsg, PickupSequenceData } from '../types';
 
 // Helper to compress chat photo client-side before upload (fast upload, fits in NGINX limits)
 async function compressChatImage(file: File, maxDim = 1600, quality = 0.82): Promise<File> {
@@ -101,6 +101,8 @@ export default function Chat() {
   const [showFareSplitModal, setShowFareSplitModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showMenuPanel, setShowMenuPanel] = useState(false);
+  const [showPickupSequenceModal, setShowPickupSequenceModal] = useState(false);
+  const [pickupSequenceData, setPickupSequenceData] = useState<PickupSequenceData | null>(null);
 
   // Attachment & Image preview state
   const [showAttachMenu, setShowAttachMenu] = useState(false);
@@ -163,7 +165,23 @@ export default function Chat() {
       showToast(err.message || 'Chat error', 'error');
     });
 
-    socket.on('group:confirmed', () => { if (!isLeavingRef.current) loadGroup(); });
+    socket.on('group:confirmed', (data: any) => {
+      if (!isLeavingRef.current) {
+        loadGroup();
+        if (data?.allConfirmed) {
+          if (data?.pickupSequence) {
+            setPickupSequenceData(data.pickupSequence);
+            setShowPickupSequenceModal(true);
+          } else if (groupId) {
+            // Fetch dynamically if not in payload
+            groupApi.getPickupSequence(groupId).then((seq) => {
+              setPickupSequenceData(seq);
+              setShowPickupSequenceModal(true);
+            }).catch(() => {});
+          }
+        }
+      }
+    });
     socket.on('group:phone-shared', () => { if (!isLeavingRef.current) loadGroup(); });
     socket.on('group:member-joined', () => { if (!isLeavingRef.current) loadGroup(); });
     socket.on('group:member-left', (data: any) => {
@@ -287,6 +305,15 @@ export default function Chat() {
       const result = await groupApi.confirmGo(groupId);
       if (result.allConfirmed) {
         showToast('All confirmed! You\'re set to ride together 🚗', 'success');
+        if (result.pickupSequence) {
+          setPickupSequenceData(result.pickupSequence);
+          setShowPickupSequenceModal(true);
+        } else {
+          groupApi.getPickupSequence(groupId).then((seq) => {
+            setPickupSequenceData(seq);
+            setShowPickupSequenceModal(true);
+          }).catch(() => {});
+        }
       } else {
         showToast('Confirmed! Waiting for others...', 'success');
       }
@@ -821,6 +848,27 @@ export default function Chat() {
             </button>
           )}
 
+          {/* View Pickup Sequence button */}
+          {allConfirmed && group.status !== 'FORMING' && (
+            <button
+              onClick={() => {
+                if (pickupSequenceData) {
+                  setShowPickupSequenceModal(true);
+                } else if (groupId) {
+                  groupApi.getPickupSequence(groupId).then((seq) => {
+                    setPickupSequenceData(seq);
+                    setShowPickupSequenceModal(true);
+                  }).catch(() => {
+                    showToast('Could not load pickup sequence', 'error');
+                  });
+                }
+              }}
+              className="chat-action-btn chat-action-btn--sequence"
+            >
+              📍 Pickup Sequence
+            </button>
+          )}
+
           {/* Share Phone button */}
           {allConfirmed && !selfMember?.sharedPhone && group.status !== 'FORMING' && (
             <button
@@ -963,6 +1011,147 @@ export default function Chat() {
           </div>
         </div>
       )}
+
+      {/* Optimal Pickup Sequence Modal — Appears when all confirmed */}
+      <Modal
+        open={showPickupSequenceModal}
+        onClose={() => setShowPickupSequenceModal(false)}
+        className="pickup-modal-card"
+      >
+        <div className="pickup-modal-header">
+          <div>
+            <span className="pickup-modal-badge">
+              ⚡ Lowest Cost Route
+            </span>
+            <h3 className="text-xl font-instrument text-white mt-1.5 font-semibold">
+              Pickup Sequence
+            </h3>
+          </div>
+          <button
+            onClick={() => setShowPickupSequenceModal(false)}
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center transition-colors text-sm cursor-pointer"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Booker recommendation banner */}
+        {pickupSequenceData?.suggestedBooker && (
+          <div className="pickup-booker-banner">
+            <div className="relative shrink-0">
+              <Avatar
+                name={pickupSequenceData.suggestedBooker.fullName}
+                imageUrl={pickupSequenceData.suggestedBooker.profilePicUrl}
+                size="md"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="pickup-booker-badge">Suggested Booker</span>
+                {pickupSequenceData.suggestedBooker.userId === user?.id && (
+                  <span className="text-[10px] text-blue-300 font-bold bg-blue-500/20 px-1.5 py-0.5 rounded">You</span>
+                )}
+              </div>
+              <p className="text-sm font-semibold text-white truncate mt-0.5">
+                {pickupSequenceData.suggestedBooker.fullName}
+              </p>
+              <p className="text-xs text-white/70">
+                {pickupSequenceData.suggestedBooker.userId === user?.id
+                  ? 'Please book the ride from your app in the order shown below.'
+                  : `Ask ${pickupSequenceData.suggestedBooker.fullName.split(' ')[0]} to book the ride on Uber/Ola in this sequence.`}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Sequence list */}
+        <div className="pickup-steps-list">
+          {pickupSequenceData?.sequence.map((stop) => {
+            const isBooker = stop.order === 1;
+            const isUser = stop.userId === user?.id;
+            return (
+              <div key={stop.userId} className="pickup-step-item">
+                <div className="pickup-step-left">
+                  <div className={`pickup-step-number ${isBooker ? 'pickup-step-number--active' : ''}`}>
+                    {stop.order}
+                  </div>
+                  <div className="pickup-step-connector" />
+                </div>
+                <div className={`pickup-step-card ${isBooker ? 'pickup-step-card--first' : ''}`}>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Avatar name={stop.fullName} imageUrl={stop.profilePicUrl} size="sm" />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-sm font-medium text-white truncate">
+                          {stop.fullName}
+                        </span>
+                        {isUser && (
+                          <span className="text-[10px] text-blue-400 bg-blue-500/10 border border-blue-500/20 px-1.5 py-0.2 rounded font-semibold">
+                            You
+                          </span>
+                        )}
+                        {isBooker && (
+                          <span className="text-[10px] text-amber-300 bg-amber-500/15 border border-amber-500/30 px-1.5 py-0.2 rounded font-semibold">
+                            1st Pickup
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-white/60">
+                        {isBooker ? 'Start ride / Pickup Point 1' : `Pickup Stop #${stop.order}`}
+                      </p>
+                    </div>
+                  </div>
+                  {stop.distanceToNextMeters > 0 && (
+                    <span className="text-xs text-slate-400 font-mono shrink-0">
+                      ~{formatDistance(stop.distanceToNextMeters)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Final Destination stop */}
+          <div className="pickup-step-item">
+            <div className="pickup-step-left">
+              <div className="pickup-step-number pickup-step-number--dest">
+                🏁
+              </div>
+            </div>
+            <div className="pickup-step-card">
+              <div className="min-w-0">
+                <span className="text-xs text-red-300 font-semibold uppercase tracking-wider block">
+                  Final Destination
+                </span>
+                <span className="text-sm font-medium text-white truncate block">
+                  {pickupSequenceData?.destination.label || 'Campus'}
+                </span>
+              </div>
+              {pickupSequenceData?.totalDistanceMeters ? (
+                <span className="text-xs text-emerald-400 font-mono shrink-0 font-medium">
+                  Total ~{formatDistance(pickupSequenceData.totalDistanceMeters)}
+                </span>
+              ) : null}
+            </div>
+          </div>
+        </div>
+
+        {/* Note Box */}
+        <div className="pickup-note-box">
+          <span className="text-amber-400 text-sm">💡</span>
+          <span>
+            <strong>Note:</strong> This is the suggested pickup sequence for least transit cost. Book the ride on Uber, Ola, or Rapido following this order to get the cheapest fare.
+          </span>
+        </div>
+
+        <button
+          onClick={() => setShowPickupSequenceModal(false)}
+          className="pickup-modal-close-btn"
+        >
+          Got it
+        </button>
+      </Modal>
 
       {/* Share Phone Confirmation Modal */}
       <Modal open={showSharePhoneModal} onClose={() => setShowSharePhoneModal(false)} className="chat-share-modal">

@@ -4,6 +4,7 @@ import { env } from '../../config/env';
 import { resolveProfilePicUrl } from '../../utils/initials';
 import { createError } from '../../middleware/errorHandler';
 import { journeyService } from '../journey/journey.service';
+import { haversineDistance } from '../../utils/haversine';
 
 export class GroupService {
   /**
@@ -341,11 +342,18 @@ export class GroupService {
       (m: any) => m.userId === userId || m.confirmedGoWith
     );
 
+    let pickupSequence: any = null;
     if (allConfirmed) {
       await prisma.group.update({
         where: { id: groupId },
         data: { status: 'CONFIRMED' },
       });
+      // Compute pickup sequence dynamically from live locations for session
+      try {
+        pickupSequence = await this.getPickupSequence(groupId);
+      } catch (err) {
+        console.error('Failed to compute pickup sequence on confirm:', err);
+      }
     }
 
     return {
@@ -354,6 +362,186 @@ export class GroupService {
         userId: m.userId,
         confirmedGoWith: m.userId === userId ? true : m.confirmedGoWith,
       })),
+      pickupSequence,
+    };
+  }
+
+  /**
+   * Dynamically calculate the optimal pickup sequence for the confirmed group session.
+   * Does NOT persist coordinates or order to DB. Evaluates live location from ephemeral Redis session.
+   * Algorithm: Optimal TSP-style permutation search with exact Haversine metric.
+   * Finds the path P_1 -> P_2 -> ... -> P_k -> Destination minimizing total transit distance & cost.
+   * First user in sequence is recommended to book the ride.
+   */
+  async getPickupSequence(groupId: string) {
+    const group = await prisma.group.findUnique({
+      where: { id: groupId },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                phone: true,
+                profilePicKey: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!group) throw createError('Group not found', 404);
+
+    // Destination coordinates fallback to MIT-WPU Front Gate if none specified
+    const destLat = group.dropLat ?? 18.5191;
+    const destLng = group.dropLng ?? 73.8553;
+    const destLabel = group.dropLocation || 'Campus';
+
+    // Retrieve ephemeral live location for each member from Redis
+    const memberLocations: Array<{
+      userId: string;
+      fullName: string;
+      profilePicUrl: string | null;
+      lat: number;
+      lng: number;
+      hasLiveCoords: boolean;
+    }> = [];
+
+    for (const m of group.members) {
+      const u = m.user;
+      let lat = destLat;
+      let lng = destLng;
+      let hasLiveCoords = false;
+
+      try {
+        const raw = await redis.get(`active:${u.id}`);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (typeof parsed.lat === 'number' && typeof parsed.lng === 'number') {
+            lat = parsed.lat;
+            lng = parsed.lng;
+            hasLiveCoords = true;
+          }
+        }
+      } catch {}
+
+      memberLocations.push({
+        userId: u.id,
+        fullName: u.fullName,
+        profilePicUrl: resolveProfilePicUrl(u.profilePicKey, u.id),
+        lat,
+        lng,
+        hasLiveCoords,
+      });
+    }
+
+    const n = memberLocations.length;
+    if (n === 0) {
+      return {
+        sequence: [],
+        suggestedBooker: null,
+        destination: { label: destLabel, lat: destLat, lng: destLng },
+        totalDistanceMeters: 0,
+      };
+    }
+
+    if (n === 1) {
+      const distToDest = haversineDistance(memberLocations[0].lat, memberLocations[0].lng, destLat, destLng);
+      const seqItem = {
+        order: 1,
+        userId: memberLocations[0].userId,
+        fullName: memberLocations[0].fullName,
+        profilePicUrl: memberLocations[0].profilePicUrl,
+        lat: memberLocations[0].lat,
+        lng: memberLocations[0].lng,
+        hasLiveCoords: memberLocations[0].hasLiveCoords,
+        distanceToNextMeters: distToDest,
+      };
+      return {
+        sequence: [seqItem],
+        suggestedBooker: {
+          userId: memberLocations[0].userId,
+          fullName: memberLocations[0].fullName,
+          profilePicUrl: memberLocations[0].profilePicUrl,
+        },
+        destination: { label: destLabel, lat: destLat, lng: destLng },
+        totalDistanceMeters: distToDest,
+      };
+    }
+
+    // Exact TSP permutation search (Group size max 4, permutations <= 24, complexity O(k! * k), < 1ms execution)
+    const indices = memberLocations.map((_, i) => i);
+    let bestPermutation: number[] = [...indices];
+    let minTotalDistance = Infinity;
+
+    const permute = (arr: number[], m: number[] = []) => {
+      if (arr.length === 0) {
+        // Calculate total route distance for this sequence: m[0] -> m[1] -> ... -> m[k-1] -> Destination
+        let dist = 0;
+        for (let i = 0; i < m.length - 1; i++) {
+          const u1 = memberLocations[m[i]];
+          const u2 = memberLocations[m[i + 1]];
+          dist += haversineDistance(u1.lat, u1.lng, u2.lat, u2.lng);
+        }
+        const lastUser = memberLocations[m[m.length - 1]];
+        dist += haversineDistance(lastUser.lat, lastUser.lng, destLat, destLng);
+
+        if (dist < minTotalDistance) {
+          minTotalDistance = dist;
+          bestPermutation = [...m];
+        }
+      } else {
+        for (let i = 0; i < arr.length; i++) {
+          const curr = arr.slice();
+          const next = curr.splice(i, 1);
+          permute(curr.slice(), m.concat(next));
+        }
+      }
+    };
+
+    permute(indices);
+
+    // Build the ordered sequence with distances
+    const sequence = bestPermutation.map((idx, rank) => {
+      const member = memberLocations[idx];
+      let distanceToNextMeters = 0;
+      if (rank < bestPermutation.length - 1) {
+        const nextMember = memberLocations[bestPermutation[rank + 1]];
+        distanceToNextMeters = haversineDistance(member.lat, member.lng, nextMember.lat, nextMember.lng);
+      } else {
+        // Last member to destination
+        distanceToNextMeters = haversineDistance(member.lat, member.lng, destLat, destLng);
+      }
+
+      return {
+        order: rank + 1,
+        userId: member.userId,
+        fullName: member.fullName,
+        profilePicUrl: member.profilePicUrl,
+        lat: member.lat,
+        lng: member.lng,
+        hasLiveCoords: member.hasLiveCoords,
+        distanceToNextMeters,
+      };
+    });
+
+    const first = sequence[0];
+
+    return {
+      sequence,
+      suggestedBooker: {
+        userId: first.userId,
+        fullName: first.fullName,
+        profilePicUrl: first.profilePicUrl,
+      },
+      destination: {
+        label: destLabel,
+        lat: destLat,
+        lng: destLng,
+      },
+      totalDistanceMeters: minTotalDistance === Infinity ? 0 : minTotalDistance,
     };
   }
 

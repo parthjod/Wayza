@@ -3709,6 +3709,24 @@ body {
   transform: scale(0.97);
 }
 
+/* Pickup Sequence Action Button - cyan/emerald accent */
+.chat-action-btn--sequence {
+  background: rgba(13, 148, 136, 0.25);
+  border-color: rgba(45, 212, 191, 0.45);
+  color: #5eead4;
+  box-shadow: 0 2px 14px rgba(13, 148, 136, 0.25);
+}
+
+.chat-action-btn--sequence:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 4px 20px rgba(45, 212, 191, 0.35);
+  transform: translateY(-1px);
+}
+
+.chat-action-btn--sequence:active {
+  transform: scale(0.97);
+}
+
 .chat-go-btn {
   width: 100%;
   background: linear-gradient(110deg, #22b5f5 0%, #1760ff 100%);
@@ -7028,4 +7046,176 @@ body {
   .wayza-rating-content button {
     transition: none;
   }
+}
+
+/* =====================================================
+   Pickup Sequence Modal & UI
+   ===================================================== */
+.pickup-modal-card {
+  max-width: 480px !important;
+  background: rgba(15, 23, 42, 0.88) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 24px !important;
+  padding: 24px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 40px rgba(59, 130, 246, 0.12) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  backdrop-filter: blur(20px) !important;
+}
+
+.pickup-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pickup-modal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: rgba(45, 212, 191, 0.15);
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  color: #2dd4bf;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.pickup-booker-banner {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.22) 0%, rgba(13, 148, 136, 0.22) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pickup-booker-badge {
+  background: #3b82f6;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pickup-steps-list {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  margin-bottom: 18px;
+}
+
+.pickup-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  position: relative;
+}
+
+.pickup-step-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.pickup-step-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 2;
+}
+
+.pickup-step-number--active {
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  border-color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+}
+
+.pickup-step-number--dest {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+.pickup-step-connector {
+  width: 2px;
+  flex: 1;
+  min-height: 28px;
+  background: linear-gradient(to bottom, rgba(56, 189, 248, 0.4), rgba(255, 255, 255, 0.1));
+  margin: 4px 0;
+}
+
+.pickup-step-card {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pickup-step-card--first {
+  background: rgba(14, 165, 233, 0.08);
+  border-color: rgba(56, 189, 248, 0.25);
+}
+
+.pickup-note-box {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 18px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: rgba(253, 230, 138, 0.95);
+}
+
+.pickup-modal-close-btn {
+  width: 100%;
+  height: 44px;
+  border-radius: 9999px;
+  background: linear-gradient(110deg, #0284c7 0%, #2563eb 100%);
+  color: #fff;
+  font-weight: 600;
+  font-size: 13.5px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}
+
+.pickup-modal-close-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.pickup-modal-close-btn:active {
+  transform: scale(0.98);
 }

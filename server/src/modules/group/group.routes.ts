@@ -35,6 +35,12 @@ router.post(
   (req, res, next) => groupController.confirmGo(req, res, next)
 );
 
+router.get(
+  '/:groupId/pickup-sequence',
+  validate({ params: groupIdParamSchema }),
+  (req, res, next) => groupController.getPickupSequence(req, res, next)
+);
+
 router.post(
   '/:groupId/share-phone',
   validate({ params: groupIdParamSchema }),
