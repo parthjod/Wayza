@@ -167,6 +167,20 @@ export default function Chat() {
 
     socket.on('group:confirmed', (data: any) => {
       if (!isLeavingRef.current) {
+        // Immediately apply member confirmation state to local React state
+        if (data?.members) {
+          setGroup((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              status: data.allConfirmed ? 'CONFIRMED' : prev.status,
+              members: prev.members.map((m) => {
+                const match = data.members.find((u: any) => u.userId === m.userId);
+                return match ? { ...m, confirmedGoWith: match.confirmedGoWith } : m;
+              }),
+            };
+          });
+        }
         loadGroup();
         if (data?.allConfirmed) {
           if (data?.pickupSequence) {
@@ -303,6 +317,22 @@ export default function Chat() {
     if (!groupId) return;
     try {
       const result = await groupApi.confirmGo(groupId);
+
+      // Immediately apply confirmation result to local state without waiting
+      if (result.members) {
+        setGroup((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            status: result.allConfirmed ? 'CONFIRMED' : prev.status,
+            members: prev.members.map((m) => {
+              const match = result.members.find((u: any) => u.userId === m.userId);
+              return match ? { ...m, confirmedGoWith: match.confirmedGoWith } : m;
+            }),
+          };
+        });
+      }
+
       if (result.allConfirmed) {
         showToast('All confirmed! You\'re set to ride together 🚗', 'success');
         if (result.pickupSequence) {
@@ -812,7 +842,7 @@ export default function Chat() {
         {/* Action buttons */}
         <div className="chat-actions-row">
           {/* Confirmed button — only shown while waiting for all members to confirm */}
-          {!allConfirmed && (
+          {!allConfirmed && group.status === 'FORMING' && (
             <button
               onClick={handleConfirmGo}
               disabled={selfMember?.confirmedGoWith || otherMembers.length === 0}
