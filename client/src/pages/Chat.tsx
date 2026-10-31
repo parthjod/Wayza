@@ -124,6 +124,75 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
+  // Intelligent Sequence-Based Fare Split Calculation
+  const computedIntelligentSplits = useMemo(() => {
+    const totalNum = parseFloat(totalFare);
+    if (!totalNum || isNaN(totalNum) || totalNum <= 0 || !group) {
+      return [];
+    }
+
+    const selected = group.members.filter((m) => splitMembers.includes(m.userId));
+    if (selected.length === 0) return [];
+
+    const seq = pickupSequenceData?.sequence;
+    if (!seq || seq.length === 0) {
+      // Fallback to equal split if sequence data not yet loaded
+      const equalAmt = Math.round((totalNum / selected.length) * 100) / 100;
+      const equalPct = Math.round((100 / selected.length) * 10) / 10;
+      return selected.map((m, idx) => ({
+        userId: m.userId,
+        fullName: m.fullName,
+        amount: idx === 0 ? Math.round((totalNum - equalAmt * (selected.length - 1)) * 100) / 100 : equalAmt,
+        percentage: equalPct,
+      }));
+    }
+
+    // Calculate distance from each stop to final destination
+    const distanceToDestMap = new Map<string, number>();
+    let runningDist = 0;
+    for (let i = seq.length - 1; i >= 0; i--) {
+      const stop = seq[i];
+      runningDist += stop.distanceToNextMeters;
+      distanceToDestMap.set(stop.userId, runningDist);
+    }
+
+    // Determine weight for each selected member (minimum 1 meter)
+    const weights = selected.map((m) => {
+      const dist = distanceToDestMap.get(m.userId) ?? runningDist;
+      return Math.max(dist, 1);
+    });
+
+    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+
+    let sumAmounts = 0;
+    const splits = selected.map((m, idx) => {
+      const ratio = weights[idx] / totalWeight;
+      const amount = Math.round(totalNum * ratio * 100) / 100;
+      const percentage = Math.round(ratio * 1000) / 10;
+      sumAmounts += amount;
+      return {
+        userId: m.userId,
+        fullName: m.fullName,
+        amount,
+        percentage,
+      };
+    });
+
+    // Reconcile any rounding cent/paisa diff onto the largest share
+    const diff = Math.round((totalNum - sumAmounts) * 100) / 100;
+    if (diff !== 0 && splits.length > 0) {
+      let maxIdx = 0;
+      for (let i = 1; i < splits.length; i++) {
+        if (splits[i].amount > splits[maxIdx].amount) {
+          maxIdx = i;
+        }
+      }
+      splits[maxIdx].amount = Math.round((splits[maxIdx].amount + diff) * 100) / 100;
+    }
+
+    return splits;
+  }, [totalFare, group, splitMembers, pickupSequenceData]);
+
   // Load group data
   useEffect(() => {
     if (!groupId) return;
@@ -533,74 +602,6 @@ export default function Chat() {
   const confirmedCount = group.members.filter((m) => m.confirmedGoWith).length;
   const endedCount = group.members.filter((m) => m.endedJourney).length;
   const otherNames = otherMembers.map((m) => m.fullName).join(' & ');
-  // Intelligent Sequence-Based Fare Split Calculation
-  const computedIntelligentSplits = useMemo(() => {
-    const totalNum = parseFloat(totalFare);
-    if (!totalNum || isNaN(totalNum) || totalNum <= 0 || !group) {
-      return [];
-    }
-
-    const selected = group.members.filter((m) => splitMembers.includes(m.userId));
-    if (selected.length === 0) return [];
-
-    const seq = pickupSequenceData?.sequence;
-    if (!seq || seq.length === 0) {
-      // Fallback to equal split if sequence data not yet loaded
-      const equalAmt = Math.round((totalNum / selected.length) * 100) / 100;
-      const equalPct = Math.round((100 / selected.length) * 10) / 10;
-      return selected.map((m, idx) => ({
-        userId: m.userId,
-        fullName: m.fullName,
-        amount: idx === 0 ? Math.round((totalNum - equalAmt * (selected.length - 1)) * 100) / 100 : equalAmt,
-        percentage: equalPct,
-      }));
-    }
-
-    // Calculate distance from each stop to final destination
-    const distanceToDestMap = new Map<string, number>();
-    let runningDist = 0;
-    for (let i = seq.length - 1; i >= 0; i--) {
-      const stop = seq[i];
-      runningDist += stop.distanceToNextMeters;
-      distanceToDestMap.set(stop.userId, runningDist);
-    }
-
-    // Determine weight for each selected member (minimum 1 meter)
-    const weights = selected.map((m) => {
-      const dist = distanceToDestMap.get(m.userId) ?? runningDist;
-      return Math.max(dist, 1);
-    });
-
-    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
-
-    let sumAmounts = 0;
-    const splits = selected.map((m, idx) => {
-      const ratio = weights[idx] / totalWeight;
-      const amount = Math.round(totalNum * ratio * 100) / 100;
-      const percentage = Math.round(ratio * 1000) / 10;
-      sumAmounts += amount;
-      return {
-        userId: m.userId,
-        fullName: m.fullName,
-        amount,
-        percentage,
-      };
-    });
-
-    // Reconcile any rounding cent/paisa diff onto the largest share
-    const diff = Math.round((totalNum - sumAmounts) * 100) / 100;
-    if (diff !== 0 && splits.length > 0) {
-      let maxIdx = 0;
-      for (let i = 1; i < splits.length; i++) {
-        if (splits[i].amount > splits[maxIdx].amount) {
-          maxIdx = i;
-        }
-      }
-      splits[maxIdx].amount = Math.round((splits[maxIdx].amount + diff) * 100) / 100;
-    }
-
-    return splits;
-  }, [totalFare, group, splitMembers, pickupSequenceData]);
 
 
   return (
