@@ -3709,6 +3709,24 @@ body {
   transform: scale(0.97);
 }
 
+/* Pickup Sequence Action Button - cyan/emerald accent */
+.chat-action-btn--sequence {
+  background: rgba(13, 148, 136, 0.25);
+  border-color: rgba(45, 212, 191, 0.45);
+  color: #5eead4;
+  box-shadow: 0 2px 14px rgba(13, 148, 136, 0.25);
+}
+
+.chat-action-btn--sequence:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 4px 20px rgba(45, 212, 191, 0.35);
+  transform: translateY(-1px);
+}
+
+.chat-action-btn--sequence:active {
+  transform: scale(0.97);
+}
+
 .chat-go-btn {
   width: 100%;
   background: linear-gradient(110deg, #22b5f5 0%, #1760ff 100%);
@@ -7029,3 +7047,428 @@ body {
     transition: none;
   }
 }
+
+/* =========================================================
+   WAYZA - PICKUP SEQUENCE MODAL (Dark Glassmorphic UI)
+   ========================================================= */
+
+.pickup-modal-card {
+  width: min(520px, calc(100vw - 32px)) !important;
+  max-width: 520px !important;
+  max-height: calc(100dvh - 40px) !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+  padding: 24px 22px 20px !important;
+  font-family: var(--font-sans) !important;
+
+  background: rgba(14, 16, 22, 0.92) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 20px !important;
+
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  backdrop-filter: blur(24px) !important;
+
+  color: #f8fafc;
+}
+
+.pickup-modal-card::-webkit-scrollbar {
+  width: 5px;
+}
+
+.pickup-modal-card::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+}
+
+/* Header */
+.pickup-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  padding-bottom: 14px;
+}
+
+.pickup-header-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.pickup-modal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(45, 212, 191, 0.12);
+  border: 1px solid rgba(45, 212, 191, 0.40);
+  color: #2dd4bf;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pickup-badge-icon {
+  font-size: 13px;
+}
+
+.pickup-modal-title {
+  margin: 6px 0 0;
+  color: #ffffff;
+  font-family: var(--font-instrument), serif;
+  font-size: clamp(26px, 3.2vw, 30px);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.pickup-modal-subtitle {
+  margin: 5px 0 0;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 400;
+}
+
+.pickup-modal-icon-close {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pickup-modal-icon-close:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  transform: rotate(90deg);
+}
+
+/* Suggested Booker Banner */
+.pickup-booker-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.18) 0%, rgba(13, 148, 136, 0.18) 100%);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.pickup-avatar-large {
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pickup-booker-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pickup-booker-labels {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.pickup-booker-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  background: #2563eb;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pickup-you-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border: 1px solid rgba(96, 165, 250, 0.4);
+  border-radius: 5px;
+  background: rgba(37, 99, 235, 0.15);
+  color: #93c5fd;
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.pickup-booker-name {
+  margin: 0;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.pickup-booker-description {
+  margin: 2px 0 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Pickup Timeline */
+.pickup-steps-list {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.pickup-step-item {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.pickup-step-left {
+  flex: 0 0 28px;
+  width: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pickup-step-number {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  z-index: 2;
+}
+
+.pickup-step-number--active {
+  background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+  border-color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+}
+
+.pickup-step-connector {
+  flex: 1;
+  min-height: 22px;
+  width: 0;
+  margin: 3px 0;
+  border-left: 2px dotted rgba(56, 189, 248, 0.5);
+}
+
+.pickup-step-card {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.pickup-step-card--first {
+  background: rgba(14, 165, 233, 0.08);
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+.pickup-step-details {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pickup-avatar-small {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pickup-step-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pickup-step-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pickup-step-name {
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+  truncate: true;
+}
+
+.pickup-first-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1.5px 6px;
+  border-radius: 5px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.pickup-step-description {
+  margin: 1px 0 0;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 11.5px;
+}
+
+.pickup-distance,
+.pickup-total-distance {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.pickup-distance svg,
+.pickup-total-distance svg {
+  color: #38bdf8;
+}
+
+/* Final Destination */
+.pickup-destination-card {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.pickup-step-number--dest {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+  font-size: 13px;
+}
+
+.pickup-destination-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pickup-destination-label {
+  color: #f87171;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pickup-destination-name {
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.pickup-total-distance {
+  color: #34d399;
+}
+
+/* Note box */
+.pickup-note-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  color: rgba(253, 230, 138, 0.9);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.pickup-note-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.pickup-note-box p {
+  margin: 0;
+}
+
+.pickup-note-box strong {
+  color: #fde047;
+}
+
+/* Got it button */
+.pickup-modal-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 46px;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(110deg, #0284c7 0%, #2563eb 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s ease;
+}
+
+.pickup-modal-close-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.pickup-modal-close-btn:active {
+  transform: scale(0.98);
+}
+
+

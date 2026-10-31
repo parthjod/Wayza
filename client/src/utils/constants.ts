@@ -2,9 +2,9 @@ export const LOGIN_BG_VIDEO = '/videos/wayzaLoginVid.mp4';
 export const HOME_BG_VIDEO = '/videos/wayzaVid.mp4';
 
 export const CAMPUS_POIS = [
-  { label: 'MIT WPU Front Gate', lat: 18.5191, lng: 73.8553 },
-  { label: 'MIT WPU Back Gate', lat: 18.5178, lng: 73.8571 },
-  { label: 'MIT WPU Sports Building', lat: 18.5202, lng: 73.8545 },
+  { label: 'MIT WPU Front Gate', lat: 18.5184, lng: 73.8155 },
+  { label: 'MIT WPU Back Gate', lat: 18.5168, lng: 73.8138 },
+  { label: 'MIT WPU Sports Building', lat: 18.5195, lng: 73.8145 },
 ];
 
 export const RADIUS_OPTIONS = [

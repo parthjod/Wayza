@@ -32,8 +32,19 @@ export class GroupController {
           groupId,
           members: result.members,
           allConfirmed: result.allConfirmed,
+          pickupSequence: result.pickupSequence,
         });
       }
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getPickupSequence(req: Request, res: Response, next: NextFunction) {
+    try {
+      const groupId = req.params.groupId as string;
+      const result = await groupService.getPickupSequence(groupId);
       res.json(result);
     } catch (err) {
       next(err);

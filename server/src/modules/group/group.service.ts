@@ -4,6 +4,8 @@ import { env } from '../../config/env';
 import { resolveProfilePicUrl } from '../../utils/initials';
 import { createError } from '../../middleware/errorHandler';
 import { journeyService } from '../journey/journey.service';
+import { haversineDistance } from '../../utils/haversine';
+import { getRoadDistanceMatrix } from '../../utils/routing';
 
 export class GroupService {
   /**
@@ -141,18 +143,39 @@ export class GroupService {
 
       // 4. Otherwise, create a brand-new group with fresh members and clean chat
       let resolvedDropLocation = 'MIT-WPU Campus';
+      let resolvedDropLat: number | null = null;
+      let resolvedDropLng: number | null = null;
       try {
         const rawInit = await redis.get(`active:${userId}`);
         const rawTarget = await redis.get(`active:${targetUserId}`);
         const parsedInit = rawInit ? JSON.parse(rawInit) : null;
         const parsedTarget = rawTarget ? JSON.parse(rawTarget) : null;
         resolvedDropLocation = parsedInit?.dropLocationLabel || parsedTarget?.dropLocationLabel || 'MIT-WPU Campus';
+        resolvedDropLat = parsedInit?.dropLat ?? parsedTarget?.dropLat ?? null;
+        resolvedDropLng = parsedInit?.dropLng ?? parsedTarget?.dropLng ?? null;
       } catch {}
+
+      if (!resolvedDropLat || !resolvedDropLng) {
+        const poi = await prisma.campusPOI.findFirst({
+          where: {
+            OR: [
+              { name: { equals: resolvedDropLocation, mode: 'insensitive' } },
+              { label: { equals: resolvedDropLocation, mode: 'insensitive' } },
+            ],
+          },
+        });
+        if (poi) {
+          resolvedDropLat = poi.lat;
+          resolvedDropLng = poi.lng;
+        }
+      }
 
       const group = await prisma.group.create({
         data: {
           status: 'FORMING',
           dropLocation: resolvedDropLocation,
+          dropLat: resolvedDropLat,
+          dropLng: resolvedDropLng,
           members: {
             create: [
               { userId },
@@ -341,11 +364,18 @@ export class GroupService {
       (m: any) => m.userId === userId || m.confirmedGoWith
     );
 
+    let pickupSequence: any = null;
     if (allConfirmed) {
       await prisma.group.update({
         where: { id: groupId },
         data: { status: 'CONFIRMED' },
       });
+      // Compute pickup sequence dynamically from live locations for session
+      try {
+        pickupSequence = await this.getPickupSequence(groupId);
+      } catch (err) {
+        console.error('Failed to compute pickup sequence on confirm:', err);
+      }
     }
 
     return {
@@ -354,6 +384,211 @@ export class GroupService {
         userId: m.userId,
         confirmedGoWith: m.userId === userId ? true : m.confirmedGoWith,
       })),
+      pickupSequence,
+    };
+  }
+
+  /**
+   * Dynamically calculate the optimal pickup sequence for the confirmed group session.
+   * Does NOT persist coordinates or order to DB. Evaluates live location from ephemeral Redis session.
+   * Algorithm: Optimal TSP-style permutation search with exact Haversine metric.
+   * Finds the path P_1 -> P_2 -> ... -> P_k -> Destination minimizing total transit distance & cost.
+   * First user in sequence is recommended to book the ride.
+   */
+  async getPickupSequence(groupId: string) {
+    const group = await prisma.group.findUnique({
+      where: { id: groupId },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                phone: true,
+                profilePicKey: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!group) throw createError('Group not found', 404);
+
+    // Destination coordinates: prioritize group drop coordinates, then CampusPOI match, fallback to MIT-WPU Kothrud
+    let destLat = group.dropLat;
+    let destLng = group.dropLng;
+    const destLabel = group.dropLocation || 'Campus';
+
+    if (!destLat || !destLng) {
+      const poi = await prisma.campusPOI.findFirst({
+        where: {
+          OR: [
+            { name: { equals: destLabel, mode: 'insensitive' } },
+            { label: { equals: destLabel, mode: 'insensitive' } },
+          ],
+        },
+      });
+      if (poi) {
+        destLat = poi.lat;
+        destLng = poi.lng;
+      } else {
+        destLat = 18.5184;
+        destLng = 73.8155;
+      }
+    }
+
+    // Retrieve ephemeral live location for each member from Redis
+    const memberLocations: Array<{
+      userId: string;
+      fullName: string;
+      profilePicUrl: string | null;
+      lat: number;
+      lng: number;
+      hasLiveCoords: boolean;
+    }> = [];
+
+    for (const m of group.members) {
+      const u = m.user;
+      let lat = destLat;
+      let lng = destLng;
+      let hasLiveCoords = false;
+
+      try {
+        const raw = await redis.get(`active:${u.id}`);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (typeof parsed.lat === 'number' && typeof parsed.lng === 'number') {
+            lat = parsed.lat;
+            lng = parsed.lng;
+            hasLiveCoords = true;
+          }
+        }
+      } catch {}
+
+      memberLocations.push({
+        userId: u.id,
+        fullName: u.fullName,
+        profilePicUrl: resolveProfilePicUrl(u.profilePicKey, u.id),
+        lat,
+        lng,
+        hasLiveCoords,
+      });
+    }
+
+    const n = memberLocations.length;
+    if (n === 0) {
+      return {
+        sequence: [],
+        suggestedBooker: null,
+        destination: { label: destLabel, lat: destLat, lng: destLng },
+        totalDistanceMeters: 0,
+      };
+    }
+
+    // Collect all coordinates: member locations + destination as the terminal node
+    const allPoints = [
+      ...memberLocations.map((m) => ({ lat: m.lat, lng: m.lng })),
+      { lat: destLat, lng: destLng },
+    ];
+    const destIdx = memberLocations.length;
+
+    // Fetch real road driving distances using OSRM (with automatic fallback to Haversine * 1.3)
+    const distanceMatrix = await getRoadDistanceMatrix(allPoints);
+
+    if (n === 1) {
+      const distToDest = distanceMatrix[0][destIdx];
+      const seqItem = {
+        order: 1,
+        userId: memberLocations[0].userId,
+        fullName: memberLocations[0].fullName,
+        profilePicUrl: memberLocations[0].profilePicUrl,
+        lat: memberLocations[0].lat,
+        lng: memberLocations[0].lng,
+        hasLiveCoords: memberLocations[0].hasLiveCoords,
+        distanceToNextMeters: distToDest,
+      };
+      return {
+        sequence: [seqItem],
+        suggestedBooker: {
+          userId: memberLocations[0].userId,
+          fullName: memberLocations[0].fullName,
+          profilePicUrl: memberLocations[0].profilePicUrl,
+        },
+        destination: { label: destLabel, lat: destLat, lng: destLng },
+        totalDistanceMeters: distToDest,
+      };
+    }
+
+    // Exact TSP permutation search against real road network distances
+    const indices = memberLocations.map((_, i) => i);
+    let bestPermutation: number[] = [...indices];
+    let minTotalDistance = Infinity;
+
+    const permute = (arr: number[], m: number[] = []) => {
+      if (arr.length === 0) {
+        // Calculate total road distance for this sequence: m[0] -> m[1] -> ... -> m[k-1] -> Destination
+        let dist = 0;
+        for (let i = 0; i < m.length - 1; i++) {
+          dist += distanceMatrix[m[i]][m[i + 1]];
+        }
+        dist += distanceMatrix[m[m.length - 1]][destIdx];
+
+        if (dist < minTotalDistance) {
+          minTotalDistance = dist;
+          bestPermutation = [...m];
+        }
+      } else {
+        for (let i = 0; i < arr.length; i++) {
+          const curr = arr.slice();
+          const next = curr.splice(i, 1);
+          permute(curr.slice(), m.concat(next));
+        }
+      }
+    };
+
+    permute(indices);
+
+    // Build the ordered sequence with actual road driving distances
+    const sequence = bestPermutation.map((idx, rank) => {
+      const member = memberLocations[idx];
+      let distanceToNextMeters = 0;
+      if (rank < bestPermutation.length - 1) {
+        const nextIdx = bestPermutation[rank + 1];
+        distanceToNextMeters = distanceMatrix[idx][nextIdx];
+      } else {
+        // Last member to destination
+        distanceToNextMeters = distanceMatrix[idx][destIdx];
+      }
+
+      return {
+        order: rank + 1,
+        userId: member.userId,
+        fullName: member.fullName,
+        profilePicUrl: member.profilePicUrl,
+        lat: member.lat,
+        lng: member.lng,
+        hasLiveCoords: member.hasLiveCoords,
+        distanceToNextMeters,
+      };
+    });
+
+    const first = sequence[0];
+
+    return {
+      sequence,
+      suggestedBooker: {
+        userId: first.userId,
+        fullName: first.fullName,
+        profilePicUrl: first.profilePicUrl,
+      },
+      destination: {
+        label: destLabel,
+        lat: destLat,
+        lng: destLng,
+      },
+      totalDistanceMeters: minTotalDistance === Infinity ? 0 : minTotalDistance,
     };
   }
 

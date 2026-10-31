@@ -69,6 +69,32 @@ export interface GroupMember {
   phone?: string;
 }
 
+export interface PickupSequenceStop {
+  order: number;
+  userId: string;
+  fullName: string;
+  profilePicUrl: string | null;
+  lat: number;
+  lng: number;
+  hasLiveCoords: boolean;
+  distanceToNextMeters: number;
+}
+
+export interface PickupSequenceData {
+  sequence: PickupSequenceStop[];
+  suggestedBooker: {
+    userId: string;
+    fullName: string;
+    profilePicUrl: string | null;
+  } | null;
+  destination: {
+    label: string;
+    lat: number;
+    lng: number;
+  };
+  totalDistanceMeters: number;
+}
+
 export interface Group {
   id: string;
   status: GroupStatus;

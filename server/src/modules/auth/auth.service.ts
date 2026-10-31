@@ -75,6 +75,9 @@ export class AuthService {
     const otpHash = await hashOTP(otp);
     await storeOTP(cleanEmail, otpHash);
 
+    // Prominently print the OTP code to server console for local testing
+    console.log(`\n========================================\n📧 [EMAIL OTP CODE] for ${cleanEmail}: ${otp}\n========================================\n`);
+
     if (user) {
       // Send login OTP to student email via Resend / SES
       console.log(`[AUTH] Dispatching login OTP to ${cleanEmail}...`);
