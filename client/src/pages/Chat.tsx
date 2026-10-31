@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useSocket } from '../hooks/useSocket';
@@ -124,12 +124,90 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
+  // Intelligent Sequence-Based Fare Split Calculation
+  const computedIntelligentSplits = useMemo(() => {
+    const totalNum = parseFloat(totalFare);
+    if (!totalNum || isNaN(totalNum) || totalNum <= 0 || !group) {
+      return [];
+    }
+
+    const selected = group.members.filter((m) => splitMembers.includes(m.userId));
+    if (selected.length === 0) return [];
+
+    const seq = pickupSequenceData?.sequence;
+    if (!seq || seq.length === 0) {
+      // Fallback to equal split if sequence data not yet loaded
+      const equalAmt = Math.round((totalNum / selected.length) * 100) / 100;
+      const equalPct = Math.round((100 / selected.length) * 10) / 10;
+      return selected.map((m, idx) => ({
+        userId: m.userId,
+        fullName: m.fullName,
+        amount: idx === 0 ? Math.round((totalNum - equalAmt * (selected.length - 1)) * 100) / 100 : equalAmt,
+        percentage: equalPct,
+      }));
+    }
+
+    // Calculate distance from each stop to final destination
+    const distanceToDestMap = new Map<string, number>();
+    let runningDist = 0;
+    for (let i = seq.length - 1; i >= 0; i--) {
+      const stop = seq[i];
+      runningDist += stop.distanceToNextMeters;
+      distanceToDestMap.set(stop.userId, runningDist);
+    }
+
+    // Determine weight for each selected member (minimum 1 meter)
+    const weights = selected.map((m) => {
+      const dist = distanceToDestMap.get(m.userId) ?? runningDist;
+      return Math.max(dist, 1);
+    });
+
+    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+
+    let sumAmounts = 0;
+    const splits = selected.map((m, idx) => {
+      const ratio = weights[idx] / totalWeight;
+      const amount = Math.round(totalNum * ratio * 100) / 100;
+      const percentage = Math.round(ratio * 1000) / 10;
+      sumAmounts += amount;
+      return {
+        userId: m.userId,
+        fullName: m.fullName,
+        amount,
+        percentage,
+      };
+    });
+
+    // Reconcile any rounding cent/paisa diff onto the largest share
+    const diff = Math.round((totalNum - sumAmounts) * 100) / 100;
+    if (diff !== 0 && splits.length > 0) {
+      let maxIdx = 0;
+      for (let i = 1; i < splits.length; i++) {
+        if (splits[i].amount > splits[maxIdx].amount) {
+          maxIdx = i;
+        }
+      }
+      splits[maxIdx].amount = Math.round((splits[maxIdx].amount + diff) * 100) / 100;
+    }
+
+    return splits;
+  }, [totalFare, group, splitMembers, pickupSequenceData]);
+
   // Load group data
   useEffect(() => {
     if (!groupId) return;
     loadGroup();
     loadMessages();
   }, [groupId]);
+
+  // Load pickup sequence if fare split modal is opened and not yet cached
+  useEffect(() => {
+    if (showFareSplitModal && !pickupSequenceData && groupId) {
+      groupApi.getPickupSequence(groupId).then((seq) => {
+        setPickupSequenceData(seq);
+      }).catch(() => {});
+    }
+  }, [showFareSplitModal, pickupSequenceData, groupId]);
 
   // Socket events
   useEffect(() => {
@@ -347,12 +425,6 @@ export default function Chat() {
       } else {
         showToast('Confirmed! Waiting for others...', 'success');
       }
-      // Auto-start journey immediately upon confirming
-      try {
-        await journeyApi.start(groupId);
-      } catch {
-        // Journey start may fail if not all confirmed yet — that's fine
-      }
       await loadGroup();
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Failed', 'error');
@@ -422,14 +494,6 @@ export default function Chat() {
   const handleEndJourney = async () => {
     if (!groupId) return;
     try {
-      // Ensure user is marked as started before ending (covers the case where
-      // their start call was silently skipped at confirm-time because not all
-      // members had confirmed yet)
-      try {
-        await journeyApi.start(groupId);
-      } catch {
-        // Already started or other benign error — safe to ignore
-      }
       const result = await journeyApi.end(groupId);
       if (result.allEnded) {
         setShowRideCompletedModal(true);
@@ -447,12 +511,14 @@ export default function Chat() {
     if (!groupId || !totalFare || splitMembers.length < 2) return;
     try {
       const fareNum = parseFloat(totalFare);
-      await fareApi.submit(groupId, fareNum, splitMembers);
+      const customSplits = computedIntelligentSplits.map((s) => ({
+        userId: s.userId,
+        amount: s.amount,
+      }));
+      const result = await fareApi.submit(groupId, fareNum, splitMembers, customSplits);
+      setFareSplitResult(result);
       showToast('Fare split submitted! 🎉', 'success');
-      setShowFareSplitModal(false);
-      setShowRideCompletedModal(false);
-      isLeavingRef.current = true;
-      navigate('/home', { replace: true });
+      loadGroup();
     } catch (err: any) {
       showToast(err.response?.data?.error || 'Failed to submit fare split', 'error');
     }
@@ -536,9 +602,7 @@ export default function Chat() {
   const confirmedCount = group.members.filter((m) => m.confirmedGoWith).length;
   const endedCount = group.members.filter((m) => m.endedJourney).length;
   const otherNames = otherMembers.map((m) => m.fullName).join(' & ');
-  const computedSplit = splitMembers.length >= 2 && totalFare
-    ? (parseFloat(totalFare) / splitMembers.length).toFixed(2)
-    : '0.00';
+
 
   return (
     <div className="chat-page-shell">
@@ -959,7 +1023,7 @@ export default function Chat() {
                 if (m.endedJourney) {
                   statusLabel = '🏁 Trip ended';
                   statusClass = 'group-member-status--confirmed';
-                } else if (m.startedJourney) {
+                } else if (group.status === 'JOURNEY_STARTED' && m.startedJourney) {
                   statusLabel = '🚗 In journey';
                   statusClass = 'group-member-status--journey';
                 } else if (m.confirmedGoWith) {
@@ -1429,9 +1493,24 @@ export default function Chat() {
                 </label>
               ))}
             </div>
-            <p className="fare-modal-each-pays">
-              Each pays: <span className="fare-modal-amount">₹{computedSplit}</span>
-            </p>
+            {computedIntelligentSplits.length > 0 && parseFloat(totalFare) > 0 ? (
+              <div className="fare-modal-splits mb-4">
+                <span className="fare-modal-label mb-2 block">Calculated Share (by sequence):</span>
+                {computedIntelligentSplits.map((item) => (
+                  <div key={item.userId} className="fare-modal-split-row">
+                    <span className="fare-modal-split-name">{item.fullName}</span>
+                    <span className="fare-modal-split-amount font-bold text-emerald-400">
+                      ₹{item.amount.toFixed(2)}{' '}
+                      <span className="text-white/60 text-xs font-normal">({item.percentage}%)</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="fare-modal-each-pays">
+                Enter total fare to calculate split
+              </p>
+            )}
             <button
               onClick={handleSubmitFare}
               disabled={!totalFare || splitMembers.length < 2}
@@ -1457,12 +1536,23 @@ export default function Chat() {
           <>
             <h3 className="fare-modal-heading">Fare Split</h3>
             <div className="fare-modal-splits">
-              {(fareSplitResult?.splits || group.fareSplit?.participants || []).map((s: any) => (
-                <div key={s.userId} className="fare-modal-split-row">
-                  <span className="fare-modal-split-name">{s.fullName}</span>
-                  <span className="fare-modal-split-amount font-bold text-emerald-400">₹{Number(s.amount).toFixed(2)}</span>
-                </div>
-              ))}
+              {(fareSplitResult?.splits || group.fareSplit?.participants || [])
+                .filter((s: any) => Number(s.amount) > 0 || (group.members.length <= 2))
+                .map((s: any) => {
+                  const total = fareSplitResult?.totalFare || group.fareSplit?.totalFare || parseFloat(totalFare) || 0;
+                  const memberObj = group.members.find((m) => m.userId === s.userId);
+                  const name = s.fullName || memberObj?.fullName || 'Member';
+                  const pct = s.percentage ?? (total > 0 ? Math.round(((s.amount / total) * 100) * 10) / 10 : 0);
+                  return (
+                    <div key={s.userId} className="fare-modal-split-row">
+                      <span className="fare-modal-split-name">{name}</span>
+                      <span className="fare-modal-split-amount font-bold text-emerald-400">
+                        ₹{Number(s.amount).toFixed(2)}{' '}
+                        <span className="text-white/60 text-xs font-normal">({pct}%)</span>
+                      </span>
+                    </div>
+                  );
+                })}
             </div>
             <button
               onClick={handleAcknowledgeFare}

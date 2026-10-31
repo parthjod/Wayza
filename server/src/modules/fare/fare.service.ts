@@ -111,9 +111,10 @@ export class FareService {
       userId: p.userId,
       fullName: userMap.get(p.userId) || 'Unknown',
       amount: p.amount,
+      percentage: totalFare > 0 ? Math.round((p.amount / totalFare) * 1000) / 10 : 0,
     }));
 
-    return { splitId: fareSplit.id, splits: resultSplits };
+    return { splitId: fareSplit.id, totalFare, splits: resultSplits };
   }
 
   /**
