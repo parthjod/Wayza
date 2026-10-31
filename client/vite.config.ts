@@ -10,9 +10,9 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://d10grnxvwn5xrp.cloudfront.net',
+        target: process.env.VITE_BACKEND_TARGET || 'http://localhost:4000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
       },
     },
   },
