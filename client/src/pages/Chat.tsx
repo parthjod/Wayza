@@ -1026,7 +1026,7 @@ export default function Chat() {
               LOWEST COST ROUTE
             </span>
 
-            <h3 className="pickup-modal-title">
+            <h3 className="pickup-modal-title font-instrument">
               Pickup Sequence
             </h3>
 

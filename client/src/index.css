@@ -7059,6 +7059,7 @@ body {
   overflow-y: auto !important;
   box-sizing: border-box !important;
   padding: 24px 22px 20px !important;
+  font-family: var(--font-sans) !important;
 
   background: rgba(14, 16, 22, 0.92) !important;
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -7120,17 +7121,19 @@ body {
 .pickup-modal-title {
   margin: 6px 0 0;
   color: #ffffff;
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.25;
+  font-family: var(--font-instrument), serif;
+  font-size: clamp(26px, 3.2vw, 30px);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
 }
 
 .pickup-modal-subtitle {
-  margin: 4px 0 0;
+  margin: 5px 0 0;
   color: rgba(255, 255, 255, 0.65);
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.45;
+  font-weight: 400;
 }
 
 .pickup-modal-icon-close {
