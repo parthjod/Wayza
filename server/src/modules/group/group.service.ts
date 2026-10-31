@@ -5,6 +5,7 @@ import { resolveProfilePicUrl } from '../../utils/initials';
 import { createError } from '../../middleware/errorHandler';
 import { journeyService } from '../journey/journey.service';
 import { haversineDistance } from '../../utils/haversine';
+import { getRoadDistanceMatrix } from '../../utils/routing';
 
 export class GroupService {
   /**
@@ -447,8 +448,18 @@ export class GroupService {
       };
     }
 
+    // Collect all coordinates: member locations + destination as the terminal node
+    const allPoints = [
+      ...memberLocations.map((m) => ({ lat: m.lat, lng: m.lng })),
+      { lat: destLat, lng: destLng },
+    ];
+    const destIdx = memberLocations.length;
+
+    // Fetch real road driving distances using OSRM (with automatic fallback to Haversine * 1.3)
+    const distanceMatrix = await getRoadDistanceMatrix(allPoints);
+
     if (n === 1) {
-      const distToDest = haversineDistance(memberLocations[0].lat, memberLocations[0].lng, destLat, destLng);
+      const distToDest = distanceMatrix[0][destIdx];
       const seqItem = {
         order: 1,
         userId: memberLocations[0].userId,
@@ -471,22 +482,19 @@ export class GroupService {
       };
     }
 
-    // Exact TSP permutation search (Group size max 4, permutations <= 24, complexity O(k! * k), < 1ms execution)
+    // Exact TSP permutation search against real road network distances
     const indices = memberLocations.map((_, i) => i);
     let bestPermutation: number[] = [...indices];
     let minTotalDistance = Infinity;
 
     const permute = (arr: number[], m: number[] = []) => {
       if (arr.length === 0) {
-        // Calculate total route distance for this sequence: m[0] -> m[1] -> ... -> m[k-1] -> Destination
+        // Calculate total road distance for this sequence: m[0] -> m[1] -> ... -> m[k-1] -> Destination
         let dist = 0;
         for (let i = 0; i < m.length - 1; i++) {
-          const u1 = memberLocations[m[i]];
-          const u2 = memberLocations[m[i + 1]];
-          dist += haversineDistance(u1.lat, u1.lng, u2.lat, u2.lng);
+          dist += distanceMatrix[m[i]][m[i + 1]];
         }
-        const lastUser = memberLocations[m[m.length - 1]];
-        dist += haversineDistance(lastUser.lat, lastUser.lng, destLat, destLng);
+        dist += distanceMatrix[m[m.length - 1]][destIdx];
 
         if (dist < minTotalDistance) {
           minTotalDistance = dist;
@@ -503,16 +511,16 @@ export class GroupService {
 
     permute(indices);
 
-    // Build the ordered sequence with distances
+    // Build the ordered sequence with actual road driving distances
     const sequence = bestPermutation.map((idx, rank) => {
       const member = memberLocations[idx];
       let distanceToNextMeters = 0;
       if (rank < bestPermutation.length - 1) {
-        const nextMember = memberLocations[bestPermutation[rank + 1]];
-        distanceToNextMeters = haversineDistance(member.lat, member.lng, nextMember.lat, nextMember.lng);
+        const nextIdx = bestPermutation[rank + 1];
+        distanceToNextMeters = distanceMatrix[idx][nextIdx];
       } else {
         // Last member to destination
-        distanceToNextMeters = haversineDistance(member.lat, member.lng, destLat, destLng);
+        distanceToNextMeters = distanceMatrix[idx][destIdx];
       }
 
       return {
