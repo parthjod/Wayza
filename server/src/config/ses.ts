@@ -3,70 +3,117 @@ import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import { env } from './env';
 
 const sesClient = new SESClient({
-  region: env.AWS_REGION,
-  credentials: {
-    accessKeyId: env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
-  },
+  region: env.AWS_REGION || process.env.AWS_REGION || 'ap-south-1',
+  ...(env.AWS_ACCESS_KEY_ID && env.AWS_SECRET_ACCESS_KEY
+    ? {
+        credentials: {
+          accessKeyId: env.AWS_ACCESS_KEY_ID,
+          secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
+        },
+      }
+    : {}),
 });
 
+/**
+ * Send email via Resend
+ */
+async function sendViaResend(to: string, subject: string, htmlBody: string): Promise<boolean> {
+  const resendKey = process.env.RESEND_API_KEY;
+  if (!resendKey || resendKey === 'your-resend-api-key') return false;
+
+  try {
+    console.log(`[Resend] Sending email to ${to}...`);
+    const fromEmail = process.env.RESEND_FROM_EMAIL || (
+      env.AWS_SES_FROM_EMAIL && !env.AWS_SES_FROM_EMAIL.includes('yourdomain.com')
+        ? (env.AWS_SES_FROM_EMAIL.includes('<') ? env.AWS_SES_FROM_EMAIL : `Wayza <${env.AWS_SES_FROM_EMAIL}>`)
+        : 'Wayza <onboarding@resend.dev>'
+    );
+
+    const response = await axios.post(
+      'https://api.resend.com/emails',
+      {
+        from: fromEmail,
+        to: [to],
+        subject,
+        html: htmlBody,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${resendKey}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 7000,
+      }
+    );
+    if (response.data?.id) {
+      console.log(`[Resend] Email sent successfully (id: ${response.data.id}) to ${to}`);
+      return true;
+    }
+    console.warn(`[Resend] Response warning:`, response.data);
+    return false;
+  } catch (err: any) {
+    console.error(`[Resend] Failed to send email to ${to}:`, err.response?.data || err.message);
+    return false;
+  }
+}
+
+/**
+ * Send email via AWS SES
+ */
+async function sendViaSES(to: string, subject: string, htmlBody: string): Promise<boolean> {
+  try {
+    const fromAddress = env.AWS_SES_FROM_EMAIL.includes('<')
+      ? env.AWS_SES_FROM_EMAIL
+      : `Wayza <${env.AWS_SES_FROM_EMAIL}>`;
+
+    console.log(`[AWS SES] Sending email to ${to} from ${fromAddress}...`);
+    const command = new SendEmailCommand({
+      Source: fromAddress,
+      Destination: { ToAddresses: [to] },
+      Message: {
+        Subject: { Data: subject, Charset: 'UTF-8' },
+        Body: { Html: { Data: htmlBody, Charset: 'UTF-8' } },
+      },
+    });
+
+    const response = await sesClient.send(command);
+    console.log(`[AWS SES] Email sent successfully (MessageId: ${response.MessageId}) to ${to}`);
+    return true;
+  } catch (err: any) {
+    console.error(`[AWS SES] Failed to send email to ${to}:`, err.message);
+    return false;
+  }
+}
+
+/**
+ * Main dispatch function: Prioritizes AWS SES for high volume production,
+ * with seamless fallback between SES and Resend.
+ */
 export async function sendEmail(
   to: string,
   subject: string,
   htmlBody: string
 ): Promise<void> {
-  // 1. Resend Integration (Zero-wait instant delivery)
-  const resendKey = process.env.RESEND_API_KEY;
-  if (resendKey && resendKey !== 'your-resend-api-key') {
-    try {
-      console.log(`[Resend] Sending email to ${to}...`);
-      const fromEmail = process.env.RESEND_FROM_EMAIL || (
-        env.AWS_SES_FROM_EMAIL && !env.AWS_SES_FROM_EMAIL.includes('yourdomain.com')
-          ? `Wayza <${env.AWS_SES_FROM_EMAIL}>`
-          : 'Wayza <onboarding@resend.dev>'
-      );
+  const provider = (process.env.EMAIL_PROVIDER || 'ses').toLowerCase();
 
-      const response = await axios.post(
-        'https://api.resend.com/emails',
-        {
-          from: fromEmail,
-          to: [to],
-          subject,
-          html: htmlBody,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${resendKey}`,
-            'Content-Type': 'application/json',
-          },
-          timeout: 7000,
-        }
-      );
-      if (response.data?.id) {
-        console.log(`[Resend] Email sent successfully (id: ${response.data.id}) to ${to}`);
-        return;
-      }
-      console.warn(`[Resend] Response warning:`, response.data);
-    } catch (err: any) {
-      console.error(`[Resend] Failed to send email to ${to}:`, err.response?.data || err.message);
-    }
+  // If explicitly configured to use Resend first
+  if (provider === 'resend') {
+    const resendSuccess = await sendViaResend(to, subject, htmlBody);
+    if (resendSuccess) return;
+    console.warn(`[Email Fallback] Resend failed, attempting AWS SES for ${to}...`);
+    await sendViaSES(to, subject, htmlBody);
+    return;
   }
 
-  // 2. AWS SES Fallback
-  try {
-    await sesClient.send(
-      new SendEmailCommand({
-        Source: env.AWS_SES_FROM_EMAIL,
-        Destination: { ToAddresses: [to] },
-        Message: {
-          Subject: { Data: subject },
-          Body: { Html: { Data: htmlBody } },
-        },
-      })
-    );
-    console.log(`[AWS SES] Email sent successfully to ${to}`);
-  } catch (err: any) {
-    console.error(`[AWS SES] Failed to send email to ${to}:`, err.message);
+  // Default: Primary AWS SES
+  const sesSuccess = await sendViaSES(to, subject, htmlBody);
+  if (sesSuccess) return;
+
+  // Fallback to Resend if SES fails and Resend key is available
+  const resendKey = process.env.RESEND_API_KEY;
+  if (resendKey && resendKey !== 'your-resend-api-key') {
+    console.warn(`[Email Fallback] AWS SES failed, attempting Resend for ${to}...`);
+    await sendViaResend(to, subject, htmlBody);
   }
 }
 
@@ -231,5 +278,3 @@ export async function sendVerificationEmail(
 ): Promise<void> {
   console.log(`[AUTH] sendVerificationEmail is deprecated and bypassed for ${to}`);
 }
-
-
